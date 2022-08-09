@@ -8,6 +8,7 @@ typedef enum
 {
     STATEMENT_TYPE_UNKNOWN,
     STATEMENT_TYPE_NUMBER,
+    STATEMENT_TYPE_STRING,
     STATEMENT_TYPE_ASSIGNMENT,
     STATEMENT_TYPE_INVOKE,
     STATEMENT_TYPE_REFERENCE
@@ -41,6 +42,11 @@ typedef struct
 {
     double value;
 } number_statement_data_t;
+
+typedef struct
+{
+    char *value;
+} string_statement_data_t;
 
 typedef struct
 {

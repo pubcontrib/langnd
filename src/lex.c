@@ -5,12 +5,14 @@
 static void read_whitespace_token(scanner_t *scanner);
 static void read_comment_token(scanner_t *scanner);
 static void read_number_token(scanner_t *scanner);
+static void read_string_token(scanner_t *scanner);
 static void read_identifier_token(scanner_t *scanner);
 static int has_another_symbol(scanner_t *scanner);
 static char read_next_symbol(scanner_t *scanner);
 static char peek_next_symbol(scanner_t *scanner);
 static int is_whitespace_symbol(char symbol);
 static int is_number_symbol(char symbol);
+static int is_string_symbol(char symbol);
 static int is_letter_symbol(char symbol);
 static int is_short_identifier_symbol(char symbol);
 
@@ -54,6 +56,11 @@ void progress_scanner(scanner_t *scanner)
             || (symbol == '-' && has_another_symbol(scanner) && is_number_symbol(peek_next_symbol(scanner))))
         {
             read_number_token(scanner);
+            return;
+        }
+        else if (symbol == '"')
+        {
+            read_string_token(scanner);
             return;
         }
         else if (symbol == '$' || symbol == '@')
@@ -155,6 +162,43 @@ static void read_number_token(scanner_t *scanner)
     }
 }
 
+static void read_string_token(scanner_t *scanner)
+{
+    int completed;
+
+    scanner->token.type = TOKEN_TYPE_STRING;
+    completed = 0;
+
+    while (has_another_symbol(scanner))
+    {
+        char symbol;
+
+        symbol = peek_next_symbol(scanner);
+
+        if (symbol == '"')
+        {
+            read_next_symbol(scanner);
+
+            completed = 1;
+            break;
+        }
+        else if (is_string_symbol(symbol))
+        {
+            read_next_symbol(scanner);
+        }
+        else
+        {
+            break;
+        }
+    }
+
+    if (!completed)
+    {
+        scanner->state = SCANNER_STATE_ERRORED;
+        return;
+    }
+}
+
 static void read_identifier_token(scanner_t *scanner)
 {
     char symbol;
@@ -215,6 +259,11 @@ static int is_whitespace_symbol(char symbol)
 static int is_number_symbol(char symbol)
 {
     return symbol >= '0' && symbol <= '9';
+}
+
+static int is_string_symbol(char symbol)
+{
+    return symbol >= ' ' && symbol <= '~';
 }
 
 static int is_letter_symbol(char symbol)

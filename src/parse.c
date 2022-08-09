@@ -160,6 +160,17 @@ void destroy_statement(statement_t *statement)
                 break;
             }
 
+            case STATEMENT_TYPE_STRING:
+            {
+                string_statement_data_t *data;
+
+                data = statement->data;
+
+                free(data->value);
+                free(data);
+                break;
+            }
+
             case STATEMENT_TYPE_ASSIGNMENT:
             {
                 assignment_statement_data_t *data;
@@ -275,6 +286,27 @@ static statement_t *read_any_statement(capsule_t *capsule)
 
         statement = allocate(sizeof(statement_t));
         statement->type = STATEMENT_TYPE_NUMBER;
+        statement->data = data;
+
+        return statement;
+    }
+    else if (token->type == TOKEN_TYPE_STRING)
+    {
+        statement_t *statement;
+        string_statement_data_t *data;
+        char *text;
+        size_t textLength;
+
+        textLength = token->end - token->start;
+        text = allocate(sizeof(char) * (textLength + 1));
+        memcpy(text, capsule->scanner.code + token->start, textLength);
+        text[textLength] = '\0';
+
+        data = allocate(sizeof(string_statement_data_t));
+        data->value = text;
+
+        statement = allocate(sizeof(statement_t));
+        statement->type = STATEMENT_TYPE_STRING;
         statement->data = data;
 
         return statement;
@@ -486,6 +518,7 @@ static char is_literal_statement(statement_t *statement)
     switch (statement->type)
     {
         case STATEMENT_TYPE_NUMBER:
+        case STATEMENT_TYPE_STRING:
             return 1;
 
         default:

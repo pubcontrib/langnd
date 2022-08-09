@@ -8,7 +8,8 @@
 typedef enum
 {
     VALUE_TYPE_NULL,
-    VALUE_TYPE_NUMBER
+    VALUE_TYPE_NUMBER,
+    VALUE_TYPE_STRING
 } value_type_t;
 
 typedef struct
@@ -23,6 +24,7 @@ static value_t *apply_statement(statement_t *statement, map_t *variables);
 static value_t *throw_error(double number);
 static value_t *new_null();
 static value_t *new_number(double number);
+static value_t *new_string(char *string);
 static void destroy_value(value_t *value);
 static void destroy_value_unsafe(void *value);
 
@@ -108,6 +110,15 @@ static value_t *apply_statement(statement_t *statement, map_t *variables)
             data = statement->data;
 
             return new_number(data->value);
+        }
+
+        case STATEMENT_TYPE_STRING:
+        {
+            string_statement_data_t *data;
+
+            data = statement->data;
+
+            return new_string(data->value);
         }
 
         case STATEMENT_TYPE_ASSIGNMENT:
@@ -260,6 +271,21 @@ static value_t *new_number(double number)
     data[0] = number;
     value = allocate(sizeof(value_t));
     value->type = VALUE_TYPE_NUMBER;
+    value->data = data;
+    value->thrown = 0;
+    value->owned = 0;
+
+    return value;
+}
+
+static value_t *new_string(char *string)
+{
+    value_t *value;
+    char *data;
+
+    data = copy_string(string);
+    value = allocate(sizeof(value_t));
+    value->type = VALUE_TYPE_STRING;
     value->data = data;
     value->thrown = 0;
     value->owned = 0;
