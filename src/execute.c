@@ -150,7 +150,6 @@ static value_t *apply_statement(statement_t *statement, map_t *variables)
             {
                 argument_link_t *link;
                 value_t *left, *right, *result;
-                number_statement_data_t *x, *y;
 
                 link = data->arguments;
 
@@ -180,14 +179,43 @@ static value_t *apply_statement(statement_t *statement, map_t *variables)
                     return right;
                 }
 
-                if (left->type != VALUE_TYPE_NUMBER || right->type != VALUE_TYPE_NUMBER)
+                if (left->type == VALUE_TYPE_NUMBER)
                 {
-                    return throw_error(3.0);
-                }
+                    number_statement_data_t *x, *y;
 
-                x = (number_statement_data_t *) left->data;
-                y = (number_statement_data_t *) right->data;
-                result = new_number(x->value + y->value);
+                    if (right->type != VALUE_TYPE_NUMBER)
+                    {
+                        return throw_error(3.0);
+                    }
+
+                    x = (number_statement_data_t *) left->data;
+                    y = (number_statement_data_t *) right->data;
+                    result = new_number(x->value + y->value);
+                }
+                else if (left->type == VALUE_TYPE_STRING)
+                {
+                    char *x, *y;
+                    char *sum;
+                    size_t length;
+
+                    if (right->type != VALUE_TYPE_STRING)
+                    {
+                        return throw_error(4.0);
+                    }
+
+                    x = (char *) left->data;
+                    y = (char *) right->data;
+                    length = strlen(x) + strlen(y);
+                    sum = allocate(sizeof(char) * length + 1);
+                    memcpy(sum, x, strlen(x));
+                    memcpy(sum + strlen(x), y, strlen(y));
+                    result = new_string(sum);
+                    free(sum);
+                }
+                else
+                {
+                    return throw_error(5.0);
+                }
 
                 if (!left)
                 {
@@ -202,7 +230,7 @@ static value_t *apply_statement(statement_t *statement, map_t *variables)
                 return result;
             }
 
-            return throw_error(4.0);
+            return throw_error(6.0);
         }
 
         case STATEMENT_TYPE_REFERENCE:

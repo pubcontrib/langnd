@@ -10,6 +10,7 @@ testscripts()
     testscript '$a=100' '' 0
     testscript '$a="text"' '' 0
     testscript '@add(100, 200)' '' 0
+    testscript '@add("this", " & that")' '' 0
     testscript '$a=100 $b=200 $c=@add($a, $b)' '' 0
     testscript '$a=100 $a' '' 0
     testscript '$a="text" $a' '' 0
