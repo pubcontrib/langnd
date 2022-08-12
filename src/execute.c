@@ -181,16 +181,16 @@ static value_t *apply_statement(statement_t *statement, map_t *variables)
 
                 if (left->type == VALUE_TYPE_NUMBER)
                 {
-                    number_statement_data_t *x, *y;
+                    double *x, *y;
 
                     if (right->type != VALUE_TYPE_NUMBER)
                     {
                         return throw_error(3.0);
                     }
 
-                    x = (number_statement_data_t *) left->data;
-                    y = (number_statement_data_t *) right->data;
-                    result = new_number(x->value + y->value);
+                    x = (double *) left->data;
+                    y = (double *) right->data;
+                    result = new_number(x[0] + y[0]);
                 }
                 else if (left->type == VALUE_TYPE_STRING)
                 {
