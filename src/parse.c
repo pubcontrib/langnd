@@ -297,9 +297,9 @@ static statement_t *read_any_statement(capsule_t *capsule)
         char *text;
         size_t textLength;
 
-        textLength = token->end - token->start;
+        textLength = token->end - token->start - 2;
         text = allocate(sizeof(char) * (textLength + 1));
-        memcpy(text, capsule->scanner.code + token->start, textLength);
+        memcpy(text, capsule->scanner.code + token->start + 1, textLength);
         text[textLength] = '\0';
 
         data = allocate(sizeof(string_statement_data_t));
