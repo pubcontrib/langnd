@@ -21,7 +21,7 @@ typedef struct
 } value_t;
 
 static value_t *apply_statement(statement_t *statement, map_t *variables);
-static value_t *throw_error(double number);
+static value_t *throw_error(char *message);
 static value_t *new_null();
 static value_t *new_number(double number);
 static value_t *new_string(char *string);
@@ -61,12 +61,25 @@ outcome_t *execute(char *code)
 
         if (result->thrown)
         {
-            if (!result->owned)
+            if (result->type == VALUE_TYPE_STRING)
             {
-                destroy_value(result);
+                char *message;
+
+                message = copy_string(result->data);
+
+                if (!result->owned)
+                {
+                    destroy_value(result);
+                }
+
+                outcome->errorMessage = copy_string("failed to execute code");
+                outcome->hintMessage = message;
+            }
+            else
+            {
+                crash_with_message("unsupported branch EXECUTE_THROWN_MESSAGE");
             }
 
-            outcome->errorMessage = copy_string("failed to execute code");
             break;
         }
 
@@ -155,7 +168,7 @@ static value_t *apply_statement(statement_t *statement, map_t *variables)
 
                 if (!link)
                 {
-                    return throw_error(1.0);
+                    return throw_error("absent argument");
                 }
 
                 left = apply_statement(link->argument, variables);
@@ -169,7 +182,7 @@ static value_t *apply_statement(statement_t *statement, map_t *variables)
 
                 if (!link)
                 {
-                    return throw_error(2.0);
+                    return throw_error("absent argument");
                 }
 
                 right = apply_statement(link->argument, variables);
@@ -185,7 +198,7 @@ static value_t *apply_statement(statement_t *statement, map_t *variables)
 
                     if (right->type != VALUE_TYPE_NUMBER)
                     {
-                        return throw_error(3.0);
+                        return throw_error("wrong argument type");
                     }
 
                     x = (double *) left->data;
@@ -200,7 +213,7 @@ static value_t *apply_statement(statement_t *statement, map_t *variables)
 
                     if (right->type != VALUE_TYPE_STRING)
                     {
-                        return throw_error(4.0);
+                        return throw_error("wrong argument type");
                     }
 
                     x = (char *) left->data;
@@ -214,7 +227,7 @@ static value_t *apply_statement(statement_t *statement, map_t *variables)
                 }
                 else
                 {
-                    return throw_error(5.0);
+                    return throw_error("wrong argument type");
                 }
 
                 if (!left)
@@ -230,7 +243,7 @@ static value_t *apply_statement(statement_t *statement, map_t *variables)
                 return result;
             }
 
-            return throw_error(6.0);
+            return throw_error("absent function");
         }
 
         case STATEMENT_TYPE_REFERENCE:
@@ -251,7 +264,7 @@ static value_t *apply_statement(statement_t *statement, map_t *variables)
                 }
                 else
                 {
-                    return throw_error(5.0);
+                    return throw_error("absent variable");
                 }
             }
             else if (data->identifier->type == IDENTIFIER_TYPE_FUNCTION)
@@ -267,11 +280,11 @@ static value_t *apply_statement(statement_t *statement, map_t *variables)
     return new_null();
 }
 
-static value_t *throw_error(double number)
+static value_t *throw_error(char *message)
 {
     value_t *value;
 
-    value = new_number(number);
+    value = new_string(message);
     value->thrown = 1;
 
     return value;
