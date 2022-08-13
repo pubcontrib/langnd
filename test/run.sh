@@ -56,8 +56,8 @@ testscript()
     then
         printf 'failed to match stdout of test case\n' 1>&2
         printf '    [source] %s\n' "$text" 1>&2
-        printf '    [expected] %d\n' "$expected_output" 1>&2
-        printf '    [actual] %d\n' "$actual_output" 1>&2
+        printf '    [expected] %s\n' "$expected_output" 1>&2
+        printf '    [actual] %s\n' "$actual_output" 1>&2
         exit 1
     fi
 }
