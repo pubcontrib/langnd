@@ -13,10 +13,15 @@ testscripts()
     testscript '$a="text" $a' '' 0
     testscript '@add(100, 200)' '' 0
     testscript '@add("this", " & that")' '' 0
+    testscript '@write(@stringify(100), 1)' '100' 0
+    testscript '@write(@stringify("text"), 1)' 'text' 0
     testscript '@write("text", 1)' 'text' 0
+    testscript '$a=100 @write(@stringify($a), 1)' '100' 0
     testscript '$a="text" @write($a, 1)' 'text' 0
+    testscript '@write(@stringify(@add(100, 200)), 1)' '300' 0
     testscript '@write(@add("this", " & that"), 1)' 'this & that' 0
-    testscript '$a=100 $b=200 $c=@add($a, $b)' '' 0
+    testscript '$a=100 $b=200 @write(@stringify(@add($a, $b)), 1)' '300' 0
+    testscript '$a="this" $b=" & that" @write(@add($a, $b), 1)' 'this & that' 0
     testscript '@add' '' 0
     testscript '"missing end' '' 1
     testscript 'missing start"' '' 1
@@ -24,6 +29,7 @@ testscripts()
     testscript '@add,,,' '' 1
     testscript '@add()' '' 1
     testscript '@write()' '' 1
+    testscript '@stringify()' '' 1
     testscript '$huh' '' 1
     testscript '@huh()' '' 1
 }

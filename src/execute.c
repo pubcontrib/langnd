@@ -341,6 +341,47 @@ static value_t *apply_statement(statement_t *statement, map_t *variables)
                     return throw_error("wrong argument type");
                 }
             }
+            else if (strcmp(data->identifier->name, "stringify") == 0)
+            {
+                argument_link_t *link;
+                value_t *value;
+                char *string;
+
+                link = data->arguments;
+
+                if (!link)
+                {
+                    return throw_error("absent argument");
+                }
+
+                value = apply_statement(link->argument, variables);
+
+                if (value->type == VALUE_TYPE_NUMBER)
+                {
+                    double number;
+                    int limit, effect;
+
+                    number = ((double *) value->data)[0];
+                    limit = 50;
+                    string = allocate(sizeof(char) * limit);
+                    effect = snprintf(string, limit, "%g", number);
+
+                    if (effect < 0 || effect > limit)
+                    {
+                        crash_with_message("number to string overflow");
+                    }
+
+                    return new_string(string);
+                }
+                else if (value->type == VALUE_TYPE_STRING)
+                {
+                    return value;
+                }
+                else
+                {
+                    return throw_error("wrong argument type");
+                }
+            }
 
             return throw_error("absent function");
         }
