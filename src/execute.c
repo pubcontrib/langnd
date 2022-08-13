@@ -242,6 +242,105 @@ static value_t *apply_statement(statement_t *statement, map_t *variables)
 
                 return result;
             }
+            else if (strcmp(data->identifier->name, "write") == 0)
+            {
+                argument_link_t *link;
+                value_t *message, *file;
+                char *text;
+
+                link = data->arguments;
+
+                if (!link)
+                {
+                    return throw_error("absent argument");
+                }
+
+                message = apply_statement(link->argument, variables);
+
+                if (message->thrown)
+                {
+                    return message;
+                }
+
+                link = link->next;
+
+                if (!link)
+                {
+                    return throw_error("absent argument");
+                }
+
+                file = apply_statement(link->argument, variables);
+
+                if (file->thrown)
+                {
+                    return file;
+                }
+
+                if (message->type != VALUE_TYPE_STRING)
+                {
+                    return throw_error("wrong argument type");
+                }
+
+                text = (char *) message->data;
+
+                if (file->type == VALUE_TYPE_NUMBER)
+                {
+                    FILE *streamHandle;
+                    double streamID;
+
+                    streamID = ((double *) file->data)[0];
+
+                    if (streamID == 1.0)
+                    {
+                        streamHandle = stdout;
+                    }
+                    else if (streamID == 2.0)
+                    {
+                        streamHandle = stderr;
+                    }
+                    else
+                    {
+                        return throw_error("absent file");
+                    }
+
+                    fprintf(streamHandle, "%s", text);
+                    fflush(streamHandle);
+
+                    return new_null();
+                }
+                else if (file->type == VALUE_TYPE_STRING)
+                {
+                    FILE *fileHandle;
+                    char *fileName;
+
+                    fileName = ((char *) file->data);
+                    fileHandle = fopen(fileName, "wb");
+
+                    if (fileHandle)
+                    {
+                        fwrite(text, sizeof(char), strlen(text), fileHandle);
+
+                        if (ferror(fileHandle))
+                        {
+                            fclose(fileHandle);
+
+                            return throw_error("unable to write to file");
+                        }
+
+                        return new_null();
+                    }
+                    else
+                    {
+                        return throw_error("absent file");
+                    }
+
+                    return new_null();
+                }
+                else
+                {
+                    return throw_error("wrong argument type");
+                }
+            }
 
             return throw_error("absent function");
         }

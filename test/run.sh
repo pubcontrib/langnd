@@ -9,17 +9,21 @@ testscripts()
     testscript '"text"' '' 0
     testscript '$a=100' '' 0
     testscript '$a="text"' '' 0
-    testscript '@add(100, 200)' '' 0
-    testscript '@add("this", " & that")' '' 0
-    testscript '$a=100 $b=200 $c=@add($a, $b)' '' 0
     testscript '$a=100 $a' '' 0
     testscript '$a="text" $a' '' 0
+    testscript '@add(100, 200)' '' 0
+    testscript '@add("this", " & that")' '' 0
+    testscript '@write("text", 1)' 'text' 0
+    testscript '$a="text" @write($a, 1)' 'text' 0
+    testscript '@write(@add("this", " & that"), 1)' 'this & that' 0
+    testscript '$a=100 $b=200 $c=@add($a, $b)' '' 0
     testscript '@add' '' 0
     testscript '"missing end' '' 1
     testscript 'missing start"' '' 1
     testscript '$$$a' '' 1
     testscript '@add,,,' '' 1
     testscript '@add()' '' 1
+    testscript '@write()' '' 1
     testscript '$huh' '' 1
     testscript '@huh()' '' 1
 }
