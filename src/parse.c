@@ -23,6 +23,7 @@ static token_t *peek_token(capsule_t *capsule);
 static token_t *next_token(capsule_t *capsule);
 static token_t *scan_token(scanner_t *scanner);
 static identifier_t *parse_identifier(token_t *token, char *code);
+static char *unescape_string(token_t *token, char *code);
 
 script_t *parse_script(char *code)
 {
@@ -294,16 +295,9 @@ static statement_t *read_any_statement(capsule_t *capsule)
     {
         statement_t *statement;
         string_statement_data_t *data;
-        char *text;
-        size_t textLength;
-
-        textLength = token->end - token->start - 2;
-        text = allocate(sizeof(char) * (textLength + 1));
-        memcpy(text, capsule->scanner.code + token->start + 1, textLength);
-        text[textLength] = '\0';
 
         data = allocate(sizeof(string_statement_data_t));
-        data->value = text;
+        data->value = unescape_string(token, capsule->scanner.code);
 
         statement = allocate(sizeof(statement_t));
         statement->type = STATEMENT_TYPE_STRING;
@@ -629,4 +623,59 @@ static identifier_t *parse_identifier(token_t *token, char *code)
     identifier->name = name;
 
     return identifier;
+}
+
+static char *unescape_string(token_t *token, char *code)
+{
+    char *text;
+    size_t textLength, escapeCount, index, placement;
+
+    escapeCount = 0;
+
+    for (index = token->start; index < token->end; index++)
+    {
+        if (code[index] == '\\')
+        {
+            escapeCount++;
+            index++;
+        }
+    }
+
+    textLength = token->end - token->start - 2 - escapeCount;
+    text = allocate(sizeof(char) * (textLength + 1));
+
+    for (index = token->start + 1, placement = 0; index < token->end - 1; index++)
+    {
+        if (code[index] != '\\')
+        {
+            text[placement++] = code[index];
+        }
+        else
+        {
+            switch (code[++index])
+            {
+                case 't':
+                    text[placement++] = '\t';
+                    break;
+                case 'n':
+                    text[placement++] = '\n';
+                    break;
+                case 'r':
+                    text[placement++] = '\r';
+                    break;
+                case '"':
+                    text[placement++] = '"';
+                    break;
+                case '\\':
+                    text[placement++] = '\\';
+                    break;
+                default:
+                    break;
+            }
+        }
+    }
+
+    text[textLength] = '\0';
+
+    return text;
 }

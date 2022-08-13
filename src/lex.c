@@ -164,9 +164,10 @@ static void read_number_token(scanner_t *scanner)
 
 static void read_string_token(scanner_t *scanner)
 {
-    int completed;
+    int escaping, completed;
 
     scanner->token.type = TOKEN_TYPE_STRING;
+    escaping = 0;
     completed = 0;
 
     while (has_another_symbol(scanner))
@@ -179,12 +180,29 @@ static void read_string_token(scanner_t *scanner)
         {
             read_next_symbol(scanner);
 
-            completed = 1;
-            break;
+            if (escaping)
+            {
+                escaping = 0;
+            }
+            else
+            {
+                completed = 1;
+                break;
+            }
+        }
+        else if (symbol == '\\')
+        {
+            read_next_symbol(scanner);
+            escaping = !escaping;
         }
         else if (is_string_symbol(symbol))
         {
             read_next_symbol(scanner);
+
+            if (escaping)
+            {
+                escaping = 0;
+            }
         }
         else
         {
