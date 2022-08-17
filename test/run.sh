@@ -22,6 +22,11 @@ testscripts()
     testscript '@write(@add("this", " & that"), 1)' 'this & that' 0
     testscript '$a=100 $b=200 @write(@stringify(@add($a, $b)), 1)' '300' 0
     testscript '$a="this" $b=" & that" @write(@add($a, $b), 1)' 'this & that' 0
+    testscript '$"long id"="found" @write($"long id", 1)' 'found' 0
+    testscript '$""="found" @write($"", 1)' 'found' 0
+    testscript '$"id"="found" @write($"id", 1)' 'found' 0
+    testscript '$id="found" @write($"id", 1)' 'found' 0
+    testscript '$"id"="found" @write($id, 1)' 'found' 0
     testscript '@add' '' 0
     testscript '"missing end' '' 1
     testscript 'missing start"' '' 1

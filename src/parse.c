@@ -23,7 +23,7 @@ static token_t *peek_token(capsule_t *capsule);
 static token_t *next_token(capsule_t *capsule);
 static token_t *scan_token(scanner_t *scanner);
 static identifier_t *parse_identifier(token_t *token, char *code);
-static char *unescape_string(token_t *token, char *code);
+static char *unescape_string(char *code, size_t start, size_t end);
 
 script_t *parse_script(char *code)
 {
@@ -297,7 +297,7 @@ static statement_t *read_any_statement(capsule_t *capsule)
         string_statement_data_t *data;
 
         data = allocate(sizeof(string_statement_data_t));
-        data->value = unescape_string(token, capsule->scanner.code);
+        data->value = unescape_string(capsule->scanner.code, token->start, token->end);
 
         statement = allocate(sizeof(statement_t));
         statement->type = STATEMENT_TYPE_STRING;
@@ -598,7 +598,6 @@ static identifier_t *parse_identifier(token_t *token, char *code)
     identifier_t *identifier;
     identifier_type_t type;
     char *name;
-    size_t nameLength;
 
     if (code[token->start] == '$')
     {
@@ -614,10 +613,20 @@ static identifier_t *parse_identifier(token_t *token, char *code)
         return NULL;
     }
 
-    nameLength = token->end - token->start - 1;
-    name = allocate(sizeof(char) * (nameLength + 1));
-    memcpy(name, code + token->start + 1, nameLength);
-    name[nameLength] = '\0';
+    if (code[token->start + 1] != '"')
+    {
+        size_t nameLength;
+
+        nameLength = token->end - token->start - 1;
+        name = allocate(sizeof(char) * (nameLength + 1));
+        memcpy(name, code + token->start + 1, nameLength);
+        name[nameLength] = '\0';
+    }
+    else
+    {
+        name = unescape_string(code, token->start + 1, token->end);
+    }
+
     identifier = allocate(sizeof(identifier_t));
     identifier->type = type;
     identifier->name = name;
@@ -625,14 +634,14 @@ static identifier_t *parse_identifier(token_t *token, char *code)
     return identifier;
 }
 
-static char *unescape_string(token_t *token, char *code)
+static char *unescape_string(char *code, size_t start, size_t end)
 {
     char *text;
     size_t textLength, escapeCount, index, placement;
 
     escapeCount = 0;
 
-    for (index = token->start; index < token->end; index++)
+    for (index = start; index < end; index++)
     {
         if (code[index] == '\\')
         {
@@ -641,10 +650,10 @@ static char *unescape_string(token_t *token, char *code)
         }
     }
 
-    textLength = token->end - token->start - 2 - escapeCount;
+    textLength = end - start - 2 - escapeCount;
     text = allocate(sizeof(char) * (textLength + 1));
 
-    for (index = token->start + 1, placement = 0; index < token->end - 1; index++)
+    for (index = start + 1, placement = 0; index < end - 1; index++)
     {
         if (code[index] != '\\')
         {

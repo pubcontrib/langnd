@@ -247,6 +247,13 @@ static void read_identifier_token(scanner_t *scanner)
             }
         }
     }
+    else if (symbol == '"')
+    {
+        read_next_symbol(scanner);
+        read_string_token(scanner);
+        scanner->token.type = TOKEN_TYPE_IDENTIFIER;
+        return;
+    }
     else
     {
         scanner->state = SCANNER_STATE_ERRORED;
