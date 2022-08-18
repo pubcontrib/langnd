@@ -4,39 +4,66 @@ PROGRAM=$1
 
 testscripts()
 {
-    testscript '' '' 0
-    testscript '100' '' 0
-    testscript '"text"' '' 0
-    testscript '$a=100' '' 0
-    testscript '$a="text"' '' 0
-    testscript '$a=100 $a' '' 0
-    testscript '$a="text" $a' '' 0
-    testscript '@add(100, 200)' '' 0
-    testscript '@add("this", " & that")' '' 0
-    testscript '@write(@stringify(100), 1)' '100' 0
-    testscript '@write(@stringify("text"), 1)' 'text' 0
-    testscript '@write("text", 1)' 'text' 0
-    testscript '$a=100 @write(@stringify($a), 1)' '100' 0
-    testscript '$a="text" @write($a, 1)' 'text' 0
-    testscript '@write(@stringify(@add(100, 200)), 1)' '300' 0
-    testscript '@write(@add("this", " & that"), 1)' 'this & that' 0
-    testscript '$a=100 $b=200 @write(@stringify(@add($a, $b)), 1)' '300' 0
-    testscript '$a="this" $b=" & that" @write(@add($a, $b), 1)' 'this & that' 0
-    testscript '$"long id"="found" @write($"long id", 1)' 'found' 0
-    testscript '$""="found" @write($"", 1)' 'found' 0
-    testscript '$"id"="found" @write($"id", 1)' 'found' 0
-    testscript '$id="found" @write($"id", 1)' 'found' 0
-    testscript '$"id"="found" @write($id, 1)' 'found' 0
-    testscript '@add' '' 0
-    testscript '"missing end' '' 1
-    testscript 'missing start"' '' 1
-    testscript '$$$a' '' 1
-    testscript '@add,,,' '' 1
-    testscript '@add()' '' 1
-    testscript '@write()' '' 1
-    testscript '@stringify()' '' 1
-    testscript '$huh' '' 1
-    testscript '@huh()' '' 1
+    pass '' ''
+    pass '100' ''
+    pass '"text"' ''
+    pass '$a=100' ''
+    pass '$a="text"' ''
+    pass '$a=100 $a' ''
+    pass '$a="text" $a' ''
+    pass '@add(100, 200)' ''
+    pass '@add("this", " & that")' ''
+    pass '@write(@stringify(100), 1)' '100'
+    pass '@write(@stringify("text"), 1)' 'text'
+    pass '@write("text", 1)' 'text'
+    pass '$a=100 @write(@stringify($a), 1)' '100'
+    pass '$a="text" @write($a, 1)' 'text'
+    pass '@write(@stringify(@add(100, 200)), 1)' '300'
+    pass '@write(@add("this", " & that"), 1)' 'this & that'
+    pass '$a=100 $b=200 @write(@stringify(@add($a, $b)), 1)' '300'
+    pass '$a="this" $b=" & that" @write(@add($a, $b), 1)' 'this & that'
+    pass '$"long id"="found" @write($"long id", 1)' 'found'
+    pass '$""="found" @write($"", 1)' 'found'
+    pass '$"id"="found" @write($"id", 1)' 'found'
+    pass '$id="found" @write($"id", 1)' 'found'
+    pass '$"id"="found" @write($id, 1)' 'found'
+    pass '@add' ''
+    lexfail '"missing end' '"missing end'
+    lexfail 'missing start"' 'missing start"'
+    lexfail '$$$a' '$$$a'
+    parsefail '@add,,,'
+    executefail '@add()' 'absent argument'
+    executefail '@write()' 'absent argument'
+    executefail '@stringify()' 'absent argument'
+    executefail '$huh' 'absent variable'
+    executefail '@huh()' 'absent function'
+}
+
+lexfail()
+{
+    fail "$1" "langnd: failed to lex code
+    [hint] $2"
+}
+
+parsefail()
+{
+    fail "$1" 'langnd: failed to parse code'
+}
+
+executefail()
+{
+    fail "$1" "langnd: failed to execute code
+    [hint] $2"
+}
+
+pass()
+{
+    testscript "$1" "$2" 0 1
+}
+
+fail()
+{
+    testscript "$1" "$2" 1 2
 }
 
 testscript()
@@ -44,9 +71,20 @@ testscript()
     text=$1
     expected_output=$2
     expected_code=$3
+    capture_stream=$4
 
-    actual_output=`$PROGRAM -t "$text" 2>/dev/null`
-    actual_code=$?
+    if [ $capture_stream = 1 ]
+    then
+        actual_output=`$PROGRAM -t "$text" 2>/dev/null`
+        actual_code=$?
+    elif [ $capture_stream = 2 ]
+    then
+        actual_output=`$PROGRAM -t "$text" 2>&1`
+        actual_code=$?
+    else
+        printf 'failed to capture stream\n' 1>&2
+        exit 1
+    fi
 
     if [ $actual_code != $expected_code ]
     then
@@ -59,7 +97,7 @@ testscript()
 
     if [ "$actual_output" != "$expected_output" ]
     then
-        printf 'failed to match stdout of test case\n' 1>&2
+        printf 'failed to match stream of test case\n' 1>&2
         printf '    [source] %s\n' "$text" 1>&2
         printf '    [expected] %s\n' "$expected_output" 1>&2
         printf '    [actual] %s\n' "$actual_output" 1>&2
