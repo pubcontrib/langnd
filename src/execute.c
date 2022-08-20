@@ -364,7 +364,7 @@ static value_t *apply_statement(statement_t *statement, map_t *variables)
                     number = ((double *) value->data)[0];
                     limit = 50;
                     string = allocate(sizeof(char) * limit);
-                    effect = snprintf(string, limit, "%g", number);
+                    effect = sprintf(string, "%g", number);
 
                     if (effect < 0 || effect > limit)
                     {
