@@ -6,6 +6,8 @@
 #define PROGRAM_SUCCESS 0
 #define PROGRAM_FAILURE 1
 
+#define PORTABLE_INT_LIMIT 2147483647
+
 typedef struct map_chain_t
 {
     char *key;

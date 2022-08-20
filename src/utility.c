@@ -158,15 +158,17 @@ int hash_string(char *string)
 
 int add_with_overflow(int left, int right)
 {
-    int direction, distanceToOverlow, willOverflow;
+    int min, max, direction, distanceToOverflow, willOverflow;
 
+    min = -PORTABLE_INT_LIMIT;
+    max = PORTABLE_INT_LIMIT;
     direction = right >= 0 ? 1 : -1;
-    distanceToOverlow = direction == 1 ? INT_MAX - right : INT_MIN - right;
-    willOverflow = direction == 1 ? left > distanceToOverlow : left < distanceToOverlow;
+    distanceToOverflow = direction == 1 ? max - right : min - right;
+    willOverflow = direction == 1 ? left > distanceToOverflow : left < distanceToOverflow;
 
     if (willOverflow)
     {
-        return direction == 1 ? INT_MAX + left - distanceToOverlow : -(INT_MAX - (left - distanceToOverlow - 1));
+        return direction == 1 ? min + (left - distanceToOverflow - 1) : max - (distanceToOverflow - left) + 1;
     }
     else
     {
