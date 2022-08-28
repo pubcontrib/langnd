@@ -212,26 +212,6 @@ static value_t *apply_statement(statement_t *statement, map_t *variables)
 
                     result = new_number(sum);
                 }
-                else if (left->type == VALUE_TYPE_STRING)
-                {
-                    char *x, *y;
-                    char *sum;
-                    size_t length;
-
-                    if (right->type != VALUE_TYPE_STRING)
-                    {
-                        return throw_error("wrong argument type");
-                    }
-
-                    x = (char *) left->data;
-                    y = (char *) right->data;
-                    length = strlen(x) + strlen(y);
-                    sum = allocate(sizeof(char) * length + 1);
-                    memcpy(sum, x, strlen(x));
-                    memcpy(sum + strlen(x), y, strlen(y));
-                    result = new_string(sum);
-                    free(sum);
-                }
                 else
                 {
                     return throw_error("wrong argument type");
@@ -438,6 +418,76 @@ static value_t *apply_statement(statement_t *statement, map_t *variables)
                     }
 
                     result = new_number(quotient);
+                }
+                else
+                {
+                    return throw_error("wrong argument type");
+                }
+
+                if (!left)
+                {
+                    destroy_value(left);
+                }
+
+                if (!right)
+                {
+                    destroy_value(right);
+                }
+
+                return result;
+            }
+            else if (strcmp(data->identifier->name, "merge") == 0)
+            {
+                argument_link_t *link;
+                value_t *left, *right, *result;
+
+                link = data->arguments;
+
+                if (!link)
+                {
+                    return throw_error("absent argument");
+                }
+
+                left = apply_statement(link->argument, variables);
+
+                if (left->thrown)
+                {
+                    return left;
+                }
+
+                link = link->next;
+
+                if (!link)
+                {
+                    return throw_error("absent argument");
+                }
+
+                right = apply_statement(link->argument, variables);
+
+                if (right->thrown)
+                {
+                    return right;
+                }
+
+                if (left->type == VALUE_TYPE_STRING)
+                {
+                    char *x, *y;
+                    char *sum;
+                    size_t length;
+
+                    if (right->type != VALUE_TYPE_STRING)
+                    {
+                        return throw_error("wrong argument type");
+                    }
+
+                    x = (char *) left->data;
+                    y = (char *) right->data;
+                    length = strlen(x) + strlen(y);
+                    sum = allocate(sizeof(char) * length + 1);
+                    memcpy(sum, x, strlen(x));
+                    memcpy(sum + strlen(x), y, strlen(y));
+                    result = new_string(sum);
+                    free(sum);
                 }
                 else
                 {
