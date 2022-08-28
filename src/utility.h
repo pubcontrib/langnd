@@ -7,6 +7,7 @@
 #define PROGRAM_FAILURE 1
 
 #define PORTABLE_INT_LIMIT 2147483647
+#define PORTABLE_LONG_LIMIT 9223372036854775807
 
 typedef struct map_chain_t
 {
@@ -29,6 +30,7 @@ typedef struct
  */
 typedef int number_t;
 
+void assure_portable_environment();
 map_t *empty_map(int (*hash)(char *), void (*destroy)(void *), size_t capacity);
 int has_map_item(map_t *map, char *key);
 void *get_map_item(map_t *map, char *key);

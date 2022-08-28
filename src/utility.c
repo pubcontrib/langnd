@@ -13,6 +13,24 @@ static int integer_digits(int integer);
 static int integer_power(int a, int b);
 static void crash(void);
 
+void assure_portable_environment()
+{
+    if (INT_MIN > -PORTABLE_INT_LIMIT || INT_MAX < PORTABLE_INT_LIMIT)
+    {
+        crash_with_message("missing portable requirement INT_LIMIT");
+    }
+
+    if (LONG_MIN > -PORTABLE_LONG_LIMIT || LONG_MAX < PORTABLE_LONG_LIMIT)
+    {
+        crash_with_message("missing portable requirement LONG_LIMIT");
+    }
+
+    if (((size_t) -1) < PORTABLE_INT_LIMIT)
+    {
+        crash_with_message("missing portable requirement POINTER_LIMIT");
+    }
+}
+
 map_t *empty_map(int (*hash)(char *), void (*destroy)(void *), size_t capacity)
 {
     map_chain_t **chains;

@@ -102,6 +102,8 @@ static int run_text(char *text)
 {
     outcome_t *outcome;
 
+    assure_portable_environment();
+
     outcome = execute(text);
 
     if (outcome->errorMessage)
