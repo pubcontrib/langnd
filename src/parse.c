@@ -271,7 +271,7 @@ static statement_t *read_any_statement(capsule_t *capsule)
     {
         statement_t *statement;
         number_statement_data_t *data;
-        double value;
+        number_t value;
         char *text;
         size_t textLength;
 
@@ -279,7 +279,7 @@ static statement_t *read_any_statement(capsule_t *capsule)
         text = allocate(sizeof(char) * (textLength + 1));
         memcpy(text, capsule->scanner.code + token->start, textLength);
         text[textLength] = '\0';
-        value = atof(text);
+        string_to_number(text, &value);
         free(text);
 
         data = allocate(sizeof(number_statement_data_t));

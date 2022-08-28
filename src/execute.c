@@ -23,7 +23,7 @@ typedef struct
 static value_t *apply_statement(statement_t *statement, map_t *variables);
 static value_t *throw_error(char *message);
 static value_t *new_null();
-static value_t *new_number(double number);
+static value_t *new_number(number_t number);
 static value_t *new_string(char *string);
 static void destroy_value(value_t *value);
 static void destroy_value_unsafe(void *value);
@@ -194,16 +194,23 @@ static value_t *apply_statement(statement_t *statement, map_t *variables)
 
                 if (left->type == VALUE_TYPE_NUMBER)
                 {
-                    double *x, *y;
+                    number_t *x, *y, sum;
 
                     if (right->type != VALUE_TYPE_NUMBER)
                     {
                         return throw_error("wrong argument type");
                     }
 
-                    x = (double *) left->data;
-                    y = (double *) right->data;
-                    result = new_number(x[0] + y[0]);
+                    x = (number_t *) left->data;
+                    y = (number_t *) right->data;
+
+
+                    if (add_numbers(x[0], y[0], &sum) != 0)
+                    {
+                        sum = 0;
+                    }
+
+                    result = new_number(sum);
                 }
                 else if (left->type == VALUE_TYPE_STRING)
                 {
@@ -286,15 +293,17 @@ static value_t *apply_statement(statement_t *statement, map_t *variables)
                 if (file->type == VALUE_TYPE_NUMBER)
                 {
                     FILE *streamHandle;
-                    double streamID;
+                    number_t streamID, outID, errID;
 
-                    streamID = ((double *) file->data)[0];
+                    streamID = ((number_t *) file->data)[0];
+                    integer_to_number(1, &outID);
+                    integer_to_number(2, &errID);
 
-                    if (streamID == 1.0)
+                    if (streamID == outID)
                     {
                         streamHandle = stdout;
                     }
-                    else if (streamID == 2.0)
+                    else if (streamID == errID)
                     {
                         streamHandle = stderr;
                     }
@@ -345,7 +354,6 @@ static value_t *apply_statement(statement_t *statement, map_t *variables)
             {
                 argument_link_t *link;
                 value_t *value;
-                char *string;
 
                 link = data->arguments;
 
@@ -358,18 +366,11 @@ static value_t *apply_statement(statement_t *statement, map_t *variables)
 
                 if (value->type == VALUE_TYPE_NUMBER)
                 {
-                    double number;
-                    int limit, effect;
+                    number_t number;
+                    char *string;
 
-                    number = ((double *) value->data)[0];
-                    limit = 50;
-                    string = allocate(sizeof(char) * limit);
-                    effect = sprintf(string, "%g", number);
-
-                    if (effect < 0 || effect > limit)
-                    {
-                        crash_with_message("number to string overflow");
-                    }
+                    number = ((number_t *) value->data)[0];
+                    string = represent_number(number);
 
                     return new_string(string);
                 }
@@ -443,12 +444,12 @@ static value_t *new_null()
     return value;
 }
 
-static value_t *new_number(double number)
+static value_t *new_number(number_t number)
 {
     value_t *value;
-    double *data;
+    number_t *data;
 
-    data = allocate(sizeof(double));
+    data = allocate(sizeof(number_t));
     data[0] = number;
     value = allocate(sizeof(value_t));
     value->type = VALUE_TYPE_NUMBER;

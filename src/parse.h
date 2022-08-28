@@ -3,6 +3,7 @@
 
 #include <stddef.h>
 #include "lex.h"
+#include "utility.h"
 
 typedef enum
 {
@@ -40,7 +41,7 @@ typedef struct argument_link_t
 
 typedef struct
 {
-    double value;
+    number_t value;
 } number_statement_data_t;
 
 typedef struct

@@ -9,6 +9,8 @@ static void destroy_chain(map_chain_t *chain, void (*destroy)(void *));
 static map_chain_t *create_map_chain(char *key, void *value, map_chain_t *next);
 static map_t *create_map(int (*hash)(char *), void (*destroy)(void *), size_t length, size_t capacity, map_chain_t **chains);
 static void resize_map(map_t *map);
+static int integer_digits(int integer);
+static int integer_power(int a, int b);
 static void crash(void);
 
 map_t *empty_map(int (*hash)(char *), void (*destroy)(void *), size_t capacity)
@@ -138,6 +140,209 @@ void destroy_map(map_t *map)
     }
 
     free(map);
+}
+
+int add_numbers(number_t left, number_t right, number_t *out)
+{
+    long sum;
+
+    sum = left + right;
+
+    if (sum < INT_MIN || sum > INT_MAX)
+    {
+        return 1;
+    }
+
+    (*out) = (int) sum;
+
+    return 0;
+}
+
+int string_to_number(char *text, number_t *out)
+{
+    int number, whole, fraction, wholeIndex, fractionIndex, negative, decimal, point;
+    size_t index, length;
+
+    whole = 0;
+    fraction = 0;
+    wholeIndex = 0;
+    fractionIndex = 0;
+    negative = 0;
+    decimal = 0;
+    point = -1;
+    length = strlen(text);
+
+    for (index = 0; index < length; index++)
+    {
+        if (text[index] == '.')
+        {
+            point = index;
+            break;
+        }
+    }
+
+    for (index = 0; index < length; index++)
+    {
+        char symbol;
+
+        symbol = text[index];
+
+        if (symbol >= '0' && symbol <= '9')
+        {
+            int digit, places;
+
+            digit = symbol - '0';
+
+            if (!decimal)
+            {
+                places = (point == -1 ? length : point) - (negative ? 1 : 0) - wholeIndex++;
+                whole += digit * integer_power(10, places - 1);
+
+                if (whole > 32767)
+                {
+                    return 1;
+                }
+            }
+            else
+            {
+                places = length - point - fractionIndex++ - 1;
+                fraction += digit * integer_power(10, places - 1);
+
+                if (fractionIndex > 6)
+                {
+                    return 1;
+                }
+            }
+        }
+        else if (symbol == '-')
+        {
+            if (index == 0)
+            {
+                negative = 1;
+                continue;
+            }
+            else
+            {
+                return 1;
+            }
+        }
+        else if (symbol == '.')
+        {
+            if (index > 0)
+            {
+                decimal = 1;
+                continue;
+            }
+            else
+            {
+                return 1;
+            }
+        }
+        else
+        {
+            return 1;
+        }
+    }
+
+    number = (whole * 65536) + (fraction * 65536L) / integer_power(10, fractionIndex);
+
+    if (negative)
+    {
+        number *= -1;
+    }
+
+    (*out) = number;
+
+    return 0;
+}
+
+int integer_to_number(int integer, number_t *out)
+{
+    if (integer < -32767 || integer > 32767)
+    {
+        return 1;
+    }
+
+    (*out) = integer * 65536;
+
+    return 0;
+}
+
+char *represent_number(number_t number)
+{
+    char *string;
+    int whole, fraction, negative, decimal, decimalWidth;
+    size_t wholeDigits, fractionDigits, length, index, zero;
+
+    whole = number / 65536;
+    wholeDigits = integer_digits(whole);
+    negative = number < 0;
+
+    if (!negative || (number & 65535) == 0)
+    {
+        fraction = ((number & 65535) * 1000000l) / 65536;
+    }
+    else
+    {
+        fraction = ((65536 - (number & 65535)) * 1000000l) / 65536;
+    }
+
+    fractionDigits = integer_digits(fraction);
+    decimal = fraction > 0;
+    decimalWidth = 6;
+    length = (negative ? 1 : 0) + wholeDigits + (decimal ? (decimalWidth + 1) : 0);
+    string = allocate(sizeof(char) * length + 1);
+    index = (negative ? 1 : 0) + wholeDigits - 1;
+
+    if (negative)
+    {
+        string[0] = '-';
+        whole *= -1;
+    }
+
+    if (whole == 0)
+    {
+        string[index] = '0';
+    }
+
+    while (whole > 0)
+    {
+        int next, digit;
+
+        next = whole / 10;
+        digit = whole - (next * 10);
+        string[index--] = '0' + digit;
+        whole = next;
+    }
+
+    if (decimal)
+    {
+        string[(negative ? 1 : 0) + wholeDigits] = '.';
+    }
+
+    index = length - 1;
+
+    while (fraction > 0)
+    {
+        int next, digit;
+
+        next = fraction / 10;
+        digit = fraction - (next * 10);
+        string[index--] = '0' + digit;
+        fraction = next;
+    }
+
+    if (decimal)
+    {
+        for (zero = fractionDigits; zero < decimalWidth; zero++)
+        {
+            string[index--] = '0';
+        }
+    }
+
+    string[length] = '\0';
+
+    return string;
 }
 
 int hash_string(char *string)
@@ -324,6 +529,42 @@ static void resize_map(map_t *map)
     }
 
     free(existing);
+}
+
+static int integer_digits(int integer)
+{
+    int digits;
+
+    if (integer < 0)
+    {
+        integer *= -1;
+    }
+
+    for (digits = 0; integer > 0 || digits == 0; digits++)
+    {
+        integer /= 10;
+    }
+
+    return digits;
+}
+
+static int integer_power(int base, int power)
+{
+    int product;
+
+    if (power == 0)
+    {
+        return 1;
+    }
+
+    product = 1;
+
+    for (; power > 0; power--)
+    {
+        product *= base;
+    }
+
+    return product;
 }
 
 static void crash(void)

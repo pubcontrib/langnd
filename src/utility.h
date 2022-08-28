@@ -24,12 +24,21 @@ typedef struct
     map_chain_t **chains;
 } map_t;
 
+/**
+ * 16.16 signed fixed point number.
+ */
+typedef int number_t;
+
 map_t *empty_map(int (*hash)(char *), void (*destroy)(void *), size_t capacity);
 int has_map_item(map_t *map, char *key);
 void *get_map_item(map_t *map, char *key);
 void set_map_item(map_t *map, char *key, void *value);
 void remove_map_item(map_t *map, char *key);
 void destroy_map(map_t *map);
+int add_numbers(number_t left, number_t right, number_t *out);
+int string_to_number(char *text, number_t *out);
+int integer_to_number(int integer, number_t *out);
+char *represent_number(number_t number);
 int hash_string(char *string);
 int add_with_overflow(int left, int right);
 char *copy_string(char *string);
