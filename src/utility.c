@@ -164,9 +164,9 @@ int add_numbers(number_t left, number_t right, number_t *out)
 {
     long sum;
 
-    sum = left + right;
+    sum = (long) left + (long) right;
 
-    if (sum < INT_MIN || sum > INT_MAX)
+    if (sum < -PORTABLE_INT_LIMIT || sum > PORTABLE_INT_LIMIT)
     {
         return 1;
     }
@@ -180,9 +180,9 @@ int subtract_numbers(number_t left, number_t right, number_t *out)
 {
     long difference;
 
-    difference = left - right;
+    difference = (long) left - (long) right;
 
-    if (difference < INT_MIN || difference > INT_MAX)
+    if (difference < -PORTABLE_INT_LIMIT || difference > PORTABLE_INT_LIMIT)
     {
         return 1;
     }
@@ -198,7 +198,7 @@ int multiply_numbers(number_t left, number_t right, number_t *out)
 
     product = ((long) left * (long) right) / 65536L;
 
-    if (product < INT_MIN || product > INT_MAX)
+    if (product < -PORTABLE_INT_LIMIT || product > PORTABLE_INT_LIMIT)
     {
         return 1;
     }
@@ -219,7 +219,7 @@ int divide_numbers(number_t left, number_t right, number_t *out)
 
     quotient = ((long) left * 65536L) / (long) right;
 
-    if (quotient < INT_MIN || quotient > INT_MAX)
+    if (quotient < -PORTABLE_INT_LIMIT || quotient > PORTABLE_INT_LIMIT)
     {
         return 1;
     }

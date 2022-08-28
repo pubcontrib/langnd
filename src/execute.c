@@ -204,10 +204,9 @@ static value_t *apply_statement(statement_t *statement, map_t *variables)
                     x = (number_t *) left->data;
                     y = (number_t *) right->data;
 
-
                     if (add_numbers(x[0], y[0], &sum) != 0)
                     {
-                        sum = 0;
+                        return throw_error("arithmetic error");
                     }
 
                     result = new_number(sum);
@@ -276,7 +275,7 @@ static value_t *apply_statement(statement_t *statement, map_t *variables)
 
                     if (subtract_numbers(x[0], y[0], &difference) != 0)
                     {
-                        difference = 0;
+                        return throw_error("arithmetic error");
                     }
 
                     result = new_number(difference);
@@ -345,7 +344,7 @@ static value_t *apply_statement(statement_t *statement, map_t *variables)
 
                     if (multiply_numbers(x[0], y[0], &product) != 0)
                     {
-                        product = 0;
+                        return throw_error("arithmetic error");
                     }
 
                     result = new_number(product);
@@ -414,7 +413,7 @@ static value_t *apply_statement(statement_t *statement, map_t *variables)
 
                     if (divide_numbers(x[0], y[0], &quotient) != 0)
                     {
-                        quotient = 0;
+                        return throw_error("arithmetic error");
                     }
 
                     result = new_number(quotient);
