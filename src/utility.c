@@ -192,6 +192,22 @@ int subtract_numbers(number_t left, number_t right, number_t *out)
     return 0;
 }
 
+int multiply_numbers(number_t left, number_t right, number_t *out)
+{
+    long product;
+
+    product = ((long) left * (long) right) / 65536L;
+
+    if (product < INT_MIN || product > INT_MAX)
+    {
+        return 1;
+    }
+
+    (*out) = (int) product;
+
+    return 0;
+}
+
 int string_to_number(char *text, number_t *out)
 {
     int number, whole, fraction, wholeIndex, fractionIndex, negative, decimal, point;
