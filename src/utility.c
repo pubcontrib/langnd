@@ -208,6 +208,27 @@ int multiply_numbers(number_t left, number_t right, number_t *out)
     return 0;
 }
 
+int divide_numbers(number_t left, number_t right, number_t *out)
+{
+    long quotient;
+
+    if (right == 0)
+    {
+        return 1;
+    }
+
+    quotient = ((long) left * 65536L) / (long) right;
+
+    if (quotient < INT_MIN || quotient > INT_MAX)
+    {
+        return 1;
+    }
+
+    (*out) = (int) quotient;
+
+    return 0;
+}
+
 int string_to_number(char *text, number_t *out)
 {
     int number, whole, fraction, wholeIndex, fractionIndex, negative, decimal, point;
