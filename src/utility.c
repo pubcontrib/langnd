@@ -176,6 +176,22 @@ int add_numbers(number_t left, number_t right, number_t *out)
     return 0;
 }
 
+int subtract_numbers(number_t left, number_t right, number_t *out)
+{
+    long difference;
+
+    difference = left - right;
+
+    if (difference < INT_MIN || difference > INT_MAX)
+    {
+        return 1;
+    }
+
+    (*out) = (int) difference;
+
+    return 0;
+}
+
 int string_to_number(char *text, number_t *out)
 {
     int number, whole, fraction, wholeIndex, fractionIndex, negative, decimal, point;

@@ -249,6 +249,75 @@ static value_t *apply_statement(statement_t *statement, map_t *variables)
 
                 return result;
             }
+            else if (strcmp(data->identifier->name, "subtract") == 0)
+            {
+                argument_link_t *link;
+                value_t *left, *right, *result;
+
+                link = data->arguments;
+
+                if (!link)
+                {
+                    return throw_error("absent argument");
+                }
+
+                left = apply_statement(link->argument, variables);
+
+                if (left->thrown)
+                {
+                    return left;
+                }
+
+                link = link->next;
+
+                if (!link)
+                {
+                    return throw_error("absent argument");
+                }
+
+                right = apply_statement(link->argument, variables);
+
+                if (right->thrown)
+                {
+                    return right;
+                }
+
+                if (left->type == VALUE_TYPE_NUMBER)
+                {
+                    number_t *x, *y, difference;
+
+                    if (right->type != VALUE_TYPE_NUMBER)
+                    {
+                        return throw_error("wrong argument type");
+                    }
+
+                    x = (number_t *) left->data;
+                    y = (number_t *) right->data;
+
+                    if (subtract_numbers(x[0], y[0], &difference) != 0)
+                    {
+                        difference = 0;
+                    }
+
+                    result = new_number(difference);
+                }
+                else
+                {
+                    return throw_error("wrong argument type");
+                }
+
+                if (!left)
+                {
+                    destroy_value(left);
+                }
+
+                if (!right)
+                {
+                    destroy_value(right);
+                }
+
+                return result;
+            }
             else if (strcmp(data->identifier->name, "write") == 0)
             {
                 argument_link_t *link;

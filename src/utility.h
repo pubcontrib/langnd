@@ -38,6 +38,7 @@ void set_map_item(map_t *map, char *key, void *value);
 void remove_map_item(map_t *map, char *key);
 void destroy_map(map_t *map);
 int add_numbers(number_t left, number_t right, number_t *out);
+int subtract_numbers(number_t left, number_t right, number_t *out);
 int string_to_number(char *text, number_t *out);
 int integer_to_number(int integer, number_t *out);
 char *represent_number(number_t number);
