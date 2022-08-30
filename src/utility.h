@@ -25,6 +25,20 @@ typedef struct
     map_chain_t **chains;
 } map_t;
 
+typedef struct list_node_t
+{
+    void *value;
+    struct list_node_t *next;
+} list_node_t;
+
+typedef struct
+{
+    void (*destroy)(void *);
+    size_t length;
+    list_node_t *head;
+    list_node_t *tail;
+} list_t;
+
 /**
  * 16.16 signed fixed point number.
  */
@@ -37,6 +51,9 @@ void *get_map_item(map_t *map, char *key);
 void set_map_item(map_t *map, char *key, void *value);
 void remove_map_item(map_t *map, char *key);
 void destroy_map(map_t *map);
+list_t *empty_list(void (*destroy)(void *));
+void add_list_item(list_t *list, void *value);
+void destroy_list(list_t *list);
 int add_numbers(number_t left, number_t right, number_t *out);
 int subtract_numbers(number_t left, number_t right, number_t *out);
 int multiply_numbers(number_t left, number_t right, number_t *out);

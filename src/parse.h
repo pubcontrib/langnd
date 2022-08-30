@@ -33,12 +33,6 @@ typedef struct
     char *name;
 } identifier_t;
 
-typedef struct argument_link_t
-{
-    statement_t *argument;
-    struct argument_link_t *next;
-} argument_link_t;
-
 typedef struct
 {
     number_t value;
@@ -58,7 +52,7 @@ typedef struct
 typedef struct
 {
     identifier_t *identifier;
-    argument_link_t *arguments;
+    list_t *arguments;
 } invoke_statement_data_t;
 
 typedef struct
@@ -66,15 +60,9 @@ typedef struct
     identifier_t *identifier;
 } reference_statement_data_t;
 
-typedef struct statement_link_t
-{
-    statement_t *statement;
-    struct statement_link_t *next;
-} statement_link_t;
-
 typedef struct
 {
-    statement_link_t *statements;
+    list_t *statements;
     char *errorMessage;
     char *hintMessage;
 } script_t;

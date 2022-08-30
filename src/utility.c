@@ -9,6 +9,8 @@ static void destroy_chain(map_chain_t *chain, void (*destroy)(void *));
 static map_chain_t *create_map_chain(char *key, void *value, map_chain_t *next);
 static map_t *create_map(int (*hash)(char *), void (*destroy)(void *), size_t length, size_t capacity, map_chain_t **chains);
 static void resize_map(map_t *map);
+static list_t *create_list(void (*destroy)(void *), size_t length, list_node_t *head, list_node_t *tail);
+static list_node_t *create_list_node(void *value, list_node_t *next);
 static int integer_digits(int integer);
 static int integer_power(int a, int b);
 static void crash(void);
@@ -158,6 +160,53 @@ void destroy_map(map_t *map)
     }
 
     free(map);
+}
+
+list_t *empty_list(void (*destroy)(void *))
+{
+    return create_list(destroy, 0, NULL, NULL);
+}
+
+void add_list_item(list_t *list, void *value)
+{
+    list_node_t *node;
+
+    node = create_list_node(value, NULL);
+
+    list->length += 1;
+
+    if (list->length == 1)
+    {
+        list->head = node;
+        list->tail = node;
+    }
+    else
+    {
+        list->tail->next = node;
+        list->tail = node;
+    }
+}
+
+void destroy_list(list_t *list)
+{
+    if (list->head)
+    {
+        list_node_t *node, *next;
+
+        for (node = list->head; node != NULL; node = next)
+        {
+            next = node->next;
+
+            if (node->value)
+            {
+                list->destroy(node->value);
+            }
+
+            free(node);
+        }
+    }
+
+    free(list);
 }
 
 int add_numbers(number_t left, number_t right, number_t *out)
@@ -600,6 +649,30 @@ static void resize_map(map_t *map)
     }
 
     free(existing);
+}
+
+static list_t *create_list(void (*destroy)(void *), size_t length, list_node_t *head, list_node_t *tail)
+{
+    list_t *list;
+
+    list = allocate(sizeof(list_t));
+    list->destroy = destroy;
+    list->length = length;
+    list->head = head;
+    list->tail = tail;
+
+    return list;
+}
+
+static list_node_t *create_list_node(void *value, list_node_t *next)
+{
+    list_node_t *node;
+
+    node = allocate(sizeof(list_node_t));
+    node->value = value;
+    node->next = next;
+
+    return node;
 }
 
 static int integer_digits(int integer)

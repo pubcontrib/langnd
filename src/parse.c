@@ -24,12 +24,13 @@ static token_t *next_token(capsule_t *capsule);
 static token_t *scan_token(scanner_t *scanner);
 static identifier_t *parse_identifier(token_t *token, char *code);
 static char *unescape_string(char *code, size_t start, size_t end);
+static void destroy_statement_unsafe(void *statement);
 
 script_t *parse_script(char *code)
 {
     capsule_t capsule;
     script_t *script;
-    statement_link_t *statements;
+    list_t *statements;
     char *errorMessage;
     char *hintMessage;
 
@@ -38,7 +39,7 @@ script_t *parse_script(char *code)
     capsule.ahead = 0;
     start_scanner(&capsule.scanner, code);
 
-    statements = NULL;
+    statements = empty_list(destroy_statement_unsafe);
     errorMessage = NULL;
     hintMessage = NULL;
 
@@ -57,27 +58,7 @@ script_t *parse_script(char *code)
                 break;
             }
 
-            if (statements)
-            {
-                statement_link_t *link;
-
-                link = statements;
-
-                while (link->next)
-                {
-                    link = link->next;
-                }
-
-                link->next = allocate(sizeof(statement_link_t));
-                link->next->statement = statement;
-                link->next->next = NULL;
-            }
-            else
-            {
-                statements = allocate(sizeof(statement_link_t));
-                statements->statement = statement;
-                statements->next = NULL;
-            }
+            add_list_item(statements, statement);
         }
     }
 
@@ -117,8 +98,6 @@ script_t *parse_script(char *code)
 
 void destroy_script(script_t *script)
 {
-    statement_link_t *link;
-
     if (script->errorMessage)
     {
         free(script->errorMessage);
@@ -129,17 +108,9 @@ void destroy_script(script_t *script)
         free(script->hintMessage);
     }
 
-    link = script->statements;
-
-    while (link)
+    if (script->statements)
     {
-        statement_link_t *last;
-
-        last = link;
-        link = link->next;
-
-        destroy_statement(last->statement);
-        free(last);
+        destroy_list(script->statements);
     }
 
     free(script);
@@ -195,7 +166,6 @@ void destroy_statement(statement_t *statement)
             case STATEMENT_TYPE_INVOKE:
             {
                 invoke_statement_data_t *data;
-                argument_link_t *link;
 
                 data = statement->data;
 
@@ -204,17 +174,9 @@ void destroy_statement(statement_t *statement)
                     destroy_identifier(data->identifier);
                 }
 
-                link = data->arguments;
-
-                while (link)
+                if (data->arguments)
                 {
-                    argument_link_t *last;
-
-                    last = link;
-                    link = link->next;
-
-                    destroy_statement(last->argument);
-                    free(last);
+                    destroy_list(data->arguments);
                 }
 
                 free(data);
@@ -394,10 +356,10 @@ static statement_t *read_invoke_expression(capsule_t *capsule, identifier_t *ide
 {
     statement_t *statement;
     invoke_statement_data_t *data;
-    argument_link_t *arguments;
+    list_t *arguments;
     char ready;
 
-    arguments = NULL;
+    arguments = empty_list(destroy_statement_unsafe);
     ready = 1;
 
     while (1)
@@ -452,28 +414,7 @@ static statement_t *read_invoke_expression(capsule_t *capsule, identifier_t *ide
             }
 
             ready = 0;
-
-            if (arguments)
-            {
-                argument_link_t *link;
-
-                link = arguments;
-
-                while (link->next)
-                {
-                    link = link->next;
-                }
-
-                link->next = allocate(sizeof(argument_link_t));
-                link->next->argument = argument;
-                link->next->next = NULL;
-            }
-            else
-            {
-                arguments = allocate(sizeof(argument_link_t));
-                arguments->argument = argument;
-                arguments->next = NULL;
-            }
+            add_list_item(arguments, argument);
         }
     }
 
@@ -695,4 +636,9 @@ static char *unescape_string(char *code, size_t start, size_t end)
     text[textLength] = '\0';
 
     return text;
+}
+
+static void destroy_statement_unsafe(void *statement)
+{
+    destroy_statement((statement_t *) statement);
 }

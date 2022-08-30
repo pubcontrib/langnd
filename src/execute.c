@@ -32,7 +32,7 @@ outcome_t *execute(char *code)
 {
     outcome_t *outcome;
     script_t *script;
-    statement_link_t *link;
+    list_node_t *node;
     map_t *variables;
 
     outcome = allocate(sizeof(outcome_t));
@@ -51,13 +51,13 @@ outcome_t *execute(char *code)
     }
 
     variables = empty_map(hash_string, destroy_value_unsafe, 8);
-    link = script->statements;
+    node = script->statements->head;
 
-    while (link)
+    while (node)
     {
         value_t *result;
 
-        result = apply_statement(link->statement, variables);
+        result = apply_statement(node->value, variables);
 
         if (result->thrown)
         {
@@ -88,7 +88,7 @@ outcome_t *execute(char *code)
             destroy_value(result);
         }
 
-        link = link->next;
+        node = node->next;
     }
 
     destroy_map(variables);
@@ -161,31 +161,31 @@ static value_t *apply_statement(statement_t *statement, map_t *variables)
 
             if (strcmp(data->identifier->name, "add") == 0)
             {
-                argument_link_t *link;
+                list_node_t *node;
                 value_t *left, *right, *result;
 
-                link = data->arguments;
+                node = data->arguments->head;
 
-                if (!link)
+                if (!node)
                 {
                     return throw_error("absent argument");
                 }
 
-                left = apply_statement(link->argument, variables);
+                left = apply_statement(node->value, variables);
 
                 if (left->thrown)
                 {
                     return left;
                 }
 
-                link = link->next;
+                node = node->next;
 
-                if (!link)
+                if (!node)
                 {
                     return throw_error("absent argument");
                 }
 
-                right = apply_statement(link->argument, variables);
+                right = apply_statement(node->value, variables);
 
                 if (right->thrown)
                 {
@@ -230,31 +230,31 @@ static value_t *apply_statement(statement_t *statement, map_t *variables)
             }
             else if (strcmp(data->identifier->name, "subtract") == 0)
             {
-                argument_link_t *link;
+                list_node_t *node;
                 value_t *left, *right, *result;
 
-                link = data->arguments;
+                node = data->arguments->head;
 
-                if (!link)
+                if (!node)
                 {
                     return throw_error("absent argument");
                 }
 
-                left = apply_statement(link->argument, variables);
+                left = apply_statement(node->value, variables);
 
                 if (left->thrown)
                 {
                     return left;
                 }
 
-                link = link->next;
+                node = node->next;
 
-                if (!link)
+                if (!node)
                 {
                     return throw_error("absent argument");
                 }
 
-                right = apply_statement(link->argument, variables);
+                right = apply_statement(node->value, variables);
 
                 if (right->thrown)
                 {
@@ -299,31 +299,31 @@ static value_t *apply_statement(statement_t *statement, map_t *variables)
             }
             else if (strcmp(data->identifier->name, "multiply") == 0)
             {
-                argument_link_t *link;
+                list_node_t *node;
                 value_t *left, *right, *result;
 
-                link = data->arguments;
+                node = data->arguments->head;
 
-                if (!link)
+                if (!node)
                 {
                     return throw_error("absent argument");
                 }
 
-                left = apply_statement(link->argument, variables);
+                left = apply_statement(node->value, variables);
 
                 if (left->thrown)
                 {
                     return left;
                 }
 
-                link = link->next;
+                node = node->next;
 
-                if (!link)
+                if (!node)
                 {
                     return throw_error("absent argument");
                 }
 
-                right = apply_statement(link->argument, variables);
+                right = apply_statement(node->value, variables);
 
                 if (right->thrown)
                 {
@@ -368,31 +368,31 @@ static value_t *apply_statement(statement_t *statement, map_t *variables)
             }
             else if (strcmp(data->identifier->name, "divide") == 0)
             {
-                argument_link_t *link;
+                list_node_t *node;
                 value_t *left, *right, *result;
 
-                link = data->arguments;
+                node = data->arguments->head;
 
-                if (!link)
+                if (!node)
                 {
                     return throw_error("absent argument");
                 }
 
-                left = apply_statement(link->argument, variables);
+                left = apply_statement(node->value, variables);
 
                 if (left->thrown)
                 {
                     return left;
                 }
 
-                link = link->next;
+                node = node->next;
 
-                if (!link)
+                if (!node)
                 {
                     return throw_error("absent argument");
                 }
 
-                right = apply_statement(link->argument, variables);
+                right = apply_statement(node->value, variables);
 
                 if (right->thrown)
                 {
@@ -437,31 +437,31 @@ static value_t *apply_statement(statement_t *statement, map_t *variables)
             }
             else if (strcmp(data->identifier->name, "merge") == 0)
             {
-                argument_link_t *link;
+                list_node_t *node;
                 value_t *left, *right, *result;
 
-                link = data->arguments;
+                node = data->arguments->head;
 
-                if (!link)
+                if (!node)
                 {
                     return throw_error("absent argument");
                 }
 
-                left = apply_statement(link->argument, variables);
+                left = apply_statement(node->value, variables);
 
                 if (left->thrown)
                 {
                     return left;
                 }
 
-                link = link->next;
+                node = node->next;
 
-                if (!link)
+                if (!node)
                 {
                     return throw_error("absent argument");
                 }
 
-                right = apply_statement(link->argument, variables);
+                right = apply_statement(node->value, variables);
 
                 if (right->thrown)
                 {
@@ -507,32 +507,32 @@ static value_t *apply_statement(statement_t *statement, map_t *variables)
             }
             else if (strcmp(data->identifier->name, "write") == 0)
             {
-                argument_link_t *link;
+                list_node_t *node;
                 value_t *message, *file;
                 char *text;
 
-                link = data->arguments;
+                node = data->arguments->head;
 
-                if (!link)
+                if (!node)
                 {
                     return throw_error("absent argument");
                 }
 
-                message = apply_statement(link->argument, variables);
+                message = apply_statement(node->value, variables);
 
                 if (message->thrown)
                 {
                     return message;
                 }
 
-                link = link->next;
+                node = node->next;
 
-                if (!link)
+                if (!node)
                 {
                     return throw_error("absent argument");
                 }
 
-                file = apply_statement(link->argument, variables);
+                file = apply_statement(node->value, variables);
 
                 if (file->thrown)
                 {
@@ -608,17 +608,17 @@ static value_t *apply_statement(statement_t *statement, map_t *variables)
             }
             else if (strcmp(data->identifier->name, "stringify") == 0)
             {
-                argument_link_t *link;
+                list_node_t *node;
                 value_t *value;
 
-                link = data->arguments;
+                node = data->arguments->head;
 
-                if (!link)
+                if (!node)
                 {
                     return throw_error("absent argument");
                 }
 
-                value = apply_statement(link->argument, variables);
+                value = apply_statement(node->value, variables);
 
                 if (value->type == VALUE_TYPE_NUMBER)
                 {
