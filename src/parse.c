@@ -433,6 +433,14 @@ static statement_t *read_invoke_expression(capsule_t *capsule, identifier_t *ide
         {
             statement_t *argument;
 
+            if (!ready)
+            {
+                statement = allocate(sizeof(statement_t));
+                statement->type = STATEMENT_TYPE_UNKNOWN;
+                statement->data = NULL;
+                return statement;
+            }
+
             argument = read_any_statement(capsule);
 
             if (!argument || !is_value_statement(argument))
