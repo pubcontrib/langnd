@@ -410,6 +410,7 @@ static value_t *run_merge(argument_iterator_t *arguments, map_t *variables)
     sum = allocate(sizeof(char) * length + 1);
     memcpy(sum, x, strlen(x));
     memcpy(sum + strlen(x), y, strlen(y));
+    sum[length] = '\0';
     result = steal_string(sum);
 
     return result;
