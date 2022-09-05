@@ -7,6 +7,7 @@ static void read_comment_token(scanner_t *scanner);
 static void read_number_token(scanner_t *scanner);
 static void read_string_token(scanner_t *scanner);
 static void read_identifier_token(scanner_t *scanner);
+static void read_keyword_token(scanner_t *scanner);
 static int has_another_symbol(scanner_t *scanner);
 static char read_next_symbol(scanner_t *scanner);
 static char peek_next_symbol(scanner_t *scanner);
@@ -15,6 +16,7 @@ static int is_number_symbol(char symbol);
 static int is_string_symbol(char symbol);
 static int is_letter_symbol(char symbol);
 static int is_short_identifier_symbol(char symbol);
+static int is_keyword_symbol(char symbol);
 
 void start_scanner(scanner_t *scanner, char *code)
 {
@@ -66,6 +68,11 @@ void progress_scanner(scanner_t *scanner)
         else if (symbol == '$' || symbol == '@')
         {
             read_identifier_token(scanner);
+            return;
+        }
+        else if (is_keyword_symbol(symbol))
+        {
+            read_keyword_token(scanner);
             return;
         }
         else if (symbol == '=' || symbol == '(' || symbol == ')' || symbol == ',')
@@ -261,6 +268,53 @@ static void read_identifier_token(scanner_t *scanner)
     }
 }
 
+static void read_keyword_token(scanner_t *scanner)
+{
+    static const char *keywords[] = { "null" };
+    static const size_t keywordsLength = 1;
+    size_t keywordsIndex;
+
+    scanner->token.type = TOKEN_TYPE_KEYWORD;
+
+    for (keywordsIndex = 0; keywordsIndex < keywordsLength; keywordsIndex++)
+    {
+        const char *keyword;
+        int match;
+        size_t keywordIndex, keywordLength;
+
+        keyword = keywords[keywordsIndex];
+        keywordLength = strlen(keyword);
+        match = 1;
+
+        for (keywordIndex = 0; keywordIndex < keywordLength; keywordIndex++)
+        {
+            size_t codeIndex;
+
+            codeIndex = scanner->token.start + keywordIndex;
+
+            if (codeIndex >= scanner->codeLength)
+            {
+                scanner->state = SCANNER_STATE_ERRORED;
+                return;
+            }
+
+            if (scanner->code[codeIndex] != keyword[keywordIndex])
+            {
+                match = 0;
+                break;
+            }
+        }
+
+        if (match)
+        {
+            scanner->token.end = scanner->token.start + keywordLength;
+            return;
+        }
+    }
+
+    scanner->state = SCANNER_STATE_ERRORED;
+}
+
 static int has_another_symbol(scanner_t *scanner)
 {
     return scanner->token.end < scanner->codeLength;
@@ -301,4 +355,9 @@ static int is_short_identifier_symbol(char symbol)
     return is_letter_symbol(symbol)
         || is_number_symbol(symbol)
         || symbol == '_';
+}
+
+static int is_keyword_symbol(char symbol)
+{
+    return symbol >= 'a' && symbol <= 'z';
 }

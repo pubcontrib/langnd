@@ -11,6 +11,7 @@ typedef enum
     TOKEN_TYPE_NUMBER,
     TOKEN_TYPE_STRING,
     TOKEN_TYPE_IDENTIFIER,
+    TOKEN_TYPE_KEYWORD,
     TOKEN_TYPE_SYMBOL
 } token_type_t;
 

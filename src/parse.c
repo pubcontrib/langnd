@@ -202,9 +202,9 @@ void destroy_statement(statement_t *statement)
                 crash_with_message("unsupported branch PARSE_DESTROY_STATEMENT");
                 break;
         }
-
-        free(statement);
     }
+
+    free(statement);
 }
 
 void destroy_identifier(identifier_t *identifier)
@@ -318,6 +318,32 @@ static statement_t *read_any_statement(capsule_t *capsule)
 
             return statement;
         }
+    }
+    else if (token->type == TOKEN_TYPE_KEYWORD)
+    {
+        statement_t *statement;
+        char *keyword;
+        size_t length;
+
+        length = token->end - token->start;
+        keyword = allocate(sizeof(char) * (length + 1));
+        memcpy(keyword, capsule->scanner.code + token->start, length);
+        keyword[length] = '\0';
+        statement = allocate(sizeof(statement_t));
+
+        if (strcmp(keyword, "null") == 0)
+        {
+            statement->type = STATEMENT_TYPE_NULL;
+            statement->data = NULL;
+        }
+        else
+        {
+            crash_with_message("unsupported branch PARSE_KEYWORD_TOKEN");
+        }
+
+        free(keyword);
+
+        return statement;
     }
 
     error = allocate(sizeof(statement_t));
