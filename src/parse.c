@@ -124,6 +124,16 @@ void destroy_statement(statement_t *statement)
     {
         switch (statement->type)
         {
+            case STATEMENT_TYPE_BOOLEAN:
+            {
+                boolean_statement_data_t *data;
+
+                data = statement->data;
+
+                free(data);
+                break;
+            }
+
             case STATEMENT_TYPE_NUMBER:
             {
                 number_statement_data_t *data;
@@ -338,6 +348,24 @@ static statement_t *read_any_statement(capsule_t *capsule)
             statement->type = STATEMENT_TYPE_NULL;
             statement->data = NULL;
         }
+        else if (strcmp(keyword, "false") == 0)
+        {
+            boolean_statement_data_t *data;
+
+            data = allocate(sizeof(boolean_statement_data_t));
+            data->value = FALSE;
+            statement->type = STATEMENT_TYPE_BOOLEAN;
+            statement->data = data;
+        }
+        else if (strcmp(keyword, "true") == 0)
+        {
+            boolean_statement_data_t *data;
+
+            data = allocate(sizeof(boolean_statement_data_t));
+            data->value = TRUE;
+            statement->type = STATEMENT_TYPE_BOOLEAN;
+            statement->data = data;
+        }
         else
         {
             crash_with_message("unsupported branch PARSE_KEYWORD_TOKEN");
@@ -501,6 +529,7 @@ static char is_literal_statement(statement_t *statement)
 {
     switch (statement->type)
     {
+        case STATEMENT_TYPE_BOOLEAN:
         case STATEMENT_TYPE_NUMBER:
         case STATEMENT_TYPE_STRING:
             return 1;

@@ -9,6 +9,7 @@ typedef enum
 {
     STATEMENT_TYPE_UNKNOWN,
     STATEMENT_TYPE_NULL,
+    STATEMENT_TYPE_BOOLEAN,
     STATEMENT_TYPE_NUMBER,
     STATEMENT_TYPE_STRING,
     STATEMENT_TYPE_ASSIGNMENT,
@@ -33,6 +34,11 @@ typedef struct
     identifier_type_t type;
     char *name;
 } identifier_t;
+
+typedef struct
+{
+    boolean_t value;
+} boolean_statement_data_t;
 
 typedef struct
 {

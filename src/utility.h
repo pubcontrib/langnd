@@ -44,6 +44,10 @@ typedef struct
  */
 typedef int number_t;
 
+typedef char boolean_t;
+static const boolean_t TRUE = 1;
+static const boolean_t FALSE = 0;
+
 void assure_portable_environment();
 map_t *empty_map(int (*hash)(char *), void (*destroy)(void *), size_t capacity);
 int has_map_item(map_t *map, char *key);

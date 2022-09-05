@@ -11,6 +11,8 @@ testscripts()
     pass 'null' ''
     pass 'nullnull' ''
     pass 'null null' ''
+    pass 'false' ''
+    pass 'true' ''
     pass '$a=null'
     pass '$a=100' ''
     pass '$a="text"' ''

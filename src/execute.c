@@ -8,6 +8,7 @@
 typedef enum
 {
     VALUE_TYPE_NULL,
+    VALUE_TYPE_BOOLEAN,
     VALUE_TYPE_NUMBER,
     VALUE_TYPE_STRING
 } value_type_t;
@@ -40,6 +41,7 @@ static int next_argument(argument_iterator_t *arguments, map_t *variables, int t
 static int has_next_argument(argument_iterator_t *arguments);
 static value_t *throw_error(char *message);
 static value_t *new_null();
+static value_t *new_boolean(boolean_t boolean);
 static value_t *new_number(number_t number);
 static value_t *new_string(char *string);
 static value_t *steal_string(char *string);
@@ -138,6 +140,15 @@ static value_t *apply_statement(statement_t *statement, map_t *variables)
         case STATEMENT_TYPE_NULL:
         {
             return new_null();
+        }
+
+        case STATEMENT_TYPE_BOOLEAN:
+        {
+            boolean_statement_data_t *data;
+
+            data = statement->data;
+
+            return new_boolean(data->value);
         }
 
         case STATEMENT_TYPE_NUMBER:
@@ -586,6 +597,22 @@ static value_t *new_null()
     value = allocate(sizeof(value_t));
     value->type = VALUE_TYPE_NULL;
     value->data = NULL;
+    value->thrown = 0;
+    value->owners = 1;
+
+    return value;
+}
+
+static value_t *new_boolean(boolean_t boolean)
+{
+    value_t *value;
+    boolean_t *data;
+
+    data = allocate(sizeof(boolean_t));
+    data[0] = boolean;
+    value = allocate(sizeof(value_t));
+    value->type = VALUE_TYPE_BOOLEAN;
+    value->data = data;
     value->thrown = 0;
     value->owners = 1;
 
