@@ -99,7 +99,6 @@ testscripts()
     pass '$"id"="found" @write($"id", 1)' 'found'
     pass '$id="found" @write($"id", 1)' 'found'
     pass '$"id"="found" @write($id, 1)' 'found'
-    pass '@add' ''
     lexfail 'NULL' 'NULL'
     lexfail 'unknown' 'unknown'
     lexfail '"missing end' '"missing end'
@@ -109,7 +108,9 @@ testscripts()
     lexfail '$var-me' '-me'
     lexfail '$-var' '$-var'
     lexfail '$"missing end' '$"missing end'
-    parsefail '@add,,,'
+    parsefail '@add('
+    parsefail '@add(,'
+    parsefail '@add(,)'
     parsefail '@merge("1" "2")'
     parsefail '$x="1" $y="2" @merge($x $y)'
     parsefail '@merge(@stringify(1) @stringify(2))'
@@ -133,6 +134,7 @@ testscripts()
     executefail '@divide(-32767, 0.5)' 'arithmetic error'
     executefail '@divide(-32767, -0.5)' 'arithmetic error'
     executefail '@divide(100, 0)' 'arithmetic error'
+    executefail '@add' 'unexpected reference type'
 }
 
 lexfail()

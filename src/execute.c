@@ -278,7 +278,7 @@ static value_t *apply_statement(statement_t *statement, map_t *variables)
             }
             else if (data->identifier->type == IDENTIFIER_TYPE_FUNCTION)
             {
-                return new_null();
+                return throw_error("unexpected reference type");
             }
         }
 
