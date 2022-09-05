@@ -44,7 +44,7 @@ static value_t *new_number(number_t number);
 static value_t *new_string(char *string);
 static value_t *steal_string(char *string);
 static void destroy_value(value_t *value);
-static void destroy_value_unsafe(void *value);
+static void dereference_value_unsafe(void *value);
 
 outcome_t *execute(char *code)
 {
@@ -68,7 +68,7 @@ outcome_t *execute(char *code)
         return outcome;
     }
 
-    variables = empty_map(hash_string, destroy_value_unsafe, 8);
+    variables = empty_map(hash_string, dereference_value_unsafe, 8);
     node = script->statements->head;
 
     while (node)
@@ -171,7 +171,6 @@ static value_t *apply_statement(statement_t *statement, map_t *variables)
                 return value;
             }
 
-            value->owners += 1;
             set_map_item(variables, copy_string(data->identifier->name), value);
 
             return new_null();
@@ -269,6 +268,7 @@ static value_t *apply_statement(statement_t *statement, map_t *variables)
 
                 if (value)
                 {
+                    value->owners += 1;
                     return value;
                 }
                 else
@@ -646,7 +646,15 @@ static void destroy_value(value_t *value)
     free(value);
 }
 
-static void destroy_value_unsafe(void *value)
+static void dereference_value_unsafe(void *value)
 {
-    destroy_value((value_t *) value);
+    value_t *cast;
+
+    cast = value;
+    cast->owners -= 1;
+
+    if (cast->owners < 1)
+    {
+        destroy_value(cast);
+    }
 }
