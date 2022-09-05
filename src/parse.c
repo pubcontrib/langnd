@@ -53,6 +53,8 @@ script_t *parse_script(char *code)
         {
             if (statement->type == STATEMENT_TYPE_UNKNOWN)
             {
+                destroy_list(statements);
+                destroy_statement(statement);
                 statements = NULL;
                 errorMessage = copy_string("failed to parse code");
                 break;
@@ -409,6 +411,8 @@ static statement_t *read_invoke_expression(capsule_t *capsule, identifier_t *ide
 
             if (ready)
             {
+                destroy_identifier(identifier);
+                destroy_list(arguments);
                 statement = allocate(sizeof(statement_t));
                 statement->type = STATEMENT_TYPE_UNKNOWN;
                 statement->data = NULL;
@@ -423,6 +427,8 @@ static statement_t *read_invoke_expression(capsule_t *capsule, identifier_t *ide
 
             if (!ready)
             {
+                destroy_identifier(identifier);
+                destroy_list(arguments);
                 statement = allocate(sizeof(statement_t));
                 statement->type = STATEMENT_TYPE_UNKNOWN;
                 statement->data = NULL;
@@ -433,6 +439,13 @@ static statement_t *read_invoke_expression(capsule_t *capsule, identifier_t *ide
 
             if (!argument || !is_value_statement(argument))
             {
+                if (argument)
+                {
+                    destroy_statement(argument);
+                }
+
+                destroy_identifier(identifier);
+                destroy_list(arguments);
                 statement = allocate(sizeof(statement_t));
                 statement->type = STATEMENT_TYPE_UNKNOWN;
                 statement->data = NULL;
@@ -457,6 +470,8 @@ static statement_t *read_invoke_expression(capsule_t *capsule, identifier_t *ide
     }
     else
     {
+        destroy_identifier(identifier);
+        destroy_list(arguments);
         statement->type = STATEMENT_TYPE_UNKNOWN;
         statement->data = NULL;
     }
