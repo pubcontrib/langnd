@@ -529,6 +529,7 @@ static char is_literal_statement(statement_t *statement)
 {
     switch (statement->type)
     {
+        case STATEMENT_TYPE_NULL:
         case STATEMENT_TYPE_BOOLEAN:
         case STATEMENT_TYPE_NUMBER:
         case STATEMENT_TYPE_STRING:
