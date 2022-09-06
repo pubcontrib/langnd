@@ -515,12 +515,22 @@ static value_t *run_stringify(argument_iterator_t *arguments, map_t *variables)
 {
     value_t *value;
 
-    if (!next_argument(arguments, variables, VALUE_TYPE_NUMBER | VALUE_TYPE_STRING, &value))
+    if (!next_argument(arguments, variables, VALUE_TYPE_BOOLEAN | VALUE_TYPE_NUMBER | VALUE_TYPE_STRING, &value))
     {
         return value;
     }
 
-    if (value->type == VALUE_TYPE_NUMBER)
+    if (value->type == VALUE_TYPE_BOOLEAN)
+    {
+        value_t *result;
+        boolean_t boolean;
+
+        boolean = ((boolean_t *) value->data)[0];
+        result = boolean == TRUE ? new_string("true") : new_string("false");
+
+        return result;
+    }
+    else if (value->type == VALUE_TYPE_NUMBER)
     {
         value_t *result;
         number_t number;
