@@ -32,6 +32,7 @@ typedef struct
 static value_t *apply_statement(statement_t *statement, map_t *variables);
 static value_t *run_and(argument_iterator_t *arguments, map_t *variables);
 static value_t *run_or(argument_iterator_t *arguments, map_t *variables);
+static value_t *run_not(argument_iterator_t *arguments, map_t *variables);
 static value_t *run_add(argument_iterator_t *arguments, map_t *variables);
 static value_t *run_subtract(argument_iterator_t *arguments, map_t *variables);
 static value_t *run_multiply(argument_iterator_t *arguments, map_t *variables);
@@ -219,6 +220,10 @@ static value_t *apply_statement(statement_t *statement, map_t *variables)
             {
                 result = run_or(&arguments, variables);
             }
+            else if (strcmp(data->identifier->name, "not") == 0)
+            {
+                result = run_not(&arguments, variables);
+            }
             else if (strcmp(data->identifier->name, "add") == 0)
             {
                 result = run_add(&arguments, variables);
@@ -350,6 +355,21 @@ static value_t *run_or(argument_iterator_t *arguments, map_t *variables)
     y = (boolean_t *) right->data;
 
     return new_boolean(x[0] || y[0]);
+}
+
+static value_t *run_not(argument_iterator_t *arguments, map_t *variables)
+{
+    value_t *value;
+    boolean_t *i;
+
+    if (!next_argument(arguments, variables, VALUE_TYPE_BOOLEAN, &value))
+    {
+        return value;
+    }
+
+    i = (boolean_t *) value->data;
+
+    return new_boolean(!i[0]);
 }
 
 static value_t *run_add(argument_iterator_t *arguments, map_t *variables)
