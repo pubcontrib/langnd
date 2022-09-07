@@ -30,6 +30,7 @@ typedef struct
 } argument_iterator_t;
 
 static value_t *apply_statement(statement_t *statement, map_t *variables);
+static value_t *run_and(argument_iterator_t *arguments, map_t *variables);
 static value_t *run_add(argument_iterator_t *arguments, map_t *variables);
 static value_t *run_subtract(argument_iterator_t *arguments, map_t *variables);
 static value_t *run_multiply(argument_iterator_t *arguments, map_t *variables);
@@ -209,7 +210,11 @@ static value_t *apply_statement(statement_t *statement, map_t *variables)
 
             arguments.index = 0;
 
-            if (strcmp(data->identifier->name, "add") == 0)
+            if (strcmp(data->identifier->name, "and") == 0)
+            {
+                result = run_and(&arguments, variables);
+            }
+            else if (strcmp(data->identifier->name, "add") == 0)
             {
                 result = run_add(&arguments, variables);
             }
@@ -298,6 +303,27 @@ static value_t *apply_statement(statement_t *statement, map_t *variables)
     }
 
     return new_null();
+}
+
+static value_t *run_and(argument_iterator_t *arguments, map_t *variables)
+{
+    value_t *left, *right;
+    boolean_t *x, *y;
+
+    if (!next_argument(arguments, variables, VALUE_TYPE_BOOLEAN, &left))
+    {
+        return left;
+    }
+
+    if (!next_argument(arguments, variables, VALUE_TYPE_BOOLEAN, &right))
+    {
+        return right;
+    }
+
+    x = (boolean_t *) left->data;
+    y = (boolean_t *) right->data;
+
+    return new_boolean(x[0] && y[0]);
 }
 
 static value_t *run_add(argument_iterator_t *arguments, map_t *variables)
