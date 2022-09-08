@@ -51,7 +51,7 @@ script_t *parse_script(char *code)
 
         if (statement)
         {
-            if (statement->type == STATEMENT_TYPE_UNKNOWN)
+            if (statement->type == STATEMENT_TYPE_UNKNOWN && capsule.scanner.state != SCANNER_STATE_ERRORED)
             {
                 destroy_list(statements);
                 destroy_statement(statement);

@@ -123,6 +123,7 @@ testscripts()
     lexfail '$var-me' '-me'
     lexfail '$-var' '$-var'
     lexfail '$"missing end' '$"missing end'
+    lexfail '@not(tru)' 'tru)'
     parsefail '@add('
     parsefail '@add(,'
     parsefail '@add(,)'
