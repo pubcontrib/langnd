@@ -643,6 +643,7 @@ static int next_argument(argument_iterator_t *arguments, map_t *variables, int t
 
     if (result->thrown)
     {
+        result->owners += 1;
         (*out) = result;
         return 0;
     }

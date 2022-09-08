@@ -133,6 +133,7 @@ testscripts()
     executefail '@add()' 'absent argument'
     executefail '@write()' 'absent argument'
     executefail '@stringify()' 'absent argument'
+    executefail '@not(@not())' 'absent argument'
     executefail '$huh' 'absent variable'
     executefail '@huh()' 'absent function'
     executefail '@add(32767, 32767)' 'arithmetic error'
