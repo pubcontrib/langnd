@@ -40,6 +40,7 @@ static value_t *run_divide(argument_iterator_t *arguments, map_t *variables);
 static value_t *run_merge(argument_iterator_t *arguments, map_t *variables);
 static value_t *run_write(argument_iterator_t *arguments, map_t *variables);
 static value_t *run_stringify(argument_iterator_t *arguments, map_t *variables);
+static value_t *run_type(argument_iterator_t *arguments, map_t *variables);
 static int next_argument(argument_iterator_t *arguments, map_t *variables, int types, value_t **out);
 static int has_next_argument(argument_iterator_t *arguments);
 static value_t *throw_error(char *message);
@@ -251,6 +252,10 @@ static value_t *apply_statement(statement_t *statement, map_t *variables)
             else if (strcmp(data->identifier->name, "stringify") == 0)
             {
                 result = run_stringify(&arguments, variables);
+            }
+            else if (strcmp(data->identifier->name, "type") == 0)
+            {
+                result = run_type(&arguments, variables);
             }
             else
             {
@@ -623,6 +628,35 @@ static value_t *run_stringify(argument_iterator_t *arguments, map_t *variables)
     {
         crash_with_message("unsupported branch EXECUTE_STRINGIFY_TYPE");
         return new_null();
+    }
+}
+
+static value_t *run_type(argument_iterator_t *arguments, map_t *variables)
+{
+    value_t *value;
+
+    if (!next_argument(arguments, variables, VALUE_TYPE_NULL | VALUE_TYPE_BOOLEAN | VALUE_TYPE_NUMBER | VALUE_TYPE_STRING, &value))
+    {
+        return value;
+    }
+
+    switch (value->type)
+    {
+        case VALUE_TYPE_NULL:
+            return new_string("NULL");
+
+        case VALUE_TYPE_BOOLEAN:
+            return new_string("BOOLEAN");
+
+        case VALUE_TYPE_NUMBER:
+            return new_string("NUMBER");
+
+        case VALUE_TYPE_STRING:
+            return new_string("STRING");
+
+        default:
+            crash_with_message("unsupported branch EXECUTE_TYPE_TYPE");
+            return new_null();
     }
 }
 
