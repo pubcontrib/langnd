@@ -7,10 +7,10 @@
 
 typedef enum
 {
-    VALUE_TYPE_NULL,
-    VALUE_TYPE_BOOLEAN,
-    VALUE_TYPE_NUMBER,
-    VALUE_TYPE_STRING
+    VALUE_TYPE_NULL = 0x01,
+    VALUE_TYPE_BOOLEAN = 0x02,
+    VALUE_TYPE_NUMBER = 0x04,
+    VALUE_TYPE_STRING = 0x08
 } value_type_t;
 
 typedef struct
