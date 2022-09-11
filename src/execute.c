@@ -39,8 +39,8 @@ static value_t *run_multiply(argument_iterator_t *arguments, map_t *variables);
 static value_t *run_divide(argument_iterator_t *arguments, map_t *variables);
 static value_t *run_merge(argument_iterator_t *arguments, map_t *variables);
 static value_t *run_write(argument_iterator_t *arguments, map_t *variables);
-static value_t *run_stringify(argument_iterator_t *arguments, map_t *variables);
 static value_t *run_type(argument_iterator_t *arguments, map_t *variables);
+static value_t *run_cast(argument_iterator_t *arguments, map_t *variables);
 static int next_argument(argument_iterator_t *arguments, map_t *variables, int types, value_t **out);
 static int has_next_argument(argument_iterator_t *arguments);
 static value_t *throw_error(char *message);
@@ -249,13 +249,13 @@ static value_t *apply_statement(statement_t *statement, map_t *variables)
             {
                 result = run_write(&arguments, variables);
             }
-            else if (strcmp(data->identifier->name, "stringify") == 0)
-            {
-                result = run_stringify(&arguments, variables);
-            }
             else if (strcmp(data->identifier->name, "type") == 0)
             {
                 result = run_type(&arguments, variables);
+            }
+            else if (strcmp(data->identifier->name, "cast") == 0)
+            {
+                result = run_cast(&arguments, variables);
             }
             else
             {
@@ -588,49 +588,6 @@ static value_t *run_write(argument_iterator_t *arguments, map_t *variables)
     }
 }
 
-static value_t *run_stringify(argument_iterator_t *arguments, map_t *variables)
-{
-    value_t *value;
-
-    if (!next_argument(arguments, variables, VALUE_TYPE_BOOLEAN | VALUE_TYPE_NUMBER | VALUE_TYPE_STRING, &value))
-    {
-        return value;
-    }
-
-    if (value->type == VALUE_TYPE_BOOLEAN)
-    {
-        value_t *result;
-        boolean_t boolean;
-
-        boolean = ((boolean_t *) value->data)[0];
-        result = boolean == TRUE ? new_string("true") : new_string("false");
-
-        return result;
-    }
-    else if (value->type == VALUE_TYPE_NUMBER)
-    {
-        value_t *result;
-        number_t number;
-        char *string;
-
-        number = ((number_t *) value->data)[0];
-        string = represent_number(number);
-        result = steal_string(string);
-
-        return result;
-    }
-    else if (value->type == VALUE_TYPE_STRING)
-    {
-        value->owners += 1;
-        return value;
-    }
-    else
-    {
-        crash_with_message("unsupported branch EXECUTE_STRINGIFY_TYPE");
-        return new_null();
-    }
-}
-
 static value_t *run_type(argument_iterator_t *arguments, map_t *variables)
 {
     value_t *value;
@@ -657,6 +614,152 @@ static value_t *run_type(argument_iterator_t *arguments, map_t *variables)
         default:
             crash_with_message("unsupported branch EXECUTE_TYPE_TYPE");
             return new_null();
+    }
+}
+
+static value_t *run_cast(argument_iterator_t *arguments, map_t *variables)
+{
+    value_t *value, *type;
+    char *pattern;
+
+    if (!next_argument(arguments, variables, VALUE_TYPE_NULL | VALUE_TYPE_BOOLEAN | VALUE_TYPE_NUMBER | VALUE_TYPE_STRING, &value))
+    {
+        return value;
+    }
+
+    if (!next_argument(arguments, variables, VALUE_TYPE_STRING, &type))
+    {
+        return type;
+    }
+
+    pattern = (char *) type->data;
+
+    if (strcmp(pattern, "NULL") == 0)
+    {
+        if (value->type == VALUE_TYPE_NULL)
+        {
+            value->owners += 1;
+
+            return value;
+        }
+        else if (value->type == VALUE_TYPE_STRING)
+        {
+            char *string;
+
+            string = (char *) value->data;
+
+            if (strcmp(string, "null") == 0)
+            {
+                return new_null();
+            }
+            else
+            {
+                return throw_error("invalid cast");
+            }
+        }
+        else
+        {
+            return throw_error("invalid cast");
+        }
+    }
+    else if (strcmp(pattern, "BOOLEAN") == 0)
+    {
+        if (value->type == VALUE_TYPE_BOOLEAN)
+        {
+            value->owners += 1;
+
+            return value;
+        }
+        else if (value->type == VALUE_TYPE_STRING)
+        {
+            char *string;
+
+            string = (char *) value->data;
+
+            if (strcmp(string, "false") == 0)
+            {
+                return new_boolean(FALSE);
+            }
+            else if (strcmp(string, "true") == 0)
+            {
+                return new_boolean(TRUE);
+            }
+            else
+            {
+                return throw_error("invalid cast");
+            }
+        }
+        else
+        {
+            return throw_error("invalid cast");
+        }
+    }
+    else if (strcmp(pattern, "NUMBER") == 0)
+    {
+        if (value->type == VALUE_TYPE_NUMBER)
+        {
+            value->owners += 1;
+
+            return value;
+        }
+        else if (value->type == VALUE_TYPE_STRING)
+        {
+            number_t number;
+
+            if (string_to_number(value->data, &number) != 0)
+            {
+                return throw_error("invalid cast");
+            }
+
+            return new_number(number);
+        }
+        else
+        {
+            return throw_error("invalid cast");
+        }
+    }
+    else if (strcmp(pattern, "STRING") == 0)
+    {
+        if (value->type == VALUE_TYPE_NULL)
+        {
+            return new_string("null");
+        }
+        else if (value->type == VALUE_TYPE_BOOLEAN)
+        {
+            value_t *result;
+            boolean_t boolean;
+
+            boolean = ((boolean_t *) value->data)[0];
+            result = boolean == TRUE ? new_string("true") : new_string("false");
+
+            return result;
+        }
+        else if (value->type == VALUE_TYPE_NUMBER)
+        {
+            value_t *result;
+            number_t number;
+            char *string;
+
+            number = ((number_t *) value->data)[0];
+            string = represent_number(number);
+            result = steal_string(string);
+
+            return result;
+        }
+        else if (value->type == VALUE_TYPE_STRING)
+        {
+            value->owners += 1;
+
+            return value;
+        }
+        else
+        {
+            return throw_error("invalid cast");
+        }
+    }
+    else
+    {
+        return throw_error("unknown type");
     }
 }
 

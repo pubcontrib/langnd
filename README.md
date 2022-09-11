@@ -10,7 +10,7 @@ and the implementation of the language are a work in progress.
     $a = 300
     $b = 200
     $c = @add($a, $b)
-    @write(@stringify($c), 1)
+    @write(@cast($c, "STRING"), 1)
 
 ## License
 
