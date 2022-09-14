@@ -14,6 +14,7 @@ typedef enum
     STATEMENT_TYPE_STRING,
     STATEMENT_TYPE_ASSIGNMENT,
     STATEMENT_TYPE_INVOKE,
+    STATEMENT_TYPE_BRANCH,
     STATEMENT_TYPE_REFERENCE
 } statement_type_t;
 
@@ -61,6 +62,12 @@ typedef struct
     identifier_t *identifier;
     list_t *arguments;
 } invoke_statement_data_t;
+
+typedef struct
+{
+    statement_t *condition;
+    list_t *body;
+} branch_statement_data_t ;
 
 typedef struct
 {

@@ -75,7 +75,7 @@ void progress_scanner(scanner_t *scanner)
             read_keyword_token(scanner);
             return;
         }
-        else if (symbol == '=' || symbol == '(' || symbol == ')' || symbol == ',')
+        else if (symbol == '=' || symbol == '(' || symbol == ')' || symbol == ',' || symbol == '{' || symbol == '}')
         {
             scanner->token.type = TOKEN_TYPE_SYMBOL;
             return;
@@ -270,8 +270,8 @@ static void read_identifier_token(scanner_t *scanner)
 
 static void read_keyword_token(scanner_t *scanner)
 {
-    static const char *keywords[] = { "null", "false", "true" };
-    static const size_t keywordsLength = 3;
+    static const char *keywords[] = { "null", "false", "true", "if" };
+    static const size_t keywordsLength = 4;
     size_t keywordsIndex;
 
     scanner->token.type = TOKEN_TYPE_KEYWORD;

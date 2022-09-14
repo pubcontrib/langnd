@@ -50,6 +50,7 @@ static value_t *new_number(number_t number);
 static value_t *new_string(char *string);
 static value_t *steal_string(char *string);
 static void destroy_value(value_t *value);
+static void dereference_value(value_t *value);
 static void dereference_value_unsafe(void *value);
 
 outcome_t *execute(char *code)
@@ -268,21 +269,64 @@ static value_t *apply_statement(statement_t *statement, map_t *variables)
 
                 for (index = 0; index < arguments.index; index++)
                 {
-                    value_t *argument;
-
-                    argument = arguments.evaluated[index];
-                    argument->owners -= 1;
-
-                    if (argument->owners < 1)
-                    {
-                        destroy_value(argument);
-                    }
+                    dereference_value(arguments.evaluated[index]);
                 }
 
                 free(arguments.evaluated);
             }
 
             return result;
+        }
+
+        case STATEMENT_TYPE_BRANCH:
+        {
+            branch_statement_data_t *data;
+            value_t *test;
+
+            data = statement->data;
+            test = apply_statement(data->condition, variables);
+
+            if (test->type == VALUE_TYPE_BOOLEAN)
+            {
+                if (((char *) test->data)[0])
+                {
+                    value_t *last;
+                    list_node_t *node;
+
+                    last = NULL;
+
+                    for (node = data->body->head; node; node = node->next)
+                    {
+                        if (last)
+                        {
+                            destroy_value(last);
+                        }
+
+                        last = apply_statement(node->value, variables);
+
+                        if (last->thrown)
+                        {
+                            break;
+                        }
+                    }
+
+                    dereference_value(test);
+
+                    return last;
+                }
+                else
+                {
+                    dereference_value(test);
+
+                    return new_null();
+                }
+            }
+            else
+            {
+                dereference_value(test);
+
+                return throw_error("branch with non-boolean condition");
+            }
         }
 
         case STATEMENT_TYPE_REFERENCE:
@@ -893,15 +937,17 @@ static void destroy_value(value_t *value)
     free(value);
 }
 
+static void dereference_value(value_t *value)
+{
+    value->owners -= 1;
+
+    if (value->owners < 1)
+    {
+        destroy_value(value);
+    }
+}
+
 static void dereference_value_unsafe(void *value)
 {
-    value_t *cast;
-
-    cast = value;
-    cast->owners -= 1;
-
-    if (cast->owners < 1)
-    {
-        destroy_value(cast);
-    }
+    dereference_value(value);
 }
