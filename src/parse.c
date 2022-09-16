@@ -414,12 +414,28 @@ static statement_t *read_any_statement(capsule_t *capsule)
 
 static statement_t *read_assignment_expression(capsule_t *capsule, identifier_t *identifier)
 {
-    statement_t *statement;
+    statement_t *statement, *value;
     assignment_statement_data_t *data;
+
+    value = read_any_statement(capsule);
+
+    if (!value || !is_value_statement(value))
+    {
+        if (value)
+        {
+            destroy_statement(value);
+        }
+
+        destroy_identifier(identifier);
+        statement = allocate(sizeof(statement_t));
+        statement->type = STATEMENT_TYPE_UNKNOWN;
+        statement->data = NULL;
+        return statement;
+    }
 
     data = allocate(sizeof(assignment_statement_data_t));
     data->identifier = identifier;
-    data->value = read_any_statement(capsule);
+    data->value = value;
 
     statement = allocate(sizeof(statement_t));
 
