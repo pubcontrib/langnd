@@ -1,7 +1,7 @@
 #ifndef UTILITY_H
 #define UTILITY_H
 
-#define PROGRAM_VERSION "v0.9.0"
+#define PROGRAM_VERSION "v0.10.0"
 #define PROGRAM_NAME "langnd"
 #define PROGRAM_SUCCESS 0
 #define PROGRAM_FAILURE 1
