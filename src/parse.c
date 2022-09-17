@@ -25,6 +25,7 @@ static token_t *next_token(capsule_t *capsule);
 static token_t *scan_token(scanner_t *scanner);
 static identifier_t *parse_identifier(token_t *token, char *code);
 static char *unescape_string(char *code, size_t start, size_t end);
+static char is_symbol_token(char symbol, token_t *token, char *code);
 static void destroy_statement_unsafe(void *statement);
 
 script_t *parse_script(char *code)
@@ -311,9 +312,7 @@ static statement_t *read_any_statement(capsule_t *capsule)
 
         optional = peek_token(capsule);
 
-        if (optional
-            && optional->type == TOKEN_TYPE_SYMBOL
-            && capsule->scanner.code[optional->start] == '=')
+        if (is_symbol_token('=', optional, capsule->scanner.code))
         {
             identifier_t *identifier;
 
@@ -322,9 +321,7 @@ static statement_t *read_any_statement(capsule_t *capsule)
 
             return read_assignment_expression(capsule, identifier);
         }
-        else if (optional
-            && optional->type == TOKEN_TYPE_SYMBOL
-            && capsule->scanner.code[optional->start] == '(')
+        else if (is_symbol_token('(', optional, capsule->scanner.code))
         {
             identifier_t *identifier;
 
@@ -474,16 +471,12 @@ static statement_t *read_invoke_expression(capsule_t *capsule, identifier_t *ide
 
         optional = peek_token(capsule);
 
-        if (optional
-            && optional->type == TOKEN_TYPE_SYMBOL
-            && capsule->scanner.code[optional->start] == ')')
+        if (is_symbol_token(')', optional, capsule->scanner.code))
         {
             next_token(capsule);
             break;
         }
-        else if (optional
-            && optional->type == TOKEN_TYPE_SYMBOL
-            && capsule->scanner.code[optional->start] == ',')
+        else if (is_symbol_token(',', optional, capsule->scanner.code))
         {
             next_token(capsule);
 
@@ -582,9 +575,7 @@ static statement_t *read_branch_expression(capsule_t *capsule)
 
     optional = peek_token(capsule);
 
-    if (!(optional
-        && optional->type == TOKEN_TYPE_SYMBOL
-        && capsule->scanner.code[optional->start] == '{'))
+    if (!is_symbol_token('{', optional, capsule->scanner.code))
     {
         destroy_statement(condition);
         statement = allocate(sizeof(statement_t));
@@ -603,9 +594,7 @@ static statement_t *read_branch_expression(capsule_t *capsule)
 
         optional = peek_token(capsule);
 
-        if (optional
-            && optional->type == TOKEN_TYPE_SYMBOL
-            && capsule->scanner.code[optional->start] == '}')
+        if (is_symbol_token('}', optional, capsule->scanner.code))
         {
             next_token(capsule);
 
@@ -645,9 +634,7 @@ static statement_t *read_branch_expression(capsule_t *capsule)
             next_token(capsule);
             optional = peek_token(capsule);
 
-            if (!(optional
-                && optional->type == TOKEN_TYPE_SYMBOL
-                && capsule->scanner.code[optional->start] == '{'))
+            if (!is_symbol_token('{', optional, capsule->scanner.code))
             {
                 destroy_statement(condition);
                 destroy_list(pass);
@@ -666,9 +653,7 @@ static statement_t *read_branch_expression(capsule_t *capsule)
 
                 optional = peek_token(capsule);
 
-                if (optional
-                    && optional->type == TOKEN_TYPE_SYMBOL
-                    && capsule->scanner.code[optional->start] == '}')
+                if (is_symbol_token('}', optional, capsule->scanner.code))
                 {
                     next_token(capsule);
 
@@ -910,6 +895,13 @@ static char *unescape_string(char *code, size_t start, size_t end)
     text[textLength] = '\0';
 
     return text;
+}
+
+static char is_symbol_token(char symbol, token_t *token, char *code)
+{
+    return token
+        && token->type == TOKEN_TYPE_SYMBOL
+        && code[token->start] == symbol;
 }
 
 static void destroy_statement_unsafe(void *statement)
