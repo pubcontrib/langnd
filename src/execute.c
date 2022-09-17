@@ -49,6 +49,9 @@ static value_t *new_boolean(boolean_t boolean);
 static value_t *new_number(number_t number);
 static value_t *new_string(char *string);
 static value_t *steal_string(char *string);
+static boolean_t view_boolean(value_t *value);
+static number_t view_number(value_t *value);
+static char *view_string(value_t *value);
 static void destroy_value(value_t *value);
 static void dereference_value(value_t *value);
 static void dereference_value_unsafe(void *value);
@@ -288,14 +291,12 @@ static value_t *apply_statement(statement_t *statement, map_t *variables)
 
             if (test->type == VALUE_TYPE_BOOLEAN)
             {
-                boolean_t passed;
                 value_t *last;
                 list_t *body;
                 list_node_t *node;
 
-                passed = ((boolean_t *) test->data)[0];
+                body = view_boolean(test) ? data->pass : data->fail;
                 dereference_value(test);
-                body = passed ? data->pass : data->fail;
                 last = NULL;
 
                 if (body)
@@ -369,7 +370,6 @@ static value_t *apply_statement(statement_t *statement, map_t *variables)
 static value_t *run_and(argument_iterator_t *arguments, map_t *variables)
 {
     value_t *left, *right;
-    boolean_t *x, *y;
 
     if (!next_argument(arguments, variables, VALUE_TYPE_BOOLEAN, &left))
     {
@@ -381,16 +381,12 @@ static value_t *run_and(argument_iterator_t *arguments, map_t *variables)
         return right;
     }
 
-    x = (boolean_t *) left->data;
-    y = (boolean_t *) right->data;
-
-    return new_boolean(x[0] && y[0]);
+    return new_boolean(view_boolean(left) && view_boolean(right));
 }
 
 static value_t *run_or(argument_iterator_t *arguments, map_t *variables)
 {
     value_t *left, *right;
-    boolean_t *x, *y;
 
     if (!next_argument(arguments, variables, VALUE_TYPE_BOOLEAN, &left))
     {
@@ -402,31 +398,25 @@ static value_t *run_or(argument_iterator_t *arguments, map_t *variables)
         return right;
     }
 
-    x = (boolean_t *) left->data;
-    y = (boolean_t *) right->data;
-
-    return new_boolean(x[0] || y[0]);
+    return new_boolean(view_boolean(left) || view_boolean(right));
 }
 
 static value_t *run_not(argument_iterator_t *arguments, map_t *variables)
 {
     value_t *value;
-    boolean_t *i;
 
     if (!next_argument(arguments, variables, VALUE_TYPE_BOOLEAN, &value))
     {
         return value;
     }
 
-    i = (boolean_t *) value->data;
-
-    return new_boolean(!i[0]);
+    return new_boolean(!view_boolean(value));
 }
 
 static value_t *run_add(argument_iterator_t *arguments, map_t *variables)
 {
     value_t *left, *right;
-    number_t *x, *y, sum;
+    number_t sum;
 
     if (!next_argument(arguments, variables, VALUE_TYPE_NUMBER, &left))
     {
@@ -438,10 +428,7 @@ static value_t *run_add(argument_iterator_t *arguments, map_t *variables)
         return right;
     }
 
-    x = (number_t *) left->data;
-    y = (number_t *) right->data;
-
-    if (add_numbers(x[0], y[0], &sum) != 0)
+    if (add_numbers(view_number(left), view_number(right), &sum) != 0)
     {
         return throw_error("arithmetic error");
     }
@@ -452,7 +439,7 @@ static value_t *run_add(argument_iterator_t *arguments, map_t *variables)
 static value_t *run_subtract(argument_iterator_t *arguments, map_t *variables)
 {
     value_t *left, *right;
-    number_t *x, *y, difference;
+    number_t difference;
 
     if (!next_argument(arguments, variables, VALUE_TYPE_NUMBER, &left))
     {
@@ -464,10 +451,7 @@ static value_t *run_subtract(argument_iterator_t *arguments, map_t *variables)
         return right;
     }
 
-    x = (number_t *) left->data;
-    y = (number_t *) right->data;
-
-    if (subtract_numbers(x[0], y[0], &difference) != 0)
+    if (subtract_numbers(view_number(left), view_number(right), &difference) != 0)
     {
         return throw_error("arithmetic error");
     }
@@ -478,7 +462,7 @@ static value_t *run_subtract(argument_iterator_t *arguments, map_t *variables)
 static value_t *run_multiply(argument_iterator_t *arguments, map_t *variables)
 {
     value_t *left, *right;
-    number_t *x, *y, product;
+    number_t product;
 
     if (!next_argument(arguments, variables, VALUE_TYPE_NUMBER, &left))
     {
@@ -490,10 +474,7 @@ static value_t *run_multiply(argument_iterator_t *arguments, map_t *variables)
         return right;
     }
 
-    x = (number_t *) left->data;
-    y = (number_t *) right->data;
-
-    if (multiply_numbers(x[0], y[0], &product) != 0)
+    if (multiply_numbers(view_number(left), view_number(right), &product) != 0)
     {
         return throw_error("arithmetic error");
     }
@@ -504,7 +485,7 @@ static value_t *run_multiply(argument_iterator_t *arguments, map_t *variables)
 static value_t *run_divide(argument_iterator_t *arguments, map_t *variables)
 {
     value_t *left, *right;
-    number_t *x, *y, quotient;
+    number_t quotient;
 
     if (!next_argument(arguments, variables, VALUE_TYPE_NUMBER, &left))
     {
@@ -516,10 +497,7 @@ static value_t *run_divide(argument_iterator_t *arguments, map_t *variables)
         return right;
     }
 
-    x = (number_t *) left->data;
-    y = (number_t *) right->data;
-
-    if (divide_numbers(x[0], y[0], &quotient) != 0)
+    if (divide_numbers(view_number(left), view_number(right), &quotient) != 0)
     {
         return throw_error("arithmetic error");
     }
@@ -543,8 +521,8 @@ static value_t *run_merge(argument_iterator_t *arguments, map_t *variables)
         return right;
     }
 
-    x = (char *) left->data;
-    y = (char *) right->data;
+    x = view_string(left);
+    y = view_string(right);
     length = strlen(x) + strlen(y);
     sum = allocate(sizeof(char) * length + 1);
     memcpy(sum, x, strlen(x));
@@ -570,14 +548,14 @@ static value_t *run_write(argument_iterator_t *arguments, map_t *variables)
         return file;
     }
 
-    text = (char *) message->data;
+    text = view_string(message);
 
     if (file->type == VALUE_TYPE_NUMBER)
     {
         FILE *streamHandle;
         number_t streamID, outID, errID;
 
-        streamID = ((number_t *) file->data)[0];
+        streamID = view_number(file);
         integer_to_number(1, &outID);
         integer_to_number(2, &errID);
 
@@ -604,7 +582,7 @@ static value_t *run_write(argument_iterator_t *arguments, map_t *variables)
         FILE *fileHandle;
         char *fileName;
 
-        fileName = ((char *) file->data);
+        fileName = view_string(file);
         fileHandle = fopen(fileName, "wb");
 
         if (fileHandle)
@@ -678,7 +656,7 @@ static value_t *run_cast(argument_iterator_t *arguments, map_t *variables)
         return type;
     }
 
-    pattern = (char *) type->data;
+    pattern = view_string(type);
 
     if (strcmp(pattern, "NULL") == 0)
     {
@@ -692,7 +670,7 @@ static value_t *run_cast(argument_iterator_t *arguments, map_t *variables)
         {
             char *string;
 
-            string = (char *) value->data;
+            string = view_string(value);
 
             if (strcmp(string, "null") == 0)
             {
@@ -720,7 +698,7 @@ static value_t *run_cast(argument_iterator_t *arguments, map_t *variables)
         {
             char *string;
 
-            string = (char *) value->data;
+            string = view_string(value);
 
             if (strcmp(string, "false") == 0)
             {
@@ -772,25 +750,11 @@ static value_t *run_cast(argument_iterator_t *arguments, map_t *variables)
         }
         else if (value->type == VALUE_TYPE_BOOLEAN)
         {
-            value_t *result;
-            boolean_t boolean;
-
-            boolean = ((boolean_t *) value->data)[0];
-            result = boolean == TRUE ? new_string("true") : new_string("false");
-
-            return result;
+            return view_boolean(value) == TRUE ? new_string("true") : new_string("false");
         }
         else if (value->type == VALUE_TYPE_NUMBER)
         {
-            value_t *result;
-            number_t number;
-            char *string;
-
-            number = ((number_t *) value->data)[0];
-            string = represent_number(number);
-            result = steal_string(string);
-
-            return result;
+            return steal_string(represent_number(view_number(value)));
         }
         else if (value->type == VALUE_TYPE_STRING)
         {
@@ -927,6 +891,45 @@ static value_t *steal_string(char *data)
     value->owners = 1;
 
     return value;
+}
+
+static boolean_t view_boolean(value_t *value)
+{
+    if (value->type == VALUE_TYPE_BOOLEAN)
+    {
+        return ((boolean_t *) value->data)[0];
+    }
+    else
+    {
+        crash_with_message("unsupported branch EXECUTE_VIEW_BOOLEAN");
+        return FALSE;
+    }
+}
+
+static number_t view_number(value_t *value)
+{
+    if (value->type == VALUE_TYPE_NUMBER)
+    {
+        return ((number_t *) value->data)[0];
+    }
+    else
+    {
+        crash_with_message("unsupported branch EXECUTE_VIEW_NUMBER");
+        return 0;
+    }
+}
+
+static char *view_string(value_t *value)
+{
+    if (value->type == VALUE_TYPE_STRING)
+    {
+        return (char *) value->data;
+    }
+    else
+    {
+        crash_with_message("unsupported branch EXECUTE_VIEW_STRING");
+        return "";
+    }
 }
 
 static void destroy_value(value_t *value)
