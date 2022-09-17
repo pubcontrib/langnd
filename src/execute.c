@@ -288,18 +288,23 @@ static value_t *apply_statement(statement_t *statement, map_t *variables)
 
             if (test->type == VALUE_TYPE_BOOLEAN)
             {
-                if (((char *) test->data)[0])
+                boolean_t passed;
+                value_t *last;
+                list_t *body;
+                list_node_t *node;
+
+                passed = ((boolean_t *) test->data)[0];
+                dereference_value(test);
+                body = passed ? data->pass : data->fail;
+                last = NULL;
+
+                if (body)
                 {
-                    value_t *last;
-                    list_node_t *node;
-
-                    last = NULL;
-
-                    for (node = data->body->head; node; node = node->next)
+                    for (node = body->head; node; node = node->next)
                     {
                         if (last)
                         {
-                            destroy_value(last);
+                            dereference_value(last);
                         }
 
                         last = apply_statement(node->value, variables);
@@ -309,17 +314,14 @@ static value_t *apply_statement(statement_t *statement, map_t *variables)
                             break;
                         }
                     }
-
-                    dereference_value(test);
-
-                    return last;
                 }
-                else
+
+                if (!last)
                 {
-                    dereference_value(test);
-
-                    return new_null();
+                    last = new_null();
                 }
+
+                return last;
             }
             else
             {

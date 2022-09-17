@@ -207,9 +207,14 @@ void destroy_statement(statement_t *statement)
                     destroy_statement(data->condition);
                 }
 
-                if (data->body)
+                if (data->pass)
                 {
-                    destroy_list(data->body);
+                    destroy_list(data->pass);
+                }
+
+                if (data->fail)
+                {
+                    destroy_list(data->fail);
                 }
 
                 free(data);
@@ -557,7 +562,7 @@ static statement_t *read_branch_expression(capsule_t *capsule)
     statement_t *statement;
     branch_statement_data_t *data;
     statement_t *condition;
-    list_t *body;
+    list_t *pass, *fail;
     token_t *optional;
 
     condition = read_any_statement(capsule);
@@ -589,7 +594,8 @@ static statement_t *read_branch_expression(capsule_t *capsule)
     }
 
     next_token(capsule);
-    body = empty_list(destroy_statement_unsafe);
+    pass = empty_list(destroy_statement_unsafe);
+    fail = NULL;
 
     while (1)
     {
@@ -611,19 +617,90 @@ static statement_t *read_branch_expression(capsule_t *capsule)
         if (!part || part->type == STATEMENT_TYPE_UNKNOWN)
         {
             destroy_statement(condition);
-            destroy_list(body);
+            destroy_list(pass);
             statement = allocate(sizeof(statement_t));
             statement->type = STATEMENT_TYPE_UNKNOWN;
             statement->data = NULL;
             return statement;
         }
 
-        add_list_item(body, part);
+        add_list_item(pass, part);
+    }
+
+    optional = peek_token(capsule);
+
+    if (optional && optional->type == TOKEN_TYPE_KEYWORD)
+    {
+        char *keyword;
+        size_t length;
+
+        length = optional->end - optional->start;
+        keyword = allocate(sizeof(char) * (length + 1));
+        memcpy(keyword, capsule->scanner.code + optional->start, length);
+        keyword[length] = '\0';
+
+        if (strcmp(keyword, "else") == 0)
+        {
+            free(keyword);
+            next_token(capsule);
+            optional = peek_token(capsule);
+
+            if (!(optional
+                && optional->type == TOKEN_TYPE_SYMBOL
+                && capsule->scanner.code[optional->start] == '{'))
+            {
+                destroy_statement(condition);
+                destroy_list(pass);
+                statement = allocate(sizeof(statement_t));
+                statement->type = STATEMENT_TYPE_UNKNOWN;
+                statement->data = NULL;
+                return statement;
+            }
+
+            next_token(capsule);
+            fail = empty_list(destroy_statement_unsafe);
+
+            while (1)
+            {
+                statement_t *part;
+
+                optional = peek_token(capsule);
+
+                if (optional
+                    && optional->type == TOKEN_TYPE_SYMBOL
+                    && capsule->scanner.code[optional->start] == '}')
+                {
+                    next_token(capsule);
+
+                    break;
+                }
+
+                part = read_any_statement(capsule);
+
+                if (!part || part->type == STATEMENT_TYPE_UNKNOWN)
+                {
+                    destroy_statement(condition);
+                    destroy_list(pass);
+                    destroy_list(fail);
+                    statement = allocate(sizeof(statement_t));
+                    statement->type = STATEMENT_TYPE_UNKNOWN;
+                    statement->data = NULL;
+                    return statement;
+                }
+
+                add_list_item(fail, part);
+            }
+        }
+        else
+        {
+            free(keyword);
+        }
     }
 
     data = allocate(sizeof(branch_statement_data_t));
     data->condition = condition;
-    data->body = body;
+    data->pass = pass;
+    data->fail = fail;
 
     statement = allocate(sizeof(statement_t));
     statement->type = STATEMENT_TYPE_BRANCH;
