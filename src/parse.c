@@ -357,10 +357,10 @@ static statement_t *read_any_statement(capsule_t *capsule)
         char *keyword;
 
         keyword = substring_using_token(capsule->scanner.code, token);
-        statement = allocate(sizeof(statement_t));
 
         if (strcmp(keyword, "null") == 0)
         {
+            statement = allocate(sizeof(statement_t));
             statement->type = STATEMENT_TYPE_NULL;
             statement->data = NULL;
         }
@@ -370,6 +370,8 @@ static statement_t *read_any_statement(capsule_t *capsule)
 
             data = allocate(sizeof(boolean_statement_data_t));
             data->value = FALSE;
+
+            statement = allocate(sizeof(statement_t));
             statement->type = STATEMENT_TYPE_BOOLEAN;
             statement->data = data;
         }
@@ -379,20 +381,19 @@ static statement_t *read_any_statement(capsule_t *capsule)
 
             data = allocate(sizeof(boolean_statement_data_t));
             data->value = TRUE;
+
+            statement = allocate(sizeof(statement_t));
             statement->type = STATEMENT_TYPE_BOOLEAN;
             statement->data = data;
         }
         else if (strcmp(keyword, "if") == 0)
         {
-            statement->data = NULL;
-            destroy_statement(statement);
-            free(keyword);
-
-            return read_branch_expression(capsule);
+            statement = read_branch_expression(capsule);
         }
         else
         {
             crash_with_message("unsupported branch PARSE_KEYWORD_TOKEN");
+            return NULL;
         }
 
         free(keyword);
