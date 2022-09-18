@@ -23,6 +23,7 @@ static char is_literal_statement(statement_t *statement);
 static token_t *peek_token(capsule_t *capsule);
 static token_t *next_token(capsule_t *capsule);
 static token_t *scan_token(scanner_t *scanner);
+static char *substring_using_token(token_t *token, char *code);
 static identifier_t *parse_identifier(token_t *token, char *code);
 static char *unescape_string(char *code, size_t start, size_t end);
 static char is_symbol_token(char symbol, token_t *token, char *code);
@@ -274,12 +275,8 @@ static statement_t *read_any_statement(capsule_t *capsule)
         number_statement_data_t *data;
         number_t value;
         char *text;
-        size_t textLength;
 
-        textLength = token->end - token->start;
-        text = allocate(sizeof(char) * (textLength + 1));
-        memcpy(text, capsule->scanner.code + token->start, textLength);
-        text[textLength] = '\0';
+        text = substring_using_token(token, capsule->scanner.code);
         string_to_number(text, &value);
         free(text);
 
@@ -358,12 +355,8 @@ static statement_t *read_any_statement(capsule_t *capsule)
     {
         statement_t *statement;
         char *keyword;
-        size_t length;
 
-        length = token->end - token->start;
-        keyword = allocate(sizeof(char) * (length + 1));
-        memcpy(keyword, capsule->scanner.code + token->start, length);
-        keyword[length] = '\0';
+        keyword = substring_using_token(token, capsule->scanner.code);
         statement = allocate(sizeof(statement_t));
 
         if (strcmp(keyword, "null") == 0)
@@ -621,12 +614,8 @@ static statement_t *read_branch_expression(capsule_t *capsule)
     if (optional && optional->type == TOKEN_TYPE_KEYWORD)
     {
         char *keyword;
-        size_t length;
 
-        length = optional->end - optional->start;
-        keyword = allocate(sizeof(char) * (length + 1));
-        memcpy(keyword, capsule->scanner.code + optional->start, length);
-        keyword[length] = '\0';
+        keyword = substring_using_token(optional, capsule->scanner.code);
 
         if (strcmp(keyword, "else") == 0)
         {
@@ -799,6 +788,19 @@ static token_t *scan_token(scanner_t *scanner)
     }
 
     return NULL;
+}
+
+static char *substring_using_token(token_t *token, char *code)
+{
+    char *text;
+    size_t textLength;
+
+    textLength = token->end - token->start;
+    text = allocate(sizeof(char) * (textLength + 1));
+    memcpy(text, code + token->start, textLength);
+    text[textLength] = '\0';
+
+    return text;
 }
 
 static identifier_t *parse_identifier(token_t *token, char *code)
