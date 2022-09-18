@@ -23,10 +23,10 @@ static char is_literal_statement(statement_t *statement);
 static token_t *peek_token(capsule_t *capsule);
 static token_t *next_token(capsule_t *capsule);
 static token_t *scan_token(scanner_t *scanner);
-static char *substring_using_token(token_t *token, char *code);
-static identifier_t *parse_identifier(token_t *token, char *code);
-static char *unescape_string(char *code, size_t start, size_t end);
-static char is_symbol_token(char symbol, token_t *token, char *code);
+static char *substring_using_token(char *code, token_t *token);
+static identifier_t *parse_identifier(char *code, token_t *token);
+static char *unescape_string(char *code, token_t *token);
+static char is_symbol_token(char symbol, char *code, token_t *token);
 static void destroy_statement_unsafe(void *statement);
 
 script_t *parse_script(char *code)
@@ -276,7 +276,7 @@ static statement_t *read_any_statement(capsule_t *capsule)
         number_t value;
         char *text;
 
-        text = substring_using_token(token, capsule->scanner.code);
+        text = substring_using_token(capsule->scanner.code, token);
         string_to_number(text, &value);
         free(text);
 
@@ -295,7 +295,7 @@ static statement_t *read_any_statement(capsule_t *capsule)
         string_statement_data_t *data;
 
         data = allocate(sizeof(string_statement_data_t));
-        data->value = unescape_string(capsule->scanner.code, token->start, token->end);
+        data->value = unescape_string(capsule->scanner.code, token);
 
         statement = allocate(sizeof(statement_t));
         statement->type = STATEMENT_TYPE_STRING;
@@ -309,20 +309,20 @@ static statement_t *read_any_statement(capsule_t *capsule)
 
         optional = peek_token(capsule);
 
-        if (is_symbol_token('=', optional, capsule->scanner.code))
+        if (is_symbol_token('=', capsule->scanner.code, optional))
         {
             identifier_t *identifier;
 
-            identifier = parse_identifier(token, capsule->scanner.code);
+            identifier = parse_identifier(capsule->scanner.code, token);
             next_token(capsule);
 
             return read_assignment_expression(capsule, identifier);
         }
-        else if (is_symbol_token('(', optional, capsule->scanner.code))
+        else if (is_symbol_token('(', capsule->scanner.code, optional))
         {
             identifier_t *identifier;
 
-            identifier = parse_identifier(token, capsule->scanner.code);
+            identifier = parse_identifier(capsule->scanner.code, token);
             next_token(capsule);
 
             return read_invoke_expression(capsule, identifier);
@@ -333,7 +333,7 @@ static statement_t *read_any_statement(capsule_t *capsule)
             reference_statement_data_t *data;
 
             data = allocate(sizeof(reference_statement_data_t));
-            data->identifier = parse_identifier(token, capsule->scanner.code);
+            data->identifier = parse_identifier(capsule->scanner.code, token);
 
             statement = allocate(sizeof(statement_t));
 
@@ -356,7 +356,7 @@ static statement_t *read_any_statement(capsule_t *capsule)
         statement_t *statement;
         char *keyword;
 
-        keyword = substring_using_token(token, capsule->scanner.code);
+        keyword = substring_using_token(capsule->scanner.code, token);
         statement = allocate(sizeof(statement_t));
 
         if (strcmp(keyword, "null") == 0)
@@ -464,12 +464,12 @@ static statement_t *read_invoke_expression(capsule_t *capsule, identifier_t *ide
 
         optional = peek_token(capsule);
 
-        if (is_symbol_token(')', optional, capsule->scanner.code))
+        if (is_symbol_token(')', capsule->scanner.code, optional))
         {
             next_token(capsule);
             break;
         }
-        else if (is_symbol_token(',', optional, capsule->scanner.code))
+        else if (is_symbol_token(',', capsule->scanner.code, optional))
         {
             next_token(capsule);
 
@@ -568,7 +568,7 @@ static statement_t *read_branch_expression(capsule_t *capsule)
 
     optional = peek_token(capsule);
 
-    if (!is_symbol_token('{', optional, capsule->scanner.code))
+    if (!is_symbol_token('{', capsule->scanner.code, optional))
     {
         destroy_statement(condition);
         statement = allocate(sizeof(statement_t));
@@ -587,7 +587,7 @@ static statement_t *read_branch_expression(capsule_t *capsule)
 
         optional = peek_token(capsule);
 
-        if (is_symbol_token('}', optional, capsule->scanner.code))
+        if (is_symbol_token('}', capsule->scanner.code, optional))
         {
             next_token(capsule);
 
@@ -615,7 +615,7 @@ static statement_t *read_branch_expression(capsule_t *capsule)
     {
         char *keyword;
 
-        keyword = substring_using_token(optional, capsule->scanner.code);
+        keyword = substring_using_token(capsule->scanner.code, optional);
 
         if (strcmp(keyword, "else") == 0)
         {
@@ -623,7 +623,7 @@ static statement_t *read_branch_expression(capsule_t *capsule)
             next_token(capsule);
             optional = peek_token(capsule);
 
-            if (!is_symbol_token('{', optional, capsule->scanner.code))
+            if (!is_symbol_token('{', capsule->scanner.code, optional))
             {
                 destroy_statement(condition);
                 destroy_list(pass);
@@ -642,7 +642,7 @@ static statement_t *read_branch_expression(capsule_t *capsule)
 
                 optional = peek_token(capsule);
 
-                if (is_symbol_token('}', optional, capsule->scanner.code))
+                if (is_symbol_token('}', capsule->scanner.code, optional))
                 {
                     next_token(capsule);
 
@@ -790,7 +790,7 @@ static token_t *scan_token(scanner_t *scanner)
     return NULL;
 }
 
-static char *substring_using_token(token_t *token, char *code)
+static char *substring_using_token(char *code, token_t *token)
 {
     char *text;
     size_t textLength;
@@ -803,11 +803,12 @@ static char *substring_using_token(token_t *token, char *code)
     return text;
 }
 
-static identifier_t *parse_identifier(token_t *token, char *code)
+static identifier_t *parse_identifier(char *code, token_t *token)
 {
     identifier_t *identifier;
     identifier_type_t type;
     char *name;
+    token_t offset;
 
     if (code[token->start] == '$')
     {
@@ -823,18 +824,16 @@ static identifier_t *parse_identifier(token_t *token, char *code)
         return NULL;
     }
 
-    if (code[token->start + 1] != '"')
-    {
-        size_t nameLength;
+    offset.start = token->start + 1;
+    offset.end = token->end;
 
-        nameLength = token->end - token->start - 1;
-        name = allocate(sizeof(char) * (nameLength + 1));
-        memcpy(name, code + token->start + 1, nameLength);
-        name[nameLength] = '\0';
+    if (code[offset.start] != '"')
+    {
+        name = substring_using_token(code, &offset);
     }
     else
     {
-        name = unescape_string(code, token->start + 1, token->end);
+        name = unescape_string(code, &offset);
     }
 
     identifier = allocate(sizeof(identifier_t));
@@ -844,14 +843,14 @@ static identifier_t *parse_identifier(token_t *token, char *code)
     return identifier;
 }
 
-static char *unescape_string(char *code, size_t start, size_t end)
+static char *unescape_string(char *code, token_t *token)
 {
     char *text;
     size_t textLength, escapeCount, index, placement;
 
     escapeCount = 0;
 
-    for (index = start; index < end; index++)
+    for (index = token->start; index < token->end; index++)
     {
         if (code[index] == '\\')
         {
@@ -860,10 +859,10 @@ static char *unescape_string(char *code, size_t start, size_t end)
         }
     }
 
-    textLength = end - start - 2 - escapeCount;
+    textLength = token->end - token->start - 2 - escapeCount;
     text = allocate(sizeof(char) * (textLength + 1));
 
-    for (index = start + 1, placement = 0; index < end - 1; index++)
+    for (index = token->start + 1, placement = 0; index < token->end - 1; index++)
     {
         if (code[index] != '\\')
         {
@@ -899,7 +898,7 @@ static char *unescape_string(char *code, size_t start, size_t end)
     return text;
 }
 
-static char is_symbol_token(char symbol, token_t *token, char *code)
+static char is_symbol_token(char symbol, char *code, token_t *token)
 {
     return token
         && token->type == TOKEN_TYPE_SYMBOL
