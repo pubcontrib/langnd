@@ -278,6 +278,30 @@ int divide_numbers(number_t left, number_t right, number_t *out)
     return 0;
 }
 
+int modulo_numbers(number_t left, number_t right, number_t *out)
+{
+    long remainder, above, below;
+
+    above = (long) left / 65536L;
+    below = (long) right / 65536L;
+
+    if (below == 0)
+    {
+        return 1;
+    }
+
+    remainder = (above % below) * 65536L;
+
+    if (remainder < -PORTABLE_INT_LIMIT || remainder > PORTABLE_INT_LIMIT)
+    {
+        return 1;
+    }
+
+    (*out) = (int) remainder;
+
+    return 0;
+}
+
 int string_to_number(char *text, number_t *out)
 {
     int number, whole, fraction, wholeIndex, fractionIndex, negative, decimal, point;

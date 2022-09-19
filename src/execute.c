@@ -37,6 +37,7 @@ static value_t *run_add(argument_iterator_t *arguments, map_t *variables);
 static value_t *run_subtract(argument_iterator_t *arguments, map_t *variables);
 static value_t *run_multiply(argument_iterator_t *arguments, map_t *variables);
 static value_t *run_divide(argument_iterator_t *arguments, map_t *variables);
+static value_t *run_modulo(argument_iterator_t *arguments, map_t *variables);
 static value_t *run_merge(argument_iterator_t *arguments, map_t *variables);
 static value_t *run_write(argument_iterator_t *arguments, map_t *variables);
 static value_t *run_type(argument_iterator_t *arguments, map_t *variables);
@@ -244,6 +245,10 @@ static value_t *apply_statement(statement_t *statement, map_t *variables)
             else if (strcmp(data->identifier->name, "divide") == 0)
             {
                 result = run_divide(&arguments, variables);
+            }
+            else if (strcmp(data->identifier->name, "modulo") == 0)
+            {
+                result = run_modulo(&arguments, variables);
             }
             else if (strcmp(data->identifier->name, "merge") == 0)
             {
@@ -503,6 +508,29 @@ static value_t *run_divide(argument_iterator_t *arguments, map_t *variables)
     }
 
     return new_number(quotient);
+}
+
+static value_t *run_modulo(argument_iterator_t *arguments, map_t *variables)
+{
+    value_t *left, *right;
+    number_t remainder;
+
+    if (!next_argument(arguments, variables, VALUE_TYPE_NUMBER, &left))
+    {
+        return left;
+    }
+
+    if (!next_argument(arguments, variables, VALUE_TYPE_NUMBER, &right))
+    {
+        return right;
+    }
+
+    if (modulo_numbers(view_number(left), view_number(right), &remainder) != 0)
+    {
+        return throw_error("arithmetic error");
+    }
+
+    return new_number(remainder);
 }
 
 static value_t *run_merge(argument_iterator_t *arguments, map_t *variables)
