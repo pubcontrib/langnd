@@ -489,6 +489,11 @@ char *represent_number(number_t number)
     return string;
 }
 
+number_t truncate_number(number_t number)
+{
+    return (number / 65536) * 65536;
+}
+
 int hash_string(char *string)
 {
     int hash;

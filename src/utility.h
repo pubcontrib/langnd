@@ -66,6 +66,7 @@ int modulo_numbers(number_t left, number_t right, number_t *out);
 int string_to_number(char *text, number_t *out);
 int integer_to_number(int integer, number_t *out);
 char *represent_number(number_t number);
+number_t truncate_number(number_t number);
 int hash_string(char *string);
 int add_with_overflow(int left, int right);
 char *copy_string(char *string);

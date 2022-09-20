@@ -38,6 +38,7 @@ static value_t *run_subtract(argument_iterator_t *arguments, map_t *variables);
 static value_t *run_multiply(argument_iterator_t *arguments, map_t *variables);
 static value_t *run_divide(argument_iterator_t *arguments, map_t *variables);
 static value_t *run_modulo(argument_iterator_t *arguments, map_t *variables);
+static value_t *run_truncate(argument_iterator_t *arguments, map_t *variables);
 static value_t *run_merge(argument_iterator_t *arguments, map_t *variables);
 static value_t *run_write(argument_iterator_t *arguments, map_t *variables);
 static value_t *run_type(argument_iterator_t *arguments, map_t *variables);
@@ -249,6 +250,10 @@ static value_t *apply_statement(statement_t *statement, map_t *variables)
             else if (strcmp(data->identifier->name, "modulo") == 0)
             {
                 result = run_modulo(&arguments, variables);
+            }
+            else if (strcmp(data->identifier->name, "truncate") == 0)
+            {
+                result = run_truncate(&arguments, variables);
             }
             else if (strcmp(data->identifier->name, "merge") == 0)
             {
@@ -531,6 +536,18 @@ static value_t *run_modulo(argument_iterator_t *arguments, map_t *variables)
     }
 
     return new_number(remainder);
+}
+
+static value_t *run_truncate(argument_iterator_t *arguments, map_t *variables)
+{
+    value_t *value;
+
+    if (!next_argument(arguments, variables, VALUE_TYPE_NUMBER, &value))
+    {
+        return value;
+    }
+
+    return new_number(truncate_number(view_number(value)));
 }
 
 static value_t *run_merge(argument_iterator_t *arguments, map_t *variables)
