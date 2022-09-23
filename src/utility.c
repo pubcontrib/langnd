@@ -305,7 +305,7 @@ int modulo_numbers(number_t left, number_t right, number_t *out)
 int string_to_number(char *text, number_t *out)
 {
     int number, whole, fraction, wholeIndex, fractionIndex, negative, decimal, point;
-    size_t index, length;
+    size_t index, length, fractionLength;
 
     whole = 0;
     fraction = 0;
@@ -324,6 +324,8 @@ int string_to_number(char *text, number_t *out)
             break;
         }
     }
+
+    fractionLength = length - point - 1;
 
     for (index = 0; index < length; index++)
     {
@@ -349,13 +351,13 @@ int string_to_number(char *text, number_t *out)
             }
             else
             {
-                places = length - point - fractionIndex++ - 1;
-                fraction += digit * integer_power(10, places - 1);
-
-                if (fractionIndex > 6)
+                if (fractionIndex >= 6)
                 {
-                    return 1;
+                    continue;
                 }
+
+                places = (fractionLength < 6 ? fractionLength : 6) - fractionIndex++ - 1;
+                fraction += digit * integer_power(10, places);
             }
         }
         else if (symbol == '-')
