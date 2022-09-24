@@ -39,10 +39,12 @@ static value_t *run_multiply(argument_iterator_t *arguments, map_t *variables);
 static value_t *run_divide(argument_iterator_t *arguments, map_t *variables);
 static value_t *run_modulo(argument_iterator_t *arguments, map_t *variables);
 static value_t *run_truncate(argument_iterator_t *arguments, map_t *variables);
+static value_t *run_equals(argument_iterator_t *arguments, map_t *variables);
 static value_t *run_merge(argument_iterator_t *arguments, map_t *variables);
 static value_t *run_write(argument_iterator_t *arguments, map_t *variables);
 static value_t *run_type(argument_iterator_t *arguments, map_t *variables);
 static value_t *run_cast(argument_iterator_t *arguments, map_t *variables);
+static int compare_values(value_t *left, value_t *right);
 static int next_argument(argument_iterator_t *arguments, map_t *variables, int types, value_t **out);
 static int has_next_argument(argument_iterator_t *arguments);
 static value_t *throw_error(char *message);
@@ -254,6 +256,10 @@ static value_t *apply_statement(statement_t *statement, map_t *variables)
             else if (strcmp(data->identifier->name, "truncate") == 0)
             {
                 result = run_truncate(&arguments, variables);
+            }
+            else if (strcmp(data->identifier->name, "equals") == 0)
+            {
+                result = run_equals(&arguments, variables);
             }
             else if (strcmp(data->identifier->name, "merge") == 0)
             {
@@ -550,6 +556,23 @@ static value_t *run_truncate(argument_iterator_t *arguments, map_t *variables)
     return new_number(truncate_number(view_number(value)));
 }
 
+static value_t *run_equals(argument_iterator_t *arguments, map_t *variables)
+{
+    value_t *left, *right;
+
+    if (!next_argument(arguments, variables, VALUE_TYPE_NULL | VALUE_TYPE_BOOLEAN | VALUE_TYPE_NUMBER | VALUE_TYPE_STRING, &left))
+    {
+        return left;
+    }
+
+    if (!next_argument(arguments, variables, VALUE_TYPE_NULL | VALUE_TYPE_BOOLEAN | VALUE_TYPE_NUMBER | VALUE_TYPE_STRING, &right))
+    {
+        return right;
+    }
+
+    return new_boolean(compare_values(left, right) == 0 ? TRUE : FALSE);
+}
+
 static value_t *run_merge(argument_iterator_t *arguments, map_t *variables)
 {
     value_t *left, *right, *result;
@@ -815,6 +838,33 @@ static value_t *run_cast(argument_iterator_t *arguments, map_t *variables)
     else
     {
         return throw_error("unknown type");
+    }
+}
+
+static int compare_values(value_t *left, value_t *right)
+{
+    if (left->type != right->type)
+    {
+        return left->type - right->type;
+    }
+
+    switch (left->type)
+    {
+        case VALUE_TYPE_NULL:
+            return 0;
+
+        case VALUE_TYPE_BOOLEAN:
+            return view_boolean(left) - view_boolean(right);
+
+        case VALUE_TYPE_NUMBER:
+            return view_number(left) - view_number(right);
+
+        case VALUE_TYPE_STRING:
+            return strcmp(view_string(left), view_string(right));
+
+        default:
+            crash_with_message("unsupported branch EXECUTE_COMPARE_TYPE");
+            return 0;
     }
 }
 
