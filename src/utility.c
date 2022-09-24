@@ -429,11 +429,11 @@ char *represent_number(number_t number)
 
     if (!negative || (number & 65535) == 0)
     {
-        fraction = ((number & 65535) * 1000000l) / 65536;
+        fraction = ((number & 65535) * 1000000L) / 65536;
     }
     else
     {
-        fraction = ((65536 - (number & 65535)) * 1000000l) / 65536;
+        fraction = ((65536 - (number & 65535)) * 1000000L) / 65536;
     }
 
     fractionDigits = integer_digits(fraction);
