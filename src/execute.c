@@ -40,6 +40,7 @@ static value_t *run_divide(argument_iterator_t *arguments, map_t *variables);
 static value_t *run_modulo(argument_iterator_t *arguments, map_t *variables);
 static value_t *run_truncate(argument_iterator_t *arguments, map_t *variables);
 static value_t *run_equals(argument_iterator_t *arguments, map_t *variables);
+static value_t *run_precedes(argument_iterator_t *arguments, map_t *variables);
 static value_t *run_merge(argument_iterator_t *arguments, map_t *variables);
 static value_t *run_write(argument_iterator_t *arguments, map_t *variables);
 static value_t *run_type(argument_iterator_t *arguments, map_t *variables);
@@ -260,6 +261,10 @@ static value_t *apply_statement(statement_t *statement, map_t *variables)
             else if (strcmp(data->identifier->name, "equals") == 0)
             {
                 result = run_equals(&arguments, variables);
+            }
+            else if (strcmp(data->identifier->name, "precedes") == 0)
+            {
+                result = run_precedes(&arguments, variables);
             }
             else if (strcmp(data->identifier->name, "merge") == 0)
             {
@@ -571,6 +576,23 @@ static value_t *run_equals(argument_iterator_t *arguments, map_t *variables)
     }
 
     return new_boolean(compare_values(left, right) == 0 ? TRUE : FALSE);
+}
+
+static value_t *run_precedes(argument_iterator_t *arguments, map_t *variables)
+{
+    value_t *left, *right;
+
+    if (!next_argument(arguments, variables, VALUE_TYPE_NULL | VALUE_TYPE_BOOLEAN | VALUE_TYPE_NUMBER | VALUE_TYPE_STRING, &left))
+    {
+        return left;
+    }
+
+    if (!next_argument(arguments, variables, VALUE_TYPE_NULL | VALUE_TYPE_BOOLEAN | VALUE_TYPE_NUMBER | VALUE_TYPE_STRING, &right))
+    {
+        return right;
+    }
+
+    return new_boolean(compare_values(left, right) < 0 ? TRUE : FALSE);
 }
 
 static value_t *run_merge(argument_iterator_t *arguments, map_t *variables)
