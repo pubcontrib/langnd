@@ -18,6 +18,7 @@ static statement_t *read_any_statement(capsule_t *capsule);
 static statement_t *read_assignment_expression(capsule_t *capsule, identifier_t *identifier);
 static statement_t *read_invoke_expression(capsule_t *capsule, identifier_t *identifier);
 static statement_t *read_branch_expression(capsule_t *capsule);
+static statement_t *read_loop_expression(capsule_t *capsule);
 static char is_value_statement(statement_t *statement);
 static char is_literal_statement(statement_t *statement);
 static token_t *peek_token(capsule_t *capsule);
@@ -223,6 +224,26 @@ void destroy_statement(statement_t *statement)
                 break;
             }
 
+            case STATEMENT_TYPE_LOOP:
+            {
+                loop_statement_data_t *data;
+
+                data = statement->data;
+
+                if (data->condition)
+                {
+                    destroy_statement(data->condition);
+                }
+
+                if (data->body)
+                {
+                    destroy_list(data->body);
+                }
+
+                free(data);
+                break;
+            }
+
             case STATEMENT_TYPE_REFERENCE:
             {
                 reference_statement_data_t *data;
@@ -389,6 +410,10 @@ static statement_t *read_any_statement(capsule_t *capsule)
         else if (strcmp(keyword, "if") == 0)
         {
             statement = read_branch_expression(capsule);
+        }
+        else if (strcmp(keyword, "while") == 0)
+        {
+            statement = read_loop_expression(capsule);
         }
         else
         {
@@ -679,6 +704,82 @@ static statement_t *read_branch_expression(capsule_t *capsule)
 
     statement = allocate(sizeof(statement_t));
     statement->type = STATEMENT_TYPE_BRANCH;
+    statement->data = data;
+
+    return statement;
+}
+
+static statement_t *read_loop_expression(capsule_t *capsule)
+{
+    statement_t *statement;
+    loop_statement_data_t *data;
+    statement_t *condition;
+    list_t *body;
+    token_t *optional;
+
+    condition = read_any_statement(capsule);
+
+    if (!condition || !is_value_statement(condition))
+    {
+        if (condition)
+        {
+            destroy_statement(condition);
+        }
+
+        statement = allocate(sizeof(statement_t));
+        statement->type = STATEMENT_TYPE_UNKNOWN;
+        statement->data = NULL;
+        return statement;
+    }
+
+    optional = peek_token(capsule);
+
+    if (!is_symbol_token('{', capsule->scanner.code, optional))
+    {
+        destroy_statement(condition);
+        statement = allocate(sizeof(statement_t));
+        statement->type = STATEMENT_TYPE_UNKNOWN;
+        statement->data = NULL;
+        return statement;
+    }
+
+    next_token(capsule);
+    body = empty_list(destroy_statement_unsafe);
+
+    while (1)
+    {
+        statement_t *part;
+
+        optional = peek_token(capsule);
+
+        if (is_symbol_token('}', capsule->scanner.code, optional))
+        {
+            next_token(capsule);
+
+            break;
+        }
+
+        part = read_any_statement(capsule);
+
+        if (!part || part->type == STATEMENT_TYPE_UNKNOWN)
+        {
+            destroy_statement(condition);
+            destroy_list(body);
+            statement = allocate(sizeof(statement_t));
+            statement->type = STATEMENT_TYPE_UNKNOWN;
+            statement->data = NULL;
+            return statement;
+        }
+
+        add_list_item(body, part);
+    }
+
+    data = allocate(sizeof(branch_statement_data_t));
+    data->condition = condition;
+    data->body = body;
+
+    statement = allocate(sizeof(statement_t));
+    statement->type = STATEMENT_TYPE_LOOP;
     statement->data = data;
 
     return statement;

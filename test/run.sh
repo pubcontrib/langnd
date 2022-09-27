@@ -279,6 +279,9 @@ testscripts()
     pass 'if false { @write("true", 1) } else { @write("false", 1) }' 'false'
     pass '$msg=if true { "first" } else { "second" } @write(@cast($msg, "STRING"), 1)' 'first'
     pass '$msg=if false { "first" } else { "second" } @write(@cast($msg, "STRING"), 1)' 'second'
+    pass 'while false { @write("HERE", 1) }' ''
+    pass '$i=1 while @precedes($i, 4) { @write(@cast($i, "STRING"), 1) $i=@add($i, 1) }' '123'
+    pass '$i=1 while @precedes($i, 4) { $j=1 while @precedes($j, 4) { @write(@cast(@multiply($i, $j), "STRING"), 1) $j=@add($j, 1) } $i=@add($i, 1) }' '123246369'
     lexfail 'NULL' 'NULL'
     lexfail 'unknown' 'unknown'
     lexfail '"missing end' '"missing end'
@@ -305,6 +308,12 @@ testscripts()
     parsefail 'if true { 100 } else'
     parsefail 'if true { 100 } else {'
     parsefail 'if true { 100 } else { 200'
+    parsefail 'while'
+    parsefail 'while { }'
+    parsefail 'while false {'
+    parsefail 'while false }'
+    parsefail 'while false 100'
+    parsefail 'while false { 100'
     parsefail '$a='
     parsefail '$a=true if $a=false { }'
     parsefail '$a=1 @add($a=2, $a=3)'
@@ -342,6 +351,7 @@ testscripts()
     executefail '@cast(null, "WRONG")' 'unknown type'
     executefail '@add' 'unexpected reference type'
     executefail '$msg=if true { "before" @divide(100, 0) "after" }' 'arithmetic error'
+    executefail 'while true { "before" @divide(100, 0) "after" }' 'arithmetic error'
 }
 
 lexfail()

@@ -356,6 +356,63 @@ static value_t *apply_statement(statement_t *statement, map_t *variables)
             }
         }
 
+        case STATEMENT_TYPE_LOOP:
+        {
+            loop_statement_data_t *data;
+            value_t *last;
+
+            data = statement->data;
+            last = NULL;
+
+            while (1)
+            {
+                value_t *test;
+
+                test = apply_statement(data->condition, variables);
+
+                if (test->type == VALUE_TYPE_BOOLEAN)
+                {
+                    list_node_t *node;
+
+                    if (!view_boolean(test))
+                    {
+                        dereference_value(test);
+                        break;
+                    }
+
+                    dereference_value(test);
+
+                    for (node = data->body->head; node; node = node->next)
+                    {
+                        if (last)
+                        {
+                            dereference_value(last);
+                        }
+
+                        last = apply_statement(node->value, variables);
+
+                        if (last->thrown)
+                        {
+                            return last;
+                        }
+                    }
+                }
+                else
+                {
+                    dereference_value(test);
+
+                    return throw_error("branch with non-boolean condition");
+                }
+            }
+
+            if (!last)
+            {
+                last = new_null();
+            }
+
+            return last;
+        }
+
         case STATEMENT_TYPE_REFERENCE:
         {
             reference_statement_data_t *data;
