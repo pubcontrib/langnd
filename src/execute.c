@@ -152,9 +152,7 @@ static value_t *apply_statement(statement_t *statement, map_t *variables)
     switch (statement->type)
     {
         case STATEMENT_TYPE_NULL:
-        {
             return new_null();
-        }
 
         case STATEMENT_TYPE_BOOLEAN:
         {

@@ -876,18 +876,23 @@ static char *unescape_string(char *code, token_t *token)
                 case 't':
                     text[placement++] = '\t';
                     break;
+
                 case 'n':
                     text[placement++] = '\n';
                     break;
+
                 case 'r':
                     text[placement++] = '\r';
                     break;
+
                 case '"':
                     text[placement++] = '"';
                     break;
+
                 case '\\':
                     text[placement++] = '\\';
                     break;
+
                 default:
                     break;
             }
