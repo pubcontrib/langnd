@@ -901,7 +901,14 @@ static int compare_values(value_t *left, value_t *right)
             return view_boolean(left) - view_boolean(right);
 
         case VALUE_TYPE_NUMBER:
-            return view_number(left) - view_number(right);
+        {
+            number_t x, y;
+
+            x = view_number(left);
+            y = view_number(right);
+
+            return x == y ? 0 : (x < y ? -1 : 1);
+        }
 
         case VALUE_TYPE_STRING:
             return strcmp(view_string(left), view_string(right));
