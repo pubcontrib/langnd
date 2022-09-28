@@ -350,7 +350,7 @@ testscripts()
     executefail '@cast("text", "NUMBER")' 'invalid cast'
     executefail '@cast(null, "WRONG")' 'unknown type'
     executefail '@add' 'unexpected reference type'
-    executefail '$msg=if true { "before" @divide(100, 0) "after" }' 'arithmetic error'
+    executefail 'if true { "before" @divide(100, 0) "after" }' 'arithmetic error'
     executefail 'if @divide(100, 0) { $missing }' 'arithmetic error'
     executefail 'while true { "before" @divide(100, 0) "after" }' 'arithmetic error'
     executefail 'while @divide(100, 0) { $missing }' 'arithmetic error'
