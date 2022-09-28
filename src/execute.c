@@ -375,6 +375,11 @@ static value_t *apply_statement(statement_t *statement, map_t *variables)
 
                 test = apply_statement(data->condition, variables);
 
+                if (test->thrown)
+                {
+                    return test;
+                }
+
                 if (test->type == VALUE_TYPE_BOOLEAN)
                 {
                     list_node_t *node;

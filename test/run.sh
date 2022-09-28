@@ -353,6 +353,7 @@ testscripts()
     executefail '$msg=if true { "before" @divide(100, 0) "after" }' 'arithmetic error'
     executefail 'if @divide(100, 0) { $missing }' 'arithmetic error'
     executefail 'while true { "before" @divide(100, 0) "after" }' 'arithmetic error'
+    executefail 'while @divide(100, 0) { $missing }' 'arithmetic error'
 }
 
 lexfail()
