@@ -28,6 +28,17 @@ static char *substring_using_token(char *code, token_t *token);
 static identifier_t *parse_identifier(char *code, token_t *token);
 static char *unescape_string(char *code, token_t *token);
 static char is_symbol_token(char symbol, char *code, token_t *token);
+static statement_t *create_unknown_statement();
+static statement_t *create_null_statement();
+static statement_t *create_boolean_statement(boolean_t value);
+static statement_t *create_number_statement(number_t value);
+static statement_t *create_string_statement(char *value);
+static statement_t *create_assignment_statement(identifier_t *identifier, statement_t *value);
+static statement_t *create_invoke_statement(identifier_t *identifier, list_t *arguments);
+static statement_t *create_branch_statement(statement_t *condition, list_t *pass, list_t *fail);
+static statement_t *create_loop_statement(statement_t *condition, list_t *body);
+static statement_t *create_reference_statement(identifier_t *identifier);
+static statement_t *create_statement(statement_type_t type, void *data);
 static void destroy_statement_unsafe(void *statement);
 
 script_t *parse_script(char *code)
@@ -281,7 +292,6 @@ void destroy_identifier(identifier_t *identifier)
 static statement_t *read_any_statement(capsule_t *capsule)
 {
     token_t *token;
-    statement_t *error;
 
     token = next_token(capsule);
 
@@ -292,8 +302,6 @@ static statement_t *read_any_statement(capsule_t *capsule)
 
     if (token->type == TOKEN_TYPE_NUMBER)
     {
-        statement_t *statement;
-        number_statement_data_t *data;
         number_t value;
         char *text;
 
@@ -301,75 +309,46 @@ static statement_t *read_any_statement(capsule_t *capsule)
         string_to_number(text, &value);
         free(text);
 
-        data = allocate(sizeof(number_statement_data_t));
-        data->value = value;
-
-        statement = allocate(sizeof(statement_t));
-        statement->type = STATEMENT_TYPE_NUMBER;
-        statement->data = data;
-
-        return statement;
+        return create_number_statement(value);
     }
     else if (token->type == TOKEN_TYPE_STRING)
     {
-        statement_t *statement;
-        string_statement_data_t *data;
+        char *value;
 
-        data = allocate(sizeof(string_statement_data_t));
-        data->value = unescape_string(capsule->scanner.code, token);
+        value = unescape_string(capsule->scanner.code, token);
 
-        statement = allocate(sizeof(statement_t));
-        statement->type = STATEMENT_TYPE_STRING;
-        statement->data = data;
-
-        return statement;
+        return create_string_statement(value);
     }
     else if (token->type == TOKEN_TYPE_IDENTIFIER)
     {
+        identifier_t *identifier;
         token_t *optional;
 
+        identifier = parse_identifier(capsule->scanner.code, token);
         optional = peek_token(capsule);
 
         if (is_symbol_token('=', capsule->scanner.code, optional))
         {
-            identifier_t *identifier;
-
-            identifier = parse_identifier(capsule->scanner.code, token);
             next_token(capsule);
 
             return read_assignment_expression(capsule, identifier);
         }
         else if (is_symbol_token('(', capsule->scanner.code, optional))
         {
-            identifier_t *identifier;
-
-            identifier = parse_identifier(capsule->scanner.code, token);
             next_token(capsule);
 
             return read_invoke_expression(capsule, identifier);
         }
         else
         {
-            statement_t *statement;
-            reference_statement_data_t *data;
-
-            data = allocate(sizeof(reference_statement_data_t));
-            data->identifier = parse_identifier(capsule->scanner.code, token);
-
-            statement = allocate(sizeof(statement_t));
-
-            if (data->identifier)
+            if (identifier)
             {
-                statement->type = STATEMENT_TYPE_REFERENCE;
-                statement->data = data;
+                return create_reference_statement(identifier);
             }
             else
             {
-                statement->type = STATEMENT_TYPE_UNKNOWN;
-                statement->data = NULL;
+                return create_unknown_statement();
             }
-
-            return statement;
         }
     }
     else if (token->type == TOKEN_TYPE_KEYWORD)
@@ -381,31 +360,15 @@ static statement_t *read_any_statement(capsule_t *capsule)
 
         if (strcmp(keyword, "null") == 0)
         {
-            statement = allocate(sizeof(statement_t));
-            statement->type = STATEMENT_TYPE_NULL;
-            statement->data = NULL;
+            statement = create_null_statement();
         }
         else if (strcmp(keyword, "false") == 0)
         {
-            boolean_statement_data_t *data;
-
-            data = allocate(sizeof(boolean_statement_data_t));
-            data->value = FALSE;
-
-            statement = allocate(sizeof(statement_t));
-            statement->type = STATEMENT_TYPE_BOOLEAN;
-            statement->data = data;
+            statement = create_boolean_statement(FALSE);
         }
         else if (strcmp(keyword, "true") == 0)
         {
-            boolean_statement_data_t *data;
-
-            data = allocate(sizeof(boolean_statement_data_t));
-            data->value = TRUE;
-
-            statement = allocate(sizeof(statement_t));
-            statement->type = STATEMENT_TYPE_BOOLEAN;
-            statement->data = data;
+            statement = create_boolean_statement(TRUE);
         }
         else if (strcmp(keyword, "if") == 0)
         {
@@ -426,17 +389,12 @@ static statement_t *read_any_statement(capsule_t *capsule)
         return statement;
     }
 
-    error = allocate(sizeof(statement_t));
-    error->type = STATEMENT_TYPE_UNKNOWN;
-    error->data = NULL;
-
-    return error;
+    return create_unknown_statement();
 }
 
 static statement_t *read_assignment_expression(capsule_t *capsule, identifier_t *identifier)
 {
-    statement_t *statement, *value;
-    assignment_statement_data_t *data;
+    statement_t *value;
 
     value = read_any_statement(capsule);
 
@@ -448,36 +406,22 @@ static statement_t *read_assignment_expression(capsule_t *capsule, identifier_t 
         }
 
         destroy_identifier(identifier);
-        statement = allocate(sizeof(statement_t));
-        statement->type = STATEMENT_TYPE_UNKNOWN;
-        statement->data = NULL;
-        return statement;
+
+        return create_unknown_statement();
     }
 
-    data = allocate(sizeof(assignment_statement_data_t));
-    data->identifier = identifier;
-    data->value = value;
-
-    statement = allocate(sizeof(statement_t));
-
-    if (data->identifier && data->value)
+    if (identifier && value)
     {
-        statement->type = STATEMENT_TYPE_ASSIGNMENT;
-        statement->data = data;
+        return create_assignment_statement(identifier, value);
     }
     else
     {
-        statement->type = STATEMENT_TYPE_UNKNOWN;
-        statement->data = NULL;
+        return create_unknown_statement();
     }
-
-    return statement;
 }
 
 static statement_t *read_invoke_expression(capsule_t *capsule, identifier_t *identifier)
 {
-    statement_t *statement;
-    invoke_statement_data_t *data;
     list_t *arguments;
     char ready;
 
@@ -503,10 +447,8 @@ static statement_t *read_invoke_expression(capsule_t *capsule, identifier_t *ide
             {
                 destroy_identifier(identifier);
                 destroy_list(arguments);
-                statement = allocate(sizeof(statement_t));
-                statement->type = STATEMENT_TYPE_UNKNOWN;
-                statement->data = NULL;
-                return statement;
+
+                return create_unknown_statement();
             }
 
             ready = 1;
@@ -519,10 +461,8 @@ static statement_t *read_invoke_expression(capsule_t *capsule, identifier_t *ide
             {
                 destroy_identifier(identifier);
                 destroy_list(arguments);
-                statement = allocate(sizeof(statement_t));
-                statement->type = STATEMENT_TYPE_UNKNOWN;
-                statement->data = NULL;
-                return statement;
+
+                return create_unknown_statement();
             }
 
             argument = read_any_statement(capsule);
@@ -536,10 +476,8 @@ static statement_t *read_invoke_expression(capsule_t *capsule, identifier_t *ide
 
                 destroy_identifier(identifier);
                 destroy_list(arguments);
-                statement = allocate(sizeof(statement_t));
-                statement->type = STATEMENT_TYPE_UNKNOWN;
-                statement->data = NULL;
-                return statement;
+
+                return create_unknown_statement();
             }
 
             ready = 0;
@@ -547,32 +485,21 @@ static statement_t *read_invoke_expression(capsule_t *capsule, identifier_t *ide
         }
     }
 
-    data = allocate(sizeof(invoke_statement_data_t));
-    data->identifier = identifier;
-    data->arguments = arguments;
-
-    statement = allocate(sizeof(statement_t));
-
-    if (data->identifier)
+    if (identifier)
     {
-        statement->type = STATEMENT_TYPE_INVOKE;
-        statement->data = data;
+        return create_invoke_statement(identifier, arguments);
     }
     else
     {
         destroy_identifier(identifier);
         destroy_list(arguments);
-        statement->type = STATEMENT_TYPE_UNKNOWN;
-        statement->data = NULL;
-    }
 
-    return statement;
+        return create_unknown_statement();
+    }
 }
 
 static statement_t *read_branch_expression(capsule_t *capsule)
 {
-    statement_t *statement;
-    branch_statement_data_t *data;
     statement_t *condition;
     list_t *pass, *fail;
     token_t *optional;
@@ -586,10 +513,7 @@ static statement_t *read_branch_expression(capsule_t *capsule)
             destroy_statement(condition);
         }
 
-        statement = allocate(sizeof(statement_t));
-        statement->type = STATEMENT_TYPE_UNKNOWN;
-        statement->data = NULL;
-        return statement;
+        return create_unknown_statement();
     }
 
     optional = peek_token(capsule);
@@ -597,10 +521,8 @@ static statement_t *read_branch_expression(capsule_t *capsule)
     if (!is_symbol_token('{', capsule->scanner.code, optional))
     {
         destroy_statement(condition);
-        statement = allocate(sizeof(statement_t));
-        statement->type = STATEMENT_TYPE_UNKNOWN;
-        statement->data = NULL;
-        return statement;
+
+        return create_unknown_statement();
     }
 
     next_token(capsule);
@@ -626,10 +548,8 @@ static statement_t *read_branch_expression(capsule_t *capsule)
         {
             destroy_statement(condition);
             destroy_list(pass);
-            statement = allocate(sizeof(statement_t));
-            statement->type = STATEMENT_TYPE_UNKNOWN;
-            statement->data = NULL;
-            return statement;
+
+            return create_unknown_statement();
         }
 
         add_list_item(pass, part);
@@ -653,10 +573,8 @@ static statement_t *read_branch_expression(capsule_t *capsule)
             {
                 destroy_statement(condition);
                 destroy_list(pass);
-                statement = allocate(sizeof(statement_t));
-                statement->type = STATEMENT_TYPE_UNKNOWN;
-                statement->data = NULL;
-                return statement;
+
+                return create_unknown_statement();
             }
 
             next_token(capsule);
@@ -682,10 +600,8 @@ static statement_t *read_branch_expression(capsule_t *capsule)
                     destroy_statement(condition);
                     destroy_list(pass);
                     destroy_list(fail);
-                    statement = allocate(sizeof(statement_t));
-                    statement->type = STATEMENT_TYPE_UNKNOWN;
-                    statement->data = NULL;
-                    return statement;
+
+                    return create_unknown_statement();
                 }
 
                 add_list_item(fail, part);
@@ -697,22 +613,11 @@ static statement_t *read_branch_expression(capsule_t *capsule)
         }
     }
 
-    data = allocate(sizeof(branch_statement_data_t));
-    data->condition = condition;
-    data->pass = pass;
-    data->fail = fail;
-
-    statement = allocate(sizeof(statement_t));
-    statement->type = STATEMENT_TYPE_BRANCH;
-    statement->data = data;
-
-    return statement;
+    return create_branch_statement(condition, pass, fail);
 }
 
 static statement_t *read_loop_expression(capsule_t *capsule)
 {
-    statement_t *statement;
-    loop_statement_data_t *data;
     statement_t *condition;
     list_t *body;
     token_t *optional;
@@ -726,10 +631,7 @@ static statement_t *read_loop_expression(capsule_t *capsule)
             destroy_statement(condition);
         }
 
-        statement = allocate(sizeof(statement_t));
-        statement->type = STATEMENT_TYPE_UNKNOWN;
-        statement->data = NULL;
-        return statement;
+        return create_unknown_statement();
     }
 
     optional = peek_token(capsule);
@@ -737,10 +639,8 @@ static statement_t *read_loop_expression(capsule_t *capsule)
     if (!is_symbol_token('{', capsule->scanner.code, optional))
     {
         destroy_statement(condition);
-        statement = allocate(sizeof(statement_t));
-        statement->type = STATEMENT_TYPE_UNKNOWN;
-        statement->data = NULL;
-        return statement;
+
+        return create_unknown_statement();
     }
 
     next_token(capsule);
@@ -765,24 +665,14 @@ static statement_t *read_loop_expression(capsule_t *capsule)
         {
             destroy_statement(condition);
             destroy_list(body);
-            statement = allocate(sizeof(statement_t));
-            statement->type = STATEMENT_TYPE_UNKNOWN;
-            statement->data = NULL;
-            return statement;
+
+            return create_unknown_statement();
         }
 
         add_list_item(body, part);
     }
 
-    data = allocate(sizeof(branch_statement_data_t));
-    data->condition = condition;
-    data->body = body;
-
-    statement = allocate(sizeof(statement_t));
-    statement->type = STATEMENT_TYPE_LOOP;
-    statement->data = data;
-
-    return statement;
+    return create_loop_statement(condition, body);
 }
 
 static char is_value_statement(statement_t *statement)
@@ -1010,6 +900,112 @@ static char is_symbol_token(char symbol, char *code, token_t *token)
     return token
         && token->type == TOKEN_TYPE_SYMBOL
         && code[token->start] == symbol;
+}
+
+static statement_t *create_unknown_statement()
+{
+    return create_statement(STATEMENT_TYPE_UNKNOWN, NULL);
+}
+
+static statement_t *create_null_statement()
+{
+    return create_statement(STATEMENT_TYPE_NULL, NULL);
+}
+
+static statement_t *create_boolean_statement(boolean_t value)
+{
+    boolean_statement_data_t *data;
+
+    data = allocate(sizeof(boolean_statement_data_t));
+    data->value = value;
+
+    return create_statement(STATEMENT_TYPE_BOOLEAN, data);
+}
+
+static statement_t *create_number_statement(number_t value)
+{
+    number_statement_data_t *data;
+
+    data = allocate(sizeof(number_statement_data_t));
+    data->value = value;
+
+    return create_statement(STATEMENT_TYPE_NUMBER, data);
+}
+
+static statement_t *create_string_statement(char *value)
+{
+    string_statement_data_t *data;
+
+    data = allocate(sizeof(string_statement_data_t));
+    data->value = value;
+
+    return create_statement(STATEMENT_TYPE_STRING, data);
+}
+
+static statement_t *create_assignment_statement(identifier_t *identifier, statement_t *value)
+{
+    assignment_statement_data_t *data;
+
+    data = allocate(sizeof(assignment_statement_data_t));
+    data->identifier = identifier;
+    data->value = value;
+
+    return create_statement(STATEMENT_TYPE_ASSIGNMENT, data);
+}
+
+static statement_t *create_invoke_statement(identifier_t *identifier, list_t *arguments)
+{
+    invoke_statement_data_t *data;
+
+    data = allocate(sizeof(invoke_statement_data_t));
+    data->identifier = identifier;
+    data->arguments = arguments;
+
+    return create_statement(STATEMENT_TYPE_INVOKE, data);
+}
+
+static statement_t *create_branch_statement(statement_t *condition, list_t *pass, list_t *fail)
+{
+    branch_statement_data_t *data;
+
+    data = allocate(sizeof(branch_statement_data_t));
+    data->condition = condition;
+    data->pass = pass;
+    data->fail = fail;
+
+    return create_statement(STATEMENT_TYPE_BRANCH, data);
+}
+
+static statement_t *create_loop_statement(statement_t *condition, list_t *body)
+{
+    loop_statement_data_t *data;
+
+    data = allocate(sizeof(loop_statement_data_t));
+    data->condition = condition;
+    data->body = body;
+
+    return create_statement(STATEMENT_TYPE_LOOP, data);
+}
+
+static statement_t *create_reference_statement(identifier_t *identifier)
+{
+    reference_statement_data_t *data;
+
+    data = allocate(sizeof(reference_statement_data_t));
+    data->identifier = identifier;
+
+    return create_statement(STATEMENT_TYPE_REFERENCE, data);
+}
+
+static statement_t *create_statement(statement_type_t type, void *data)
+{
+    statement_t *statement;
+
+    statement = allocate(sizeof(statement_t));
+    statement->type = type;
+    statement->data = data;
+
+    return statement;
 }
 
 static void destroy_statement_unsafe(void *statement)
