@@ -15,10 +15,10 @@ typedef struct
 } capsule_t;
 
 static statement_t *read_any_statement(capsule_t *capsule);
-static statement_t *read_assignment_expression(capsule_t *capsule, identifier_t *identifier);
-static statement_t *read_invoke_expression(capsule_t *capsule, identifier_t *identifier);
-static statement_t *read_branch_expression(capsule_t *capsule);
-static statement_t *read_loop_expression(capsule_t *capsule);
+static statement_t *read_assignment_statement(capsule_t *capsule, identifier_t *identifier);
+static statement_t *read_invoke_statement(capsule_t *capsule, identifier_t *identifier);
+static statement_t *read_branch_statement(capsule_t *capsule);
+static statement_t *read_loop_statement(capsule_t *capsule);
 static char is_value_statement(statement_t *statement);
 static char is_literal_statement(statement_t *statement);
 static token_t *peek_token(capsule_t *capsule);
@@ -331,13 +331,13 @@ static statement_t *read_any_statement(capsule_t *capsule)
         {
             next_token(capsule);
 
-            return read_assignment_expression(capsule, identifier);
+            return read_assignment_statement(capsule, identifier);
         }
         else if (is_symbol_token('(', capsule->scanner.code, optional))
         {
             next_token(capsule);
 
-            return read_invoke_expression(capsule, identifier);
+            return read_invoke_statement(capsule, identifier);
         }
         else
         {
@@ -372,11 +372,11 @@ static statement_t *read_any_statement(capsule_t *capsule)
         }
         else if (strcmp(keyword, "if") == 0)
         {
-            statement = read_branch_expression(capsule);
+            statement = read_branch_statement(capsule);
         }
         else if (strcmp(keyword, "while") == 0)
         {
-            statement = read_loop_expression(capsule);
+            statement = read_loop_statement(capsule);
         }
         else
         {
@@ -392,7 +392,7 @@ static statement_t *read_any_statement(capsule_t *capsule)
     return create_unknown_statement();
 }
 
-static statement_t *read_assignment_expression(capsule_t *capsule, identifier_t *identifier)
+static statement_t *read_assignment_statement(capsule_t *capsule, identifier_t *identifier)
 {
     statement_t *value;
 
@@ -420,7 +420,7 @@ static statement_t *read_assignment_expression(capsule_t *capsule, identifier_t 
     }
 }
 
-static statement_t *read_invoke_expression(capsule_t *capsule, identifier_t *identifier)
+static statement_t *read_invoke_statement(capsule_t *capsule, identifier_t *identifier)
 {
     list_t *arguments;
     char ready;
@@ -498,7 +498,7 @@ static statement_t *read_invoke_expression(capsule_t *capsule, identifier_t *ide
     }
 }
 
-static statement_t *read_branch_expression(capsule_t *capsule)
+static statement_t *read_branch_statement(capsule_t *capsule)
 {
     statement_t *condition;
     list_t *pass, *fail;
@@ -616,7 +616,7 @@ static statement_t *read_branch_expression(capsule_t *capsule)
     return create_branch_statement(condition, pass, fail);
 }
 
-static statement_t *read_loop_expression(capsule_t *capsule)
+static statement_t *read_loop_statement(capsule_t *capsule)
 {
     statement_t *condition;
     list_t *body;
