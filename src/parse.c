@@ -25,6 +25,7 @@ static token_t *peek_token(capsule_t *capsule);
 static token_t *next_token(capsule_t *capsule);
 static token_t *scan_token(scanner_t *scanner);
 static char *substring_using_token(char *code, token_t *token);
+static char *substring_to_newline(char *code, int start, int limit);
 static identifier_t *parse_identifier(char *code, token_t *token);
 static char *unescape_string(char *code, token_t *token);
 static char is_symbol_token(char symbol, char *code, token_t *token);
@@ -72,6 +73,7 @@ script_t *parse_script(char *code)
                 destroy_statement(statement);
                 statements = NULL;
                 errorMessage = copy_string("failed to parse code");
+                hintMessage = substring_to_newline(capsule.scanner.code, capsule.present.start, 80);
                 break;
             }
 
@@ -81,28 +83,8 @@ script_t *parse_script(char *code)
 
     if (capsule.scanner.state == SCANNER_STATE_ERRORED)
     {
-        char *hint;
-        size_t hintLength;
-
-        for (hintLength = 0; hintLength < 80; hintLength++)
-        {
-            size_t offset;
-
-            offset = capsule.scanner.token.start + hintLength;
-
-            if (offset >= capsule.scanner.codeLength
-                || capsule.scanner.code[offset] == '\n')
-            {
-                break;
-            }
-        }
-
-        hint = allocate(sizeof(char) * (hintLength + 1));
-        memcpy(hint, capsule.scanner.code + capsule.scanner.token.start, hintLength);
-        hint[hintLength] = '\0';
-
         errorMessage = copy_string("failed to lex code");
-        hintMessage = hint;
+        hintMessage = substring_to_newline(capsule.scanner.code, capsule.scanner.token.start, 80);
     }
 
     script = allocate(sizeof(script_t));
@@ -793,6 +775,32 @@ static char *substring_using_token(char *code, token_t *token)
     text[textLength] = '\0';
 
     return text;
+}
+
+static char *substring_to_newline(char *code, int start, int limit)
+{
+    char *line;
+    size_t lineLength, codeLength;
+
+    codeLength = strlen(code);
+
+    for (lineLength = 0; lineLength < limit; lineLength++)
+    {
+        size_t offset;
+
+        offset = start + lineLength;
+
+        if (offset >= codeLength|| code[offset] == '\n')
+        {
+            break;
+        }
+    }
+
+    line = allocate(sizeof(char) * (lineLength + 1));
+    memcpy(line, code + start, lineLength);
+    line[lineLength] = '\0';
+
+    return line;
 }
 
 static identifier_t *parse_identifier(char *code, token_t *token)
