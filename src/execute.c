@@ -30,22 +30,22 @@ typedef struct
 } argument_iterator_t;
 
 static value_t *apply_statement(statement_t *statement, map_t *variables);
-static value_t *run_and(argument_iterator_t *arguments, map_t *variables);
-static value_t *run_or(argument_iterator_t *arguments, map_t *variables);
-static value_t *run_not(argument_iterator_t *arguments, map_t *variables);
 static value_t *run_add(argument_iterator_t *arguments, map_t *variables);
 static value_t *run_subtract(argument_iterator_t *arguments, map_t *variables);
 static value_t *run_multiply(argument_iterator_t *arguments, map_t *variables);
 static value_t *run_divide(argument_iterator_t *arguments, map_t *variables);
 static value_t *run_modulo(argument_iterator_t *arguments, map_t *variables);
 static value_t *run_truncate(argument_iterator_t *arguments, map_t *variables);
-static value_t *run_equals(argument_iterator_t *arguments, map_t *variables);
+static value_t *run_and(argument_iterator_t *arguments, map_t *variables);
+static value_t *run_or(argument_iterator_t *arguments, map_t *variables);
+static value_t *run_not(argument_iterator_t *arguments, map_t *variables);
 static value_t *run_precedes(argument_iterator_t *arguments, map_t *variables);
 static value_t *run_succeeds(argument_iterator_t *arguments, map_t *variables);
-static value_t *run_merge(argument_iterator_t *arguments, map_t *variables);
+static value_t *run_equals(argument_iterator_t *arguments, map_t *variables);
 static value_t *run_write(argument_iterator_t *arguments, map_t *variables);
 static value_t *run_type(argument_iterator_t *arguments, map_t *variables);
 static value_t *run_cast(argument_iterator_t *arguments, map_t *variables);
+static value_t *run_merge(argument_iterator_t *arguments, map_t *variables);
 static int compare_values(value_t *left, value_t *right);
 static int next_argument(argument_iterator_t *arguments, map_t *variables, int types, value_t **out);
 static int has_next_argument(argument_iterator_t *arguments);
@@ -221,19 +221,7 @@ static value_t *apply_statement(statement_t *statement, map_t *variables)
 
             arguments.index = 0;
 
-            if (strcmp(data->identifier->name, "and") == 0)
-            {
-                result = run_and(&arguments, variables);
-            }
-            else if (strcmp(data->identifier->name, "or") == 0)
-            {
-                result = run_or(&arguments, variables);
-            }
-            else if (strcmp(data->identifier->name, "not") == 0)
-            {
-                result = run_not(&arguments, variables);
-            }
-            else if (strcmp(data->identifier->name, "add") == 0)
+            if (strcmp(data->identifier->name, "add") == 0)
             {
                 result = run_add(&arguments, variables);
             }
@@ -257,9 +245,17 @@ static value_t *apply_statement(statement_t *statement, map_t *variables)
             {
                 result = run_truncate(&arguments, variables);
             }
-            else if (strcmp(data->identifier->name, "equals") == 0)
+            else if (strcmp(data->identifier->name, "and") == 0)
             {
-                result = run_equals(&arguments, variables);
+                result = run_and(&arguments, variables);
+            }
+            else if (strcmp(data->identifier->name, "or") == 0)
+            {
+                result = run_or(&arguments, variables);
+            }
+            else if (strcmp(data->identifier->name, "not") == 0)
+            {
+                result = run_not(&arguments, variables);
             }
             else if (strcmp(data->identifier->name, "precedes") == 0)
             {
@@ -269,9 +265,9 @@ static value_t *apply_statement(statement_t *statement, map_t *variables)
             {
                 result = run_succeeds(&arguments, variables);
             }
-            else if (strcmp(data->identifier->name, "merge") == 0)
+            else if (strcmp(data->identifier->name, "equals") == 0)
             {
-                result = run_merge(&arguments, variables);
+                result = run_equals(&arguments, variables);
             }
             else if (strcmp(data->identifier->name, "write") == 0)
             {
@@ -284,6 +280,10 @@ static value_t *apply_statement(statement_t *statement, map_t *variables)
             else if (strcmp(data->identifier->name, "cast") == 0)
             {
                 result = run_cast(&arguments, variables);
+            }
+            else if (strcmp(data->identifier->name, "merge") == 0)
+            {
+                result = run_merge(&arguments, variables);
             }
             else
             {
@@ -458,52 +458,6 @@ static value_t *apply_statement(statement_t *statement, map_t *variables)
     return new_null();
 }
 
-static value_t *run_and(argument_iterator_t *arguments, map_t *variables)
-{
-    value_t *left, *right;
-
-    if (!next_argument(arguments, variables, VALUE_TYPE_BOOLEAN, &left))
-    {
-        return left;
-    }
-
-    if (!next_argument(arguments, variables, VALUE_TYPE_BOOLEAN, &right))
-    {
-        return right;
-    }
-
-    return new_boolean(view_boolean(left) && view_boolean(right));
-}
-
-static value_t *run_or(argument_iterator_t *arguments, map_t *variables)
-{
-    value_t *left, *right;
-
-    if (!next_argument(arguments, variables, VALUE_TYPE_BOOLEAN, &left))
-    {
-        return left;
-    }
-
-    if (!next_argument(arguments, variables, VALUE_TYPE_BOOLEAN, &right))
-    {
-        return right;
-    }
-
-    return new_boolean(view_boolean(left) || view_boolean(right));
-}
-
-static value_t *run_not(argument_iterator_t *arguments, map_t *variables)
-{
-    value_t *value;
-
-    if (!next_argument(arguments, variables, VALUE_TYPE_BOOLEAN, &value))
-    {
-        return value;
-    }
-
-    return new_boolean(!view_boolean(value));
-}
-
 static value_t *run_add(argument_iterator_t *arguments, map_t *variables)
 {
     value_t *left, *right;
@@ -631,21 +585,50 @@ static value_t *run_truncate(argument_iterator_t *arguments, map_t *variables)
     return new_number(truncate_number(view_number(value)));
 }
 
-static value_t *run_equals(argument_iterator_t *arguments, map_t *variables)
+static value_t *run_and(argument_iterator_t *arguments, map_t *variables)
 {
     value_t *left, *right;
 
-    if (!next_argument(arguments, variables, VALUE_TYPE_NULL | VALUE_TYPE_BOOLEAN | VALUE_TYPE_NUMBER | VALUE_TYPE_STRING, &left))
+    if (!next_argument(arguments, variables, VALUE_TYPE_BOOLEAN, &left))
     {
         return left;
     }
 
-    if (!next_argument(arguments, variables, VALUE_TYPE_NULL | VALUE_TYPE_BOOLEAN | VALUE_TYPE_NUMBER | VALUE_TYPE_STRING, &right))
+    if (!next_argument(arguments, variables, VALUE_TYPE_BOOLEAN, &right))
     {
         return right;
     }
 
-    return new_boolean(compare_values(left, right) == 0 ? TRUE : FALSE);
+    return new_boolean(view_boolean(left) && view_boolean(right));
+}
+
+static value_t *run_or(argument_iterator_t *arguments, map_t *variables)
+{
+    value_t *left, *right;
+
+    if (!next_argument(arguments, variables, VALUE_TYPE_BOOLEAN, &left))
+    {
+        return left;
+    }
+
+    if (!next_argument(arguments, variables, VALUE_TYPE_BOOLEAN, &right))
+    {
+        return right;
+    }
+
+    return new_boolean(view_boolean(left) || view_boolean(right));
+}
+
+static value_t *run_not(argument_iterator_t *arguments, map_t *variables)
+{
+    value_t *value;
+
+    if (!next_argument(arguments, variables, VALUE_TYPE_BOOLEAN, &value))
+    {
+        return value;
+    }
+
+    return new_boolean(!view_boolean(value));
 }
 
 static value_t *run_precedes(argument_iterator_t *arguments, map_t *variables)
@@ -682,32 +665,21 @@ static value_t *run_succeeds(argument_iterator_t *arguments, map_t *variables)
     return new_boolean(compare_values(left, right) > 0 ? TRUE : FALSE);
 }
 
-static value_t *run_merge(argument_iterator_t *arguments, map_t *variables)
+static value_t *run_equals(argument_iterator_t *arguments, map_t *variables)
 {
-    value_t *left, *right, *result;
-    char *x, *y, *sum;
-    size_t length;
+    value_t *left, *right;
 
-    if (!next_argument(arguments, variables, VALUE_TYPE_STRING, &left))
+    if (!next_argument(arguments, variables, VALUE_TYPE_NULL | VALUE_TYPE_BOOLEAN | VALUE_TYPE_NUMBER | VALUE_TYPE_STRING, &left))
     {
         return left;
     }
 
-    if (!next_argument(arguments, variables, VALUE_TYPE_STRING, &right))
+    if (!next_argument(arguments, variables, VALUE_TYPE_NULL | VALUE_TYPE_BOOLEAN | VALUE_TYPE_NUMBER | VALUE_TYPE_STRING, &right))
     {
         return right;
     }
 
-    x = view_string(left);
-    y = view_string(right);
-    length = strlen(x) + strlen(y);
-    sum = allocate(sizeof(char) * length + 1);
-    memcpy(sum, x, strlen(x));
-    memcpy(sum + strlen(x), y, strlen(y));
-    sum[length] = '\0';
-    result = steal_string(sum);
-
-    return result;
+    return new_boolean(compare_values(left, right) == 0 ? TRUE : FALSE);
 }
 
 static value_t *run_write(argument_iterator_t *arguments, map_t *variables)
@@ -948,6 +920,34 @@ static value_t *run_cast(argument_iterator_t *arguments, map_t *variables)
     {
         return throw_error("unknown type");
     }
+}
+
+static value_t *run_merge(argument_iterator_t *arguments, map_t *variables)
+{
+    value_t *left, *right, *result;
+    char *x, *y, *sum;
+    size_t length;
+
+    if (!next_argument(arguments, variables, VALUE_TYPE_STRING, &left))
+    {
+        return left;
+    }
+
+    if (!next_argument(arguments, variables, VALUE_TYPE_STRING, &right))
+    {
+        return right;
+    }
+
+    x = view_string(left);
+    y = view_string(right);
+    length = strlen(x) + strlen(y);
+    sum = allocate(sizeof(char) * length + 1);
+    memcpy(sum, x, strlen(x));
+    memcpy(sum + strlen(x), y, strlen(y));
+    sum[length] = '\0';
+    result = steal_string(sum);
+
+    return result;
 }
 
 static int compare_values(value_t *left, value_t *right)
