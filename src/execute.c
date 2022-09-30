@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <limits.h>
 #include "execute.h"
 #include "parse.h"
 #include "utility.h"
@@ -46,6 +47,7 @@ static value_t *run_write(argument_iterator_t *arguments, map_t *variables);
 static value_t *run_type(argument_iterator_t *arguments, map_t *variables);
 static value_t *run_cast(argument_iterator_t *arguments, map_t *variables);
 static value_t *run_merge(argument_iterator_t *arguments, map_t *variables);
+static value_t *run_length(argument_iterator_t *arguments, map_t *variables);
 static int compare_values(value_t *left, value_t *right);
 static int next_argument(argument_iterator_t *arguments, map_t *variables, int types, value_t **out);
 static int has_next_argument(argument_iterator_t *arguments);
@@ -284,6 +286,10 @@ static value_t *apply_statement(statement_t *statement, map_t *variables)
             else if (strcmp(data->identifier->name, "merge") == 0)
             {
                 result = run_merge(&arguments, variables);
+            }
+            else if (strcmp(data->identifier->name, "length") == 0)
+            {
+                result = run_length(&arguments, variables);
             }
             else
             {
@@ -948,6 +954,38 @@ static value_t *run_merge(argument_iterator_t *arguments, map_t *variables)
     result = steal_string(sum);
 
     return result;
+}
+
+static value_t *run_length(argument_iterator_t *arguments, map_t *variables)
+{
+    value_t *collection;
+
+    if (!next_argument(arguments, variables, VALUE_TYPE_STRING, &collection))
+    {
+        return collection;
+    }
+
+    switch (collection->type)
+    {
+        case VALUE_TYPE_STRING:
+        {
+            size_t length;
+            number_t number;
+
+            length = strlen(view_string(collection));
+
+            if (length >= INT_MAX || integer_to_number(length, &number) != 0)
+            {
+                return throw_error("unable to represent length");
+            }
+
+            return new_number(number);
+        }
+
+        default:
+            crash_with_message("unsupported branch EXECUTE_LENGTH_TYPE");
+            return new_null();
+    }
 }
 
 static int compare_values(value_t *left, value_t *right)
