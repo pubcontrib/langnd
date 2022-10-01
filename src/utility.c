@@ -106,7 +106,7 @@ void set_map_item(map_t *map, char *key, void *value)
     }
 }
 
-void remove_map_item(map_t *map, char *key)
+void unset_map_item(map_t *map, char *key)
 {
     map_chain_t *chain, *previous;
     int hash, index;
