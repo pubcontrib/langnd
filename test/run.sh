@@ -251,6 +251,9 @@ testscripts()
     pass '@write(@cast(true, "STRING"), 1)' 'true'
     pass '@write(@cast(123.456, "STRING"), 1)' '123.455993'
     pass '@write(@cast("text", "STRING"), 1)' 'text'
+    pass '@write(@cast(@get("abc", 1), "STRING"), 1)' 'a'
+    pass '@write(@cast(@get("abc", 2), "STRING"), 1)' 'b'
+    pass '@write(@cast(@get("abc", 3), "STRING"), 1)' 'c'
     pass '@write(@merge("this", " & that"), 1)' 'this & that'
     pass '@write(@merge("this", ""), 1)' 'this'
     pass '@write(@merge("", "that"), 1)' 'that'
@@ -357,6 +360,8 @@ testscripts()
     executefail 'if @divide(100, 0) { $missing }' 'arithmetic error'
     executefail 'while true { "before" @divide(100, 0) "after" }' 'arithmetic error'
     executefail 'while @divide(100, 0) { $missing }' 'arithmetic error'
+    executefail '@write(@cast(@get("abc", 0), "STRING"), 1)' 'absent key'
+    executefail '@write(@cast(@get("abc", 4), "STRING"), 1)' 'absent key'
 }
 
 lexfail()

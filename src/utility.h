@@ -65,6 +65,7 @@ int divide_numbers(number_t left, number_t right, number_t *out);
 int modulo_numbers(number_t left, number_t right, number_t *out);
 int string_to_number(char *text, number_t *out);
 int integer_to_number(int integer, number_t *out);
+int number_to_integer(number_t number, int *out);
 char *represent_number(number_t number);
 number_t truncate_number(number_t number);
 int hash_string(char *string);

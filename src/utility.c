@@ -417,6 +417,13 @@ int integer_to_number(int integer, number_t *out)
     return 0;
 }
 
+int number_to_integer(number_t number, int *out)
+{
+    (*out) = number / 65536;
+
+    return 0;
+}
+
 char *represent_number(number_t number)
 {
     char *string;
