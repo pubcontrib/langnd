@@ -48,6 +48,7 @@ static value_t *run_type(argument_iterator_t *arguments, map_t *variables);
 static value_t *run_cast(argument_iterator_t *arguments, map_t *variables);
 static value_t *run_get(argument_iterator_t *arguments, map_t *variables);
 static value_t *run_set(argument_iterator_t *arguments, map_t *variables);
+static value_t *run_unset(argument_iterator_t *arguments, map_t *variables);
 static value_t *run_merge(argument_iterator_t *arguments, map_t *variables);
 static value_t *run_length(argument_iterator_t *arguments, map_t *variables);
 static int compare_values(value_t *left, value_t *right);
@@ -292,6 +293,10 @@ static value_t *apply_statement(statement_t *statement, map_t *variables)
             else if (strcmp(data->identifier->name, "set") == 0)
             {
                 result = run_set(&arguments, variables);
+            }
+            else if (strcmp(data->identifier->name, "unset") == 0)
+            {
+                result = run_unset(&arguments, variables);
             }
             else if (strcmp(data->identifier->name, "merge") == 0)
             {
@@ -1039,6 +1044,56 @@ static value_t *run_set(argument_iterator_t *arguments, map_t *variables)
             memcpy(destination + beforeLength, middle, middleLength);
             memcpy(destination + beforeLength + middleLength, source + beforeLength + 1, afterLength);
             destination[destinationLength] = '\0';
+
+            return steal_string(destination);
+        }
+
+        default:
+            crash_with_message("unsupported branch EXECUTE_SET_TYPE");
+            return new_null();
+    }
+}
+
+static value_t *run_unset(argument_iterator_t *arguments, map_t *variables)
+{
+    value_t *collection, *key;
+
+    if (!next_argument(arguments, variables, VALUE_TYPE_STRING, &collection))
+    {
+        return collection;
+    }
+
+    if (!next_argument(arguments, variables, VALUE_TYPE_NUMBER, &key))
+    {
+        return key;
+    }
+
+    switch (collection->type)
+    {
+        case VALUE_TYPE_STRING:
+        {
+            char *source, *destination;
+            int index;
+            size_t length;
+
+            source = view_string(collection);
+
+            if (number_to_integer(view_number(key), &index) != 0)
+            {
+                crash_with_message("unsupported branch EXECUTE_UNSET_INDEX");
+            }
+
+            length = strlen(source);
+
+            if (index < 1 || index > length)
+            {
+                return throw_error("absent key");
+            }
+
+            destination = allocate(sizeof(char) * length);
+            memcpy(destination, source, index - 1);
+            memcpy(destination + index - 1, source + index, length - index);
+            destination[length] = '\0';
 
             return steal_string(destination);
         }

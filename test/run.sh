@@ -263,6 +263,9 @@ testscripts()
     pass '@write(@cast(@set("abc", 1, "123"), "STRING"), 1)' '123bc'
     pass '@write(@cast(@set("abc", 2, "123"), "STRING"), 1)' 'a123c'
     pass '@write(@cast(@set("abc", 3, "123"), "STRING"), 1)' 'ab123'
+    pass '@write(@cast(@unset("abc", 1), "STRING"), 1)' 'bc'
+    pass '@write(@cast(@unset("abc", 2), "STRING"), 1)' 'ac'
+    pass '@write(@cast(@unset("abc", 3), "STRING"), 1)' 'ab'
     pass '@write(@merge("this", " & that"), 1)' 'this & that'
     pass '@write(@merge("this", ""), 1)' 'this'
     pass '@write(@merge("", "that"), 1)' 'that'
@@ -377,6 +380,8 @@ testscripts()
     executefail '@write(@cast(@set("abc", 4, ""), "STRING"), 1)' 'absent key'
     executefail '@write(@cast(@set("abc", 0, "xxx"), "STRING"), 1)' 'absent key'
     executefail '@write(@cast(@set("abc", 4, "xxx"), "STRING"), 1)' 'absent key'
+    executefail '@write(@cast(@unset("abc", 0), "STRING"), 1)' 'absent key'
+    executefail '@write(@cast(@unset("abc", 4), "STRING"), 1)' 'absent key'
 }
 
 lexfail()
