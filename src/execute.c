@@ -47,6 +47,7 @@ static value_t *run_write(argument_iterator_t *arguments, map_t *variables);
 static value_t *run_type(argument_iterator_t *arguments, map_t *variables);
 static value_t *run_cast(argument_iterator_t *arguments, map_t *variables);
 static value_t *run_get(argument_iterator_t *arguments, map_t *variables);
+static value_t *run_set(argument_iterator_t *arguments, map_t *variables);
 static value_t *run_merge(argument_iterator_t *arguments, map_t *variables);
 static value_t *run_length(argument_iterator_t *arguments, map_t *variables);
 static int compare_values(value_t *left, value_t *right);
@@ -287,6 +288,10 @@ static value_t *apply_statement(statement_t *statement, map_t *variables)
             else if (strcmp(data->identifier->name, "get") == 0)
             {
                 result = run_get(&arguments, variables);
+            }
+            else if (strcmp(data->identifier->name, "set") == 0)
+            {
+                result = run_set(&arguments, variables);
             }
             else if (strcmp(data->identifier->name, "merge") == 0)
             {
@@ -978,6 +983,68 @@ static value_t *run_get(argument_iterator_t *arguments, map_t *variables)
 
         default:
             crash_with_message("unsupported branch EXECUTE_GET_TYPE");
+            return new_null();
+    }
+}
+
+static value_t *run_set(argument_iterator_t *arguments, map_t *variables)
+{
+    value_t *collection, *key, *item;
+
+    if (!next_argument(arguments, variables, VALUE_TYPE_STRING, &collection))
+    {
+        return collection;
+    }
+
+    if (!next_argument(arguments, variables, VALUE_TYPE_NUMBER, &key))
+    {
+        return key;
+    }
+
+    if (!next_argument(arguments, variables, VALUE_TYPE_STRING, &item))
+    {
+        return item;
+    }
+
+    switch (collection->type)
+    {
+        case VALUE_TYPE_STRING:
+        {
+            char *source, *middle, *destination;
+            int index;
+            size_t sourceLength, beforeLength, middleLength, afterLength, destinationLength;
+
+            source = view_string(collection);
+            middle = view_string(item);
+
+            if (number_to_integer(view_number(key), &index) != 0)
+            {
+                crash_with_message("unsupported branch EXECUTE_SET_INDEX");
+            }
+
+            sourceLength = strlen(source);
+
+            if (index < 1 || index > sourceLength)
+            {
+                return throw_error("absent key");
+            }
+
+            beforeLength = index - 1;
+            middleLength = strlen(middle);
+            afterLength = sourceLength - beforeLength - 1;
+            destinationLength = beforeLength + middleLength + afterLength;
+
+            destination = allocate(sizeof(char) * (destinationLength + 1));
+            memcpy(destination, source, beforeLength);
+            memcpy(destination + beforeLength, middle, middleLength);
+            memcpy(destination + beforeLength + middleLength, source + beforeLength + 1, afterLength);
+            destination[destinationLength] = '\0';
+
+            return steal_string(destination);
+        }
+
+        default:
+            crash_with_message("unsupported branch EXECUTE_SET_TYPE");
             return new_null();
     }
 }

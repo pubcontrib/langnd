@@ -254,6 +254,15 @@ testscripts()
     pass '@write(@cast(@get("abc", 1), "STRING"), 1)' 'a'
     pass '@write(@cast(@get("abc", 2), "STRING"), 1)' 'b'
     pass '@write(@cast(@get("abc", 3), "STRING"), 1)' 'c'
+    pass '@write(@cast(@set("abc", 1, "x"), "STRING"), 1)' 'xbc'
+    pass '@write(@cast(@set("abc", 2, "x"), "STRING"), 1)' 'axc'
+    pass '@write(@cast(@set("abc", 3, "x"), "STRING"), 1)' 'abx'
+    pass '@write(@cast(@set("abc", 1, ""), "STRING"), 1)' 'bc'
+    pass '@write(@cast(@set("abc", 2, ""), "STRING"), 1)' 'ac'
+    pass '@write(@cast(@set("abc", 3, ""), "STRING"), 1)' 'ab'
+    pass '@write(@cast(@set("abc", 1, "123"), "STRING"), 1)' '123bc'
+    pass '@write(@cast(@set("abc", 2, "123"), "STRING"), 1)' 'a123c'
+    pass '@write(@cast(@set("abc", 3, "123"), "STRING"), 1)' 'ab123'
     pass '@write(@merge("this", " & that"), 1)' 'this & that'
     pass '@write(@merge("this", ""), 1)' 'this'
     pass '@write(@merge("", "that"), 1)' 'that'
@@ -362,6 +371,12 @@ testscripts()
     executefail 'while @divide(100, 0) { $missing }' 'arithmetic error'
     executefail '@write(@cast(@get("abc", 0), "STRING"), 1)' 'absent key'
     executefail '@write(@cast(@get("abc", 4), "STRING"), 1)' 'absent key'
+    executefail '@write(@cast(@set("abc", 0, "x"), "STRING"), 1)' 'absent key'
+    executefail '@write(@cast(@set("abc", 4, "x"), "STRING"), 1)' 'absent key'
+    executefail '@write(@cast(@set("abc", 0, ""), "STRING"), 1)' 'absent key'
+    executefail '@write(@cast(@set("abc", 4, ""), "STRING"), 1)' 'absent key'
+    executefail '@write(@cast(@set("abc", 0, "xxx"), "STRING"), 1)' 'absent key'
+    executefail '@write(@cast(@set("abc", 4, "xxx"), "STRING"), 1)' 'absent key'
 }
 
 lexfail()
