@@ -44,6 +44,7 @@ static value_t *run_precedes(argument_iterator_t *arguments, map_t *variables);
 static value_t *run_succeeds(argument_iterator_t *arguments, map_t *variables);
 static value_t *run_equals(argument_iterator_t *arguments, map_t *variables);
 static value_t *run_write(argument_iterator_t *arguments, map_t *variables);
+static value_t *run_freeze(argument_iterator_t *arguments, map_t *variables);
 static value_t *run_type(argument_iterator_t *arguments, map_t *variables);
 static value_t *run_cast(argument_iterator_t *arguments, map_t *variables);
 static value_t *run_get(argument_iterator_t *arguments, map_t *variables);
@@ -277,6 +278,10 @@ static value_t *apply_statement(statement_t *statement, map_t *variables)
             else if (strcmp(data->identifier->name, "write") == 0)
             {
                 result = run_write(&arguments, variables);
+            }
+            else if (strcmp(data->identifier->name, "freeze") == 0)
+            {
+                result = run_freeze(&arguments, variables);
             }
             else if (strcmp(data->identifier->name, "type") == 0)
             {
@@ -779,6 +784,115 @@ static value_t *run_write(argument_iterator_t *arguments, map_t *variables)
     {
         crash_with_message("unsupported branch EXECUTE_WRITE_TYPE");
         return new_null();
+    }
+}
+
+static value_t *run_freeze(argument_iterator_t *arguments, map_t *variables)
+{
+    value_t *value;
+
+    if (!next_argument(arguments, variables, VALUE_TYPE_NULL | VALUE_TYPE_BOOLEAN | VALUE_TYPE_NUMBER | VALUE_TYPE_STRING, &value))
+    {
+        return value;
+    }
+
+    switch (value->type)
+    {
+        case VALUE_TYPE_NULL:
+            return new_string("null");
+
+        case VALUE_TYPE_BOOLEAN:
+            return view_boolean(value) == TRUE ? new_string("true") : new_string("false");
+
+        case VALUE_TYPE_NUMBER:
+            return steal_string(represent_number(view_number(value)));
+
+        case VALUE_TYPE_STRING:
+        {
+            char *source, *destination;
+            size_t escapeCount, length, index;
+
+            source = view_string(value);
+            escapeCount = 0;
+            length = strlen(source);
+
+            for (index = 0; index < length; index++)
+            {
+                char symbol;
+
+                symbol = source[index];
+
+                if (symbol == '\t' || symbol == '\n' || symbol == '\r' || symbol == '"'|| symbol == '\\')
+                {
+                    escapeCount++;
+                }
+            }
+
+            if (escapeCount == 0)
+            {
+                destination = allocate(sizeof(char) * (length + 3));
+                destination[0] = '"';
+                memcpy(destination + 1, source, length);
+                destination[length + 1] = '"';
+                destination[length + 2] = '\0';
+            }
+            else
+            {
+                size_t placement;
+
+                destination = allocate(sizeof(char) * (length + escapeCount + 3));
+                placement = 0;
+                destination[placement++] = '"';
+
+                for (index = 0; index < length; index++)
+                {
+                    char symbol;
+
+                    symbol = source[index];
+
+                    switch (symbol)
+                    {
+                        case '\t':
+                            destination[placement++] = '\\';
+                            destination[placement++] = 't';
+                            break;
+
+                        case '\n':
+                            destination[placement++] = '\\';
+                            destination[placement++] = 'n';
+                            break;
+
+                        case '\r':
+                            destination[placement++] = '\\';
+                            destination[placement++] = 'r';
+                            break;
+
+                        case '"':
+                            destination[placement++] = '\\';
+                            destination[placement++] = '"';
+                            break;
+
+                        case '\\':
+                            destination[placement++] = '\\';
+                            destination[placement++] = '\\';
+                            break;
+
+                        default:
+                            destination[placement++] = symbol;
+                            break;
+                    }
+                }
+
+                destination[placement++] = '"';
+                destination[placement++] = '\0';
+            }
+
+            return steal_string(destination);
+        }
+
+        default:
+            crash_with_message("unsupported branch EXECUTE_FREEZE_TYPE");
+            return new_null();
     }
 }
 
