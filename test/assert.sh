@@ -1,5 +1,16 @@
 suite='unset'
 
+introduce()
+{
+    count=0
+}
+
+conclude()
+{
+    printf '\033[7;32m PASS \033[0m\n' 1>&2
+    printf '%d tests ran successfully\n' $count 1>&2
+}
+
 suite()
 {
     suite=$1
@@ -39,6 +50,8 @@ testscript()
     expected_output=$2
     expected_code=$3
     capture_stream=$4
+
+    count=`expr $count + 1`
 
     if [ $capture_stream = 1 ]
     then

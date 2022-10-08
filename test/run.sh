@@ -4,6 +4,8 @@ PROGRAM=$1
 
 . test/assert.sh
 
+introduce
+
 . test/suite/token/unknown.sh
 . test/suite/token/whitespace.sh
 . test/suite/token/string.sh
@@ -40,3 +42,5 @@ PROGRAM=$1
 . test/suite/function/unset.sh
 . test/suite/function/merge.sh
 . test/suite/function/length.sh
+
+conclude
