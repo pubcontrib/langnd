@@ -1,0 +1,18 @@
+suite 'function/set'
+
+pass '@write(@freeze(@set("abc", 1, "x")), 1)' '"xbc"'
+pass '@write(@freeze(@set("abc", 2, "x")), 1)' '"axc"'
+pass '@write(@freeze(@set("abc", 3, "x")), 1)' '"abx"'
+pass '@write(@freeze(@set("abc", 1, "")), 1)' '"bc"'
+pass '@write(@freeze(@set("abc", 2, "")), 1)' '"ac"'
+pass '@write(@freeze(@set("abc", 3, "")), 1)' '"ab"'
+pass '@write(@freeze(@set("abc", 1, "123")), 1)' '"123bc"'
+pass '@write(@freeze(@set("abc", 2, "123")), 1)' '"a123c"'
+pass '@write(@freeze(@set("abc", 3, "123")), 1)' '"ab123"'
+
+executefail '@write(@freeze(@set("abc", 0, "x")), 1)' 'absent key'
+executefail '@write(@freeze(@set("abc", 4, "x")), 1)' 'absent key'
+executefail '@write(@freeze(@set("abc", 0, "")), 1)' 'absent key'
+executefail '@write(@freeze(@set("abc", 4, "")), 1)' 'absent key'
+executefail '@write(@freeze(@set("abc", 0, "xxx")), 1)' 'absent key'
+executefail '@write(@freeze(@set("abc", 4, "xxx")), 1)' 'absent key'
