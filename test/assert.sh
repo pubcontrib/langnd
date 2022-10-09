@@ -7,8 +7,7 @@ introduce()
 
 conclude()
 {
-    printf '\033[7;32m PASS \033[0m\n' 1>&2
-    printf '%d tests ran successfully\n' $count 1>&2
+    writeoutcome 'PASS' "`printf '%d tests ran successfully\n' $count`" 32
 }
 
 suite()
@@ -46,7 +45,7 @@ fail()
 
 testscript()
 {
-    text=$1
+    source=$1
     expected_output=$2
     expected_code=$3
     capture_stream=$4
@@ -55,11 +54,11 @@ testscript()
 
     if [ $capture_stream = 1 ]
     then
-        actual_output=`$PROGRAM -t -- "$text" 2>/dev/null`
+        actual_output=`$PROGRAM -t -- "$source" 2>/dev/null`
         actual_code=$?
     elif [ $capture_stream = 2 ]
     then
-        actual_output=`$PROGRAM -t -- "$text" 2>&1`
+        actual_output=`$PROGRAM -t -- "$source" 2>&1`
         actual_code=$?
     else
         printf 'failed to capture stream\n' 1>&2
@@ -68,25 +67,50 @@ testscript()
 
     if [ $actual_code != $expected_code ]
     then
-        printf '\033[7;31m FAIL \033[0m\n' 1>&2
-        printf 'test %d failed\n' $count 1>&2
-        printf '\033[1mreason: \033[0m\nfailed to match exit code of test case\n' 1>&2
-        printf '\033[1msuite: \033[0m\n%s\n' "$suite" 1>&2
-        printf '\033[1msource: \033[0m\n%s\n' "$text" 1>&2
-        printf '\033[1mexpected: \033[0m\n%d\n' $expected_code 1>&2
-        printf '\033[1mactual: \033[0m\n%d\n' $actual_code 1>&2
+        writeoutcome 'FAIL' "`printf 'test %d failed\n' $count`" 31
+        writedetail 'Reason' 'failed to match exit code of test case'
+        writedetail 'Suite' "$suite"
+        writedetail 'Source' "$source"
+        writedetail 'Expected' "$expected_code"
+        writedetail 'Actual' "$actual_code"
         exit 1
     fi
 
     if [ "$actual_output" != "$expected_output" ]
     then
-        printf '\033[7;31m FAIL \033[0m\n' 1>&2
-        printf 'test %d failed\n' $count 1>&2
-        printf '\033[1mreason: \033[0m\nfailed to match stream of test case\n' 1>&2
-        printf '\033[1msuite: \033[0m\n%s\n' "$suite" 1>&2
-        printf '\033[1msource: \033[0m\n%s\n' "$text" 1>&2
-        printf '\033[1mexpected: \033[0m\n%s\n' "$expected_output" 1>&2
-        printf '\033[1mactual: \033[0m\n%s\n' "$actual_output" 1>&2
+        writeoutcome 'FAIL' "`printf 'test %d failed\n' $count`" 31
+        writedetail 'Reason' 'failed to match stream of test case'
+        writedetail 'Suite' "$suite"
+        writedetail 'Source' "$source"
+        writedetail 'Expected' "$expected_output"
+        writedetail 'Actual' "$actual_output"
         exit 1
+    fi
+}
+
+writeoutcome()
+{
+    status=$1
+    text=$2
+    color=$3
+
+    if [ -z "$NO_COLOR" ]
+    then
+        printf '\033[7;%dm %s \033[0m\n%s\n' $color "$status" "$text" 1>&2
+    else
+        printf '[%s]\n%s\n' "$status" "$text" 1>&2
+    fi
+}
+
+writedetail()
+{
+    header=$1
+    text=$2
+
+    if [ -z "$NO_COLOR" ]
+    then
+        printf '\033[1m%s:\033[0m\n%s\n' "$header" "$text" 1>&2
+    else
+        printf '%s:\n%s\n' "$header" "$text" 1>&2
     fi
 }
