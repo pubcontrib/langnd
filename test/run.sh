@@ -1,5 +1,10 @@
 #!/bin/sh
 
+# run.sh: test for expected behavior from a langnd program build
+#
+# Usage:
+#     test/run.sh program
+
 PROGRAM=$1
 
 . test/assert.sh
