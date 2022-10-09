@@ -4,6 +4,7 @@
 
 CFLAGS = -ansi -pedantic -Wall
 LDFLAGS =
+CD = cd
 CC = cc
 RM = rm
 CP = cp
@@ -17,7 +18,7 @@ clean:
 	$(RM) -f bin/langnd obj/main.o obj/execute.o obj/parse.o obj/lex.o obj/utility.o
 
 check: bin/langnd
-	$(SH) test/run.sh bin/langnd
+	$(CD) test && $(SH) run.sh ../bin/langnd
 
 install: bin/langnd
 	$(CP) bin/langnd $(DESTDIR)$(PREFIX)/bin/langnd

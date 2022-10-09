@@ -3,11 +3,11 @@
 # run.sh: test for expected behavior from a langnd program build
 #
 # Usage:
-#     test/run.sh program
+#     run.sh program
 
 PROGRAM=$1
 
-. test/assert.sh
+. assert.sh
 
 if [ ! -f "$PROGRAM" -o ! -x "$PROGRAM" ]
 then
@@ -17,41 +17,41 @@ fi
 
 introduce
 
-. test/suite/token/unknown.sh
-. test/suite/token/whitespace.sh
-. test/suite/token/string.sh
-. test/suite/token/identifier.sh
-. test/suite/token/keyword.sh
+. suite/token/unknown.sh
+. suite/token/whitespace.sh
+. suite/token/string.sh
+. suite/token/identifier.sh
+. suite/token/keyword.sh
 
-. test/suite/statement/null.sh
-. test/suite/statement/boolean.sh
-. test/suite/statement/number.sh
-. test/suite/statement/string.sh
-. test/suite/statement/assignment.sh
-. test/suite/statement/invoke.sh
-. test/suite/statement/branch.sh
-. test/suite/statement/loop.sh
+. suite/statement/null.sh
+. suite/statement/boolean.sh
+. suite/statement/number.sh
+. suite/statement/string.sh
+. suite/statement/assignment.sh
+. suite/statement/invoke.sh
+. suite/statement/branch.sh
+. suite/statement/loop.sh
 
-. test/suite/function/add.sh
-. test/suite/function/subtract.sh
-. test/suite/function/multiply.sh
-. test/suite/function/divide.sh
-. test/suite/function/modulo.sh
-. test/suite/function/truncate.sh
-. test/suite/function/and.sh
-. test/suite/function/or.sh
-. test/suite/function/not.sh
-. test/suite/function/precedes.sh
-. test/suite/function/succeeds.sh
-. test/suite/function/equals.sh
-. test/suite/function/write.sh
-. test/suite/function/freeze.sh
-. test/suite/function/type.sh
-. test/suite/function/cast.sh
-. test/suite/function/get.sh
-. test/suite/function/set.sh
-. test/suite/function/unset.sh
-. test/suite/function/merge.sh
-. test/suite/function/length.sh
+. suite/function/add.sh
+. suite/function/subtract.sh
+. suite/function/multiply.sh
+. suite/function/divide.sh
+. suite/function/modulo.sh
+. suite/function/truncate.sh
+. suite/function/and.sh
+. suite/function/or.sh
+. suite/function/not.sh
+. suite/function/precedes.sh
+. suite/function/succeeds.sh
+. suite/function/equals.sh
+. suite/function/write.sh
+. suite/function/freeze.sh
+. suite/function/type.sh
+. suite/function/cast.sh
+. suite/function/get.sh
+. suite/function/set.sh
+. suite/function/unset.sh
+. suite/function/merge.sh
+. suite/function/length.sh
 
 conclude
