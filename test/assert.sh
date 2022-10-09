@@ -68,21 +68,25 @@ testscript()
 
     if [ $actual_code != $expected_code ]
     then
-        printf 'failed to match exit code of test case\n' 1>&2
-        printf '    [suite] %s\n' "$suite" 1>&2
-        printf '    [source] %s\n' "$text" 1>&2
-        printf '    [expected] %d\n' $expected_code 1>&2
-        printf '    [actual] %d\n' $actual_code 1>&2
+        printf '\033[7;31m FAIL \033[0m\n' 1>&2
+        printf 'test %d failed\n' $count 1>&2
+        printf '\033[1mreason: \033[0m\nfailed to match exit code of test case\n' 1>&2
+        printf '\033[1msuite: \033[0m\n%s\n' "$suite" 1>&2
+        printf '\033[1msource: \033[0m\n%s\n' "$text" 1>&2
+        printf '\033[1mexpected: \033[0m\n%d\n' $expected_code 1>&2
+        printf '\033[1mactual: \033[0m\n%d\n' $actual_code 1>&2
         exit 1
     fi
 
     if [ "$actual_output" != "$expected_output" ]
     then
-        printf 'failed to match stream of test case\n' 1>&2
-        printf '    [suite] %s\n' "$suite" 1>&2
-        printf '    [source] %s\n' "$text" 1>&2
-        printf '    [expected] %s\n' "$expected_output" 1>&2
-        printf '    [actual] %s\n' "$actual_output" 1>&2
+        printf '\033[7;31m FAIL \033[0m\n' 1>&2
+        printf 'test %d failed\n' $count 1>&2
+        printf '\033[1mreason: \033[0m\nfailed to match stream of test case\n' 1>&2
+        printf '\033[1msuite: \033[0m\n%s\n' "$suite" 1>&2
+        printf '\033[1msource: \033[0m\n%s\n' "$text" 1>&2
+        printf '\033[1mexpected: \033[0m\n%s\n' "$expected_output" 1>&2
+        printf '\033[1mactual: \033[0m\n%s\n' "$actual_output" 1>&2
         exit 1
     fi
 }
