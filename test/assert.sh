@@ -55,11 +55,11 @@ testscript()
 
     if [ $capture_stream = 1 ]
     then
-        actual_output=`$PROGRAM -t "$text" 2>/dev/null`
+        actual_output=`$PROGRAM -t -- "$text" 2>/dev/null`
         actual_code=$?
     elif [ $capture_stream = 2 ]
     then
-        actual_output=`$PROGRAM -t "$text" 2>&1`
+        actual_output=`$PROGRAM -t -- "$text" 2>&1`
         actual_code=$?
     else
         printf 'failed to capture stream\n' 1>&2
