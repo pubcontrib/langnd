@@ -4,6 +4,12 @@ PROGRAM=$1
 
 . test/assert.sh
 
+if [ ! -f "$PROGRAM" -o ! -x "$PROGRAM" ]
+then
+    printf 'build artifact is not an executable file\n' 1>&2
+    exit 1
+fi
+
 introduce
 
 . test/suite/token/unknown.sh
