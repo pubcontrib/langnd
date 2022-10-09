@@ -7,7 +7,7 @@
 
 PROGRAM=$1
 
-if [ ! -f run.sh ]
+if [ ! -f ./run.sh ]
 then
     printf 'working directory is not the same this script'"'"'s directory\n' 1>&2
     exit 1
@@ -19,7 +19,7 @@ then
     exit 1
 fi
 
-. assert.sh
+. ./assert.sh
 
 introduce
 
