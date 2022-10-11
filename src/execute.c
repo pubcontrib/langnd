@@ -44,6 +44,7 @@ static value_t *run_precedes(argument_iterator_t *arguments, map_t *variables);
 static value_t *run_succeeds(argument_iterator_t *arguments, map_t *variables);
 static value_t *run_equals(argument_iterator_t *arguments, map_t *variables);
 static value_t *run_write(argument_iterator_t *arguments, map_t *variables);
+static value_t *run_delete(argument_iterator_t *arguments, map_t *variables);
 static value_t *run_freeze(argument_iterator_t *arguments, map_t *variables);
 static value_t *run_type(argument_iterator_t *arguments, map_t *variables);
 static value_t *run_cast(argument_iterator_t *arguments, map_t *variables);
@@ -278,6 +279,10 @@ static value_t *apply_statement(statement_t *statement, map_t *variables)
             else if (strcmp(data->identifier->name, "write") == 0)
             {
                 result = run_write(&arguments, variables);
+            }
+            else if (strcmp(data->identifier->name, "delete") == 0)
+            {
+                result = run_delete(&arguments, variables);
             }
             else if (strcmp(data->identifier->name, "freeze") == 0)
             {
@@ -784,6 +789,40 @@ static value_t *run_write(argument_iterator_t *arguments, map_t *variables)
     {
         crash_with_message("unsupported branch EXECUTE_WRITE_TYPE");
         return new_null();
+    }
+}
+
+static value_t *run_delete(argument_iterator_t *arguments, map_t *variables)
+{
+    value_t *file;
+
+    if (!next_argument(arguments, variables, VALUE_TYPE_NUMBER | VALUE_TYPE_STRING, &file))
+    {
+        return file;
+    }
+
+    switch (file->type)
+    {
+        case VALUE_TYPE_NUMBER:
+            return throw_error("unable to delete file");
+
+        case VALUE_TYPE_STRING:
+        {
+            char *fileName;
+
+            fileName = view_string(file);
+
+            if (remove(fileName) == -1)
+            {
+                return throw_error("unable to delete file");
+            }
+
+            return new_null();
+        }
+
+        default:
+            crash_with_message("unsupported branch EXECUTE_DELETE_TYPE");
+            return new_null();
     }
 }
 
