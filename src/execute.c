@@ -44,6 +44,7 @@ static value_t *run_precedes(argument_iterator_t *arguments, map_t *variables);
 static value_t *run_succeeds(argument_iterator_t *arguments, map_t *variables);
 static value_t *run_equals(argument_iterator_t *arguments, map_t *variables);
 static value_t *run_write(argument_iterator_t *arguments, map_t *variables);
+static value_t *run_read(argument_iterator_t *arguments, map_t *variables);
 static value_t *run_delete(argument_iterator_t *arguments, map_t *variables);
 static value_t *run_freeze(argument_iterator_t *arguments, map_t *variables);
 static value_t *run_type(argument_iterator_t *arguments, map_t *variables);
@@ -279,6 +280,10 @@ static value_t *apply_statement(statement_t *statement, map_t *variables)
             else if (strcmp(data->identifier->name, "write") == 0)
             {
                 result = run_write(&arguments, variables);
+            }
+            else if (strcmp(data->identifier->name, "read") == 0)
+            {
+                result = run_read(&arguments, variables);
             }
             else if (strcmp(data->identifier->name, "delete") == 0)
             {
@@ -789,6 +794,106 @@ static value_t *run_write(argument_iterator_t *arguments, map_t *variables)
     {
         crash_with_message("unsupported branch EXECUTE_WRITE_TYPE");
         return new_null();
+    }
+}
+
+static value_t *run_read(argument_iterator_t *arguments, map_t *variables)
+{
+    value_t *file;
+
+    if (!next_argument(arguments, variables, VALUE_TYPE_NUMBER | VALUE_TYPE_STRING, &file))
+    {
+        return file;
+    }
+
+    switch (file->type)
+    {
+        case VALUE_TYPE_NUMBER:
+        {
+            char *bytes;
+            size_t fill, length;
+            FILE *streamHandle;
+            number_t streamID, inID;
+
+            streamID = view_number(file);
+            integer_to_number(0, &inID);
+
+            if (streamID == inID)
+            {
+                streamHandle = stdin;
+            }
+            else
+            {
+                return throw_error("absent file");
+            }
+
+            fill = 0;
+            length = 256;
+            bytes = allocate(sizeof(char) * (length + 1));
+
+            while (1)
+            {
+                char symbol;
+
+                symbol = getc(streamHandle);
+
+                if (symbol == EOF || symbol == '\n')
+                {
+                    bytes[fill++] = '\0';
+                    break;
+                }
+
+                bytes[fill++] = symbol;
+
+                if (fill == length)
+                {
+                    char *swap;
+
+                    length *= 2;
+                    swap = allocate(sizeof(char) * (length + 1));
+                    memcpy(swap, bytes, fill);
+                    bytes = swap;
+                }
+            }
+
+            return new_string(bytes);
+        }
+
+        case VALUE_TYPE_STRING:
+        {
+            char *bytes;
+            long length;
+            FILE *fileHandle;
+
+            fileHandle = fopen(view_string(file), "rb");
+
+            if (!fileHandle)
+            {
+                return throw_error("absent file");
+            }
+
+            fseek(fileHandle, 0, SEEK_END);
+            length = ftell(fileHandle);
+            fseek(fileHandle, 0, SEEK_SET);
+
+            bytes = allocate(sizeof(char) * length + 1);
+            fread(bytes, 1, length, fileHandle);
+            bytes[length] = '\0';
+
+            if (ferror(fileHandle))
+            {
+                free(bytes);
+                fclose(fileHandle);
+
+                return throw_error("unable to read from file");
+            }
+
+            return new_string(bytes);
+        }
+
+        default:
+            crash_with_message("unsupported branch EXECUTE_READ_TYPE");
+            return new_null();
     }
 }
 
