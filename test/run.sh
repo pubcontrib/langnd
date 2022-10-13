@@ -51,6 +51,8 @@ introduce
 . suite/function/succeeds.sh
 . suite/function/equals.sh
 . suite/function/write.sh
+. suite/function/read.sh
+. suite/function/delete.sh
 . suite/function/freeze.sh
 . suite/function/type.sh
 . suite/function/cast.sh

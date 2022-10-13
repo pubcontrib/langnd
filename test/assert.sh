@@ -3,11 +3,16 @@ suite='unset'
 introduce()
 {
     count=0
+
+    umask 077
+    workspace=`mktemp -d`
 }
 
 conclude()
 {
     writeoutcome 'PASS' "`printf '%d tests ran successfully\n' $count`" 32
+
+    rm -fr "$workspace"
 }
 
 suite()
