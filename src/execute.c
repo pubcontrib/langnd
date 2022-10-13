@@ -786,6 +786,8 @@ static value_t *run_write(argument_iterator_t *arguments, map_t *variables)
                 return throw_error("unable to write to file");
             }
 
+            fclose(fileHandle);
+
             return new_null();
         }
         else
@@ -902,6 +904,8 @@ static value_t *run_read(argument_iterator_t *arguments, map_t *variables)
 
                 return throw_error("unable to read from file");
             }
+
+            fclose(fileHandle);
 
             return new_string(bytes);
         }
