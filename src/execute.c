@@ -738,13 +738,18 @@ static value_t *run_write(argument_iterator_t *arguments, map_t *variables)
     if (file->type == VALUE_TYPE_NUMBER)
     {
         FILE *streamHandle;
-        number_t streamID, outID, errID;
+        number_t streamID, inID, outID, errID;
 
         streamID = view_number(file);
+        integer_to_number(0, &inID);
         integer_to_number(1, &outID);
         integer_to_number(2, &errID);
 
-        if (streamID == outID)
+        if (streamID == inID)
+        {
+            streamHandle = stdin;
+        }
+        else if (streamID == outID)
         {
             streamHandle = stdout;
         }
@@ -813,14 +818,24 @@ static value_t *run_read(argument_iterator_t *arguments, map_t *variables)
             char *bytes;
             size_t fill, length;
             FILE *streamHandle;
-            number_t streamID, inID;
+            number_t streamID, inID, outID, errID;
 
             streamID = view_number(file);
             integer_to_number(0, &inID);
+            integer_to_number(1, &outID);
+            integer_to_number(2, &errID);
 
             if (streamID == inID)
             {
                 streamHandle = stdin;
+            }
+            else if (streamID == outID)
+            {
+                streamHandle = stdout;
+            }
+            else if (streamID == errID)
+            {
+                streamHandle = stderr;
             }
             else
             {
