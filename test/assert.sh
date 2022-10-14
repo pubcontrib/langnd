@@ -4,15 +4,21 @@ introduce()
 {
     count=0
 
-    umask 077
-    workspace=`mktemp -d`
+    if [ -z "$NO_PERSISTENCE" ]
+    then
+        umask 077
+        workspace=`mktemp -d`
+    fi
 }
 
 conclude()
 {
     writeoutcome 'PASS' "`printf '%d tests ran successfully\n' $count`" 32
 
-    rm -fr "$workspace"
+    if [ -z "$NO_PERSISTENCE" ]
+    then
+        rm -fr "$workspace"
+    fi
 }
 
 suite()

@@ -1,7 +1,10 @@
 suite 'function/write'
 
-file="${workspace}/write.txt"
-printf '' > "$file"
-pass '@write("TEXT FILE", "'"$file"'") @write(@read("'"$file"'"), 1)' 'TEXT FILE'
+if [ -z "$NO_PERSISTENCE" ]
+then
+    file="${workspace}/write.txt"
+    printf '' > "$file"
+    pass '@write("TEXT FILE", "'"$file"'") @write(@read("'"$file"'"), 1)' 'TEXT FILE'
+fi
 
 executefail '@write()' 'absent argument'

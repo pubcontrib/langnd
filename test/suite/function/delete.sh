@@ -1,5 +1,8 @@
 suite 'function/delete'
 
-file="${workspace}/delete.txt"
-printf 'TEXT FILE' > "$file"
-executefail '@delete("'"$file"'") @read("'"$file"'")' 'absent file'
+if [ -z "$NO_PERSISTENCE" ]
+then
+    file="${workspace}/delete.txt"
+    printf 'TEXT FILE' > "$file"
+    executefail '@delete("'"$file"'") @read("'"$file"'")' 'absent file'
+fi
