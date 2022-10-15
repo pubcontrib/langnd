@@ -13,12 +13,6 @@ then
     exit 1
 fi
 
-if [ ! -f "$PROGRAM" -o ! -x "$PROGRAM" ]
-then
-    printf 'build artifact is not an executable file\n' 1>&2
-    exit 1
-fi
-
 . ./assert.sh
 
 introduce
