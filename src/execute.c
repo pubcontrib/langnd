@@ -907,7 +907,7 @@ static value_t *run_read(argument_iterator_t *arguments, map_t *variables)
 
             fclose(fileHandle);
 
-            return new_string(bytes);
+            return steal_string(bytes);
         }
 
         default:
