@@ -1370,7 +1370,7 @@ static value_t *run_unset(argument_iterator_t *arguments, map_t *variables)
             destination = allocate(sizeof(char) * length);
             memcpy(destination, source, index - 1);
             memcpy(destination + index - 1, source + index, length - index);
-            destination[length] = '\0';
+            destination[length - 1] = '\0';
 
             return steal_string(destination);
         }
