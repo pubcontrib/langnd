@@ -26,8 +26,7 @@ int main(int argumentsCount, char **arguments)
     for (argumentsIndex = 1; argumentsIndex < argumentsCount; argumentsIndex++)
     {
         char *argument;
-        size_t argumentLength;
-        int argumentIndex;
+        size_t argumentIndex, argumentLength;
 
         argument = arguments[argumentsIndex];
         argumentLength = strlen(argument);

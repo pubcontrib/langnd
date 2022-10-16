@@ -1252,7 +1252,7 @@ static value_t *run_get(argument_iterator_t *arguments, map_t *variables)
 
             length = strlen(string);
 
-            if (index < 1 || index > length)
+            if (index < 1 || (size_t) index > length)
             {
                 return throw_error("absent key");
             }
@@ -1306,7 +1306,7 @@ static value_t *run_set(argument_iterator_t *arguments, map_t *variables)
 
             sourceLength = strlen(source);
 
-            if (index < 1 || index > sourceLength)
+            if (index < 1 || (size_t) index > sourceLength)
             {
                 return throw_error("absent key");
             }
@@ -1362,7 +1362,7 @@ static value_t *run_unset(argument_iterator_t *arguments, map_t *variables)
 
             length = strlen(source);
 
-            if (index < 1 || index > length)
+            if (index < 1 || (size_t) index > length)
             {
                 return throw_error("absent key");
             }

@@ -25,7 +25,7 @@ static token_t *peek_token(capsule_t *capsule);
 static token_t *next_token(capsule_t *capsule);
 static token_t *scan_token(scanner_t *scanner);
 static char *substring_using_token(char *code, token_t *token);
-static char *substring_to_newline(char *code, int start, int limit);
+static char *substring_to_newline(char *code, size_t start, size_t limit);
 static identifier_t *parse_identifier(char *code, token_t *token);
 static char *unescape_string(char *code, token_t *token);
 static char is_symbol_token(char symbol, char *code, token_t *token);
@@ -777,7 +777,7 @@ static char *substring_using_token(char *code, token_t *token)
     return text;
 }
 
-static char *substring_to_newline(char *code, int start, int limit)
+static char *substring_to_newline(char *code, size_t start, size_t limit)
 {
     char *line;
     size_t lineLength, codeLength;

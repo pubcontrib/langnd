@@ -325,6 +325,11 @@ int string_to_number(char *text, number_t *out)
         }
     }
 
+    if (point > 6 || (point == -1 && length > 6))
+    {
+        return 1;
+    }
+
     for (index = 0; index < length; index++)
     {
         char symbol;
@@ -339,7 +344,7 @@ int string_to_number(char *text, number_t *out)
 
             if (!decimal)
             {
-                places = (point == -1 ? length : point) - (negative ? 1 : 0) - wholeIndex++;
+                places = (point == -1 ? (int) length : point) - (negative ? 1 : 0) - wholeIndex++;
                 whole += digit * integer_power(10, places - 1);
 
                 if (whole > 32767)
@@ -427,8 +432,8 @@ int number_to_integer(number_t number, int *out)
 char *represent_number(number_t number)
 {
     char *string;
-    int whole, fraction, negative, decimal, decimalWidth;
-    size_t wholeDigits, fractionDigits, length, index, zero;
+    int whole, fraction, negative, decimal;
+    size_t wholeDigits, fractionDigits, decimalWidth, length, index, zero;
 
     whole = number / 65536;
     wholeDigits = integer_digits(whole);
