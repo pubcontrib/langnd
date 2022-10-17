@@ -288,7 +288,14 @@ static statement_t *read_any_statement(capsule_t *capsule)
         char *text;
 
         text = substring_using_token(capsule->scanner.code, token);
-        string_to_number(text, &value);
+
+        if (string_to_number(text, &value) != 0)
+        {
+            free(text);
+
+            return create_unknown_statement();
+        }
+
         free(text);
 
         return create_number_statement(value);
