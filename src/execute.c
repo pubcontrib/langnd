@@ -721,6 +721,8 @@ static value_t *run_equals(argument_iterator_t *arguments, map_t *variables)
 static value_t *run_write(argument_iterator_t *arguments, map_t *variables)
 {
     value_t *message, *file;
+    FILE *handle;
+    int closable, flushable;
     char *text;
 
     if (!next_argument(arguments, variables, VALUE_TYPE_STRING, &message))
@@ -734,92 +736,13 @@ static value_t *run_write(argument_iterator_t *arguments, map_t *variables)
     }
 
     text = view_string(message);
-
-    if (file->type == VALUE_TYPE_NUMBER)
-    {
-        FILE *streamHandle;
-        number_t streamID, inID, outID, errID;
-
-        streamID = view_number(file);
-        integer_to_number(0, &inID);
-        integer_to_number(1, &outID);
-        integer_to_number(2, &errID);
-
-        if (streamID == inID)
-        {
-            streamHandle = stdin;
-        }
-        else if (streamID == outID)
-        {
-            streamHandle = stdout;
-        }
-        else if (streamID == errID)
-        {
-            streamHandle = stderr;
-        }
-        else
-        {
-            return throw_error("absent file");
-        }
-
-        fprintf(streamHandle, "%s", text);
-        fflush(streamHandle);
-
-        return new_null();
-    }
-    else if (file->type == VALUE_TYPE_STRING)
-    {
-        FILE *fileHandle;
-        char *fileName;
-
-        fileName = view_string(file);
-        fileHandle = fopen(fileName, "wb");
-
-        if (fileHandle)
-        {
-            fwrite(text, sizeof(char), strlen(text), fileHandle);
-
-            if (ferror(fileHandle))
-            {
-                fclose(fileHandle);
-
-                return throw_error("unable to write to file");
-            }
-
-            fclose(fileHandle);
-
-            return new_null();
-        }
-        else
-        {
-            return throw_error("absent file");
-        }
-
-        return new_null();
-    }
-    else
-    {
-        crash_with_message("unsupported branch EXECUTE_WRITE_TYPE");
-        return new_null();
-    }
-}
-
-static value_t *run_read(argument_iterator_t *arguments, map_t *variables)
-{
-    value_t *file;
-
-    if (!next_argument(arguments, variables, VALUE_TYPE_NUMBER | VALUE_TYPE_STRING, &file))
-    {
-        return file;
-    }
+    closable = 0;
+    flushable = 0;
 
     switch (file->type)
     {
         case VALUE_TYPE_NUMBER:
         {
-            char *bytes;
-            size_t fill, length;
-            FILE *streamHandle;
             number_t streamID, inID, outID, errID;
 
             streamID = view_number(file);
@@ -829,91 +752,179 @@ static value_t *run_read(argument_iterator_t *arguments, map_t *variables)
 
             if (streamID == inID)
             {
-                streamHandle = stdin;
+                handle = stdin;
             }
             else if (streamID == outID)
             {
-                streamHandle = stdout;
+                handle = stdout;
             }
             else if (streamID == errID)
             {
-                streamHandle = stderr;
+                handle = stderr;
             }
             else
             {
-                return throw_error("absent file");
+                handle = NULL;
             }
 
-            fill = 0;
-            length = 256;
-            bytes = allocate(sizeof(char) * (length + 1));
+            flushable = 1;
 
-            while (1)
-            {
-                char symbol;
-
-                symbol = getc(streamHandle);
-
-                if (symbol == EOF || symbol == '\n')
-                {
-                    bytes[fill++] = '\0';
-                    break;
-                }
-
-                bytes[fill++] = symbol;
-
-                if (fill == length)
-                {
-                    char *swap;
-
-                    length *= 2;
-                    swap = allocate(sizeof(char) * (length + 1));
-                    memcpy(swap, bytes, fill);
-                    bytes = swap;
-                }
-            }
-
-            return new_string(bytes);
+            break;
         }
 
         case VALUE_TYPE_STRING:
         {
-            char *bytes;
-            long length;
-            FILE *fileHandle;
+            handle = fopen(view_string(file), "wb");
+            closable = 1;
 
-            fileHandle = fopen(view_string(file), "rb");
-
-            if (!fileHandle)
-            {
-                return throw_error("absent file");
-            }
-
-            fseek(fileHandle, 0, SEEK_END);
-            length = ftell(fileHandle);
-            fseek(fileHandle, 0, SEEK_SET);
-
-            bytes = allocate(sizeof(char) * length + 1);
-            fread(bytes, 1, length, fileHandle);
-            bytes[length] = '\0';
-
-            if (ferror(fileHandle))
-            {
-                free(bytes);
-                fclose(fileHandle);
-
-                return throw_error("unable to read from file");
-            }
-
-            fclose(fileHandle);
-
-            return steal_string(bytes);
+            break;
         }
+
+        default:
+            crash_with_message("unsupported branch EXECUTE_WRITE_TYPE");
+            return new_null();
+    }
+
+    if (!handle)
+    {
+        return throw_error("absent file");
+    }
+
+    fwrite(text, sizeof(char), strlen(text), handle);
+
+    if (ferror(handle))
+    {
+        if (closable)
+        {
+            fclose(handle);
+        }
+
+        return throw_error("unable to write to file");
+    }
+
+    if (flushable)
+    {
+        fflush(handle);
+    }
+
+    if (closable)
+    {
+        fclose(handle);
+    }
+
+    return new_null();
+}
+
+static value_t *run_read(argument_iterator_t *arguments, map_t *variables)
+{
+    value_t *file;
+    FILE *handle;
+    int closable;
+    char *text;
+    size_t fill, length;
+
+    if (!next_argument(arguments, variables, VALUE_TYPE_NUMBER | VALUE_TYPE_STRING, &file))
+    {
+        return file;
+    }
+
+    closable = 0;
+
+    switch (file->type)
+    {
+        case VALUE_TYPE_NUMBER:
+        {
+            number_t streamID, inID, outID, errID;
+
+            streamID = view_number(file);
+            integer_to_number(0, &inID);
+            integer_to_number(1, &outID);
+            integer_to_number(2, &errID);
+
+            if (streamID == inID)
+            {
+                handle = stdin;
+            }
+            else if (streamID == outID)
+            {
+                handle = stdout;
+            }
+            else if (streamID == errID)
+            {
+                handle = stderr;
+            }
+            else
+            {
+                handle = NULL;
+            }
+
+            break;
+        }
+
+        case VALUE_TYPE_STRING:
+            handle = fopen(view_string(file), "rb");
+            closable = 1;
+
+            break;
 
         default:
             crash_with_message("unsupported branch EXECUTE_READ_TYPE");
             return new_null();
     }
+
+    if (!handle)
+    {
+        return throw_error("absent file");
+    }
+
+    fill = 0;
+    length = 256;
+    text = allocate(sizeof(char) * (length + 1));
+
+    while (1)
+    {
+        char symbol;
+
+        symbol = getc(handle);
+
+        if (ferror(handle))
+        {
+            if (closable)
+            {
+                fclose(handle);
+            }
+
+            free(text);
+
+            return throw_error("unable to read from file");
+        }
+
+        if (symbol == EOF || symbol == '\n')
+        {
+            text[fill++] = '\0';
+            break;
+        }
+
+        text[fill++] = symbol;
+
+        if (fill == length)
+        {
+            char *swap;
+
+            length *= 2;
+            swap = allocate(sizeof(char) * (length + 1));
+            memcpy(swap, text, fill);
+            free(text);
+            text = swap;
+        }
+    }
+
+    if (closable)
+    {
+        fclose(handle);
+    }
+
+    return steal_string(text);
 }
 
 static value_t *run_delete(argument_iterator_t *arguments, map_t *variables)
