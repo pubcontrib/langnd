@@ -817,15 +817,27 @@ static value_t *run_write(argument_iterator_t *arguments, map_t *variables)
 
 static value_t *run_read(argument_iterator_t *arguments, map_t *variables)
 {
-    value_t *file;
+    value_t *file, *until;
     FILE *handle;
     int closable;
-    char *text;
+    char *text, *terminator;
     size_t fill, length;
 
     if (!next_argument(arguments, variables, VALUE_TYPE_NUMBER | VALUE_TYPE_STRING, &file))
     {
         return file;
+    }
+
+    if (!next_argument(arguments, variables, VALUE_TYPE_NULL | VALUE_TYPE_STRING, &until))
+    {
+        return until;
+    }
+
+    terminator = until->type == VALUE_TYPE_STRING ? view_string(until) : NULL;
+
+    if (terminator && strlen(terminator) != 1)
+    {
+        return throw_error("invalid terminator");
     }
 
     closable = 0;
@@ -899,7 +911,7 @@ static value_t *run_read(argument_iterator_t *arguments, map_t *variables)
             return throw_error("unable to read from file");
         }
 
-        if (symbol == EOF || symbol == '\n')
+        if (symbol == EOF || (terminator && terminator[0] == symbol))
         {
             text[fill++] = '\0';
             break;
