@@ -3,12 +3,21 @@ suite 'function/read'
 if [ -z "$NO_PERSISTENCE" ]
 then
     file="${workspace}/read.txt"
+
+    printf 'TEXT FILE' > "$file"
+    pass '@read("'"$file"'", null)' ''
+    printf '' > "$file"
+    pass '@write(@read("'"$file"'", null), 1)' ''
     printf 'TEXT FILE' > "$file"
     pass '@write(@read("'"$file"'", null), 1)' 'TEXT FILE'
     printf 'LINE 1\nLINE 2\nLINE 3' > "$file"
     pass '@write(@read("'"$file"'", null), 1)' 'LINE 1
 LINE 2
 LINE 3'
+    printf '' > "$file"
+    pass '@write(@read("'"$file"'", "\n"), 1)' ''
+    printf 'TEXT FILE' > "$file"
+    pass '@write(@read("'"$file"'", "\n"), 1)' 'TEXT FILE'
     printf 'LINE 1\nLINE 2\nLINE 3' > "$file"
     pass '@write(@read("'"$file"'", "\n"), 1)' 'LINE 1'
     printf 'LINE 1\nLINE 2\nLINE 3' > "$file"
