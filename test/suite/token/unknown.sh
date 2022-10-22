@@ -1,4 +1,6 @@
 suite 'token/unknown'
 
-lexfail 'unknown' 'unknown'
-lexfail 'NULL' 'NULL'
+verify 'unknown' \
+    'errors with lex message' 'unknown'
+verify 'NULL' \
+    'errors with lex message' 'NULL'

@@ -1,3 +1,4 @@
 suite 'token/keyword'
 
-lexfail '@not(tru)' 'tru)'
+verify '@not(tru)' \
+    'errors with lex message' 'tru)'

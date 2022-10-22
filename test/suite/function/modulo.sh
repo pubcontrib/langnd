@@ -1,10 +1,17 @@
 suite 'function/modulo'
 
-pass '@write(@freeze(@modulo(1, 2)), 1)' '1'
-pass '@write(@freeze(@modulo(123, 456)), 1)' '123'
-pass '@write(@freeze(@modulo(-1, -2)), 1)' '-1'
-pass '@write(@freeze(@modulo(-123, -456)), 1)' '-123'
-pass '@write(@freeze(@modulo(123.456, 123.456)), 1)' '0'
-pass '@write(@freeze(@modulo(-123.456, -123.456)), 1)' '0'
+verify '@write(@freeze(@modulo(1, 2)), 1)' \
+    'prints to stdout' '1'
+verify '@write(@freeze(@modulo(123, 456)), 1)' \
+    'prints to stdout' '123'
+verify '@write(@freeze(@modulo(-1, -2)), 1)' \
+    'prints to stdout' '-1'
+verify '@write(@freeze(@modulo(-123, -456)), 1)' \
+    'prints to stdout' '-123'
+verify '@write(@freeze(@modulo(123.456, 123.456)), 1)' \
+    'prints to stdout' '0'
+verify '@write(@freeze(@modulo(-123.456, -123.456)), 1)' \
+    'prints to stdout' '0'
 
-executefail '@modulo(100, 0)' 'arithmetic error'
+verify '@modulo(100, 0)' \
+    'errors with execute message' 'arithmetic error'

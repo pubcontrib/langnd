@@ -26,40 +26,60 @@ suite()
     suite=$1
 }
 
-lexfail()
-{
-    fail "$1" "langnd: failed to lex code
-    [hint] $2"
-}
-
-parsefail()
-{
-    fail "$1" "langnd: failed to parse code
-    [hint] $2"
-}
-
-executefail()
-{
-    fail "$1" "langnd: failed to execute code
-    [hint] $2"
-}
-
-pass()
-{
-    testscript "$1" "$2" 0 1
-}
-
-fail()
-{
-    testscript "$1" "$2" 1 2
-}
-
-testscript()
+verify()
 {
     source=$1
-    expected_output=$2
-    expected_code=$3
-    capture_stream=$4
+    shift
+    expected_output=''
+    expected_code=0
+    capture_stream=1
+
+    while [ "${1+x}" = 'x' ]
+    do
+        action="$1"
+        shift
+
+        case "$action" in
+            'prints to stdout')
+                expected_output="$1"
+                shift
+                capture_stream=1
+                ;;
+            'prints to stderr')
+                expected_output="$1"
+                shift
+                capture_stream=2
+                ;;
+            'exits with code')
+                expected_code=$1
+                shift
+                ;;
+            'errors with lex message')
+                expected_output="langnd: failed to lex code
+    [hint] $1"
+                shift
+                capture_stream=2
+                expected_code=1
+                ;;
+            'errors with parse message')
+                expected_output="langnd: failed to parse code
+    [hint] $1"
+                shift
+                capture_stream=2
+                expected_code=1
+                ;;
+            'errors with execute message')
+                expected_output="langnd: failed to execute code
+    [hint] $1"
+                shift
+                capture_stream=2
+                expected_code=1
+                ;;
+            *)
+                printf 'failed to verify test\n' 1>&2
+                exit 1
+        esac
+    done
 
     count=`expr $count + 1`
 

@@ -1,4 +1,6 @@
 suite 'token/string'
 
-lexfail '"missing end' '"missing end'
-lexfail 'missing start"' 'missing start"'
+verify '"missing end' \
+    'errors with lex message' '"missing end'
+verify 'missing start"' \
+    'errors with lex message' 'missing start"'

@@ -1,15 +1,26 @@
 suite 'statement/loop'
 
-pass 'while false { @write("HERE", 1) }' ''
-pass '$i=1 while @precedes($i, 4) { @write(@freeze($i), 1) $i=@add($i, 1) }' '123'
-pass '$i=1 while @precedes($i, 4) { $j=1 while @precedes($j, 4) { @write(@freeze(@multiply($i, $j)), 1) $j=@add($j, 1) } $i=@add($i, 1) }' '123246369'
+verify 'while false { @write("HERE", 1) }' \
+    'prints to stdout' ''
+verify '$i=1 while @precedes($i, 4) { @write(@freeze($i), 1) $i=@add($i, 1) }' \
+    'prints to stdout' '123'
+verify '$i=1 while @precedes($i, 4) { $j=1 while @precedes($j, 4) { @write(@freeze(@multiply($i, $j)), 1) $j=@add($j, 1) } $i=@add($i, 1) }' \
+    'prints to stdout' '123246369'
 
-parsefail 'while' 'while'
-parsefail 'while { }' '{ }'
-parsefail 'while false {' '{'
-parsefail 'while false }' 'false }'
-parsefail 'while false 100' 'false 100'
-parsefail 'while false { 100' '100'
+verify 'while' \
+    'errors with parse message' 'while'
+verify 'while { }' \
+    'errors with parse message' '{ }'
+verify 'while false {' \
+    'errors with parse message' '{'
+verify 'while false }' \
+    'errors with parse message' 'false }'
+verify 'while false 100' \
+    'errors with parse message' 'false 100'
+verify 'while false { 100' \
+    'errors with parse message' '100'
 
-executefail 'while true { "before" @divide(100, 0) "after" }' 'arithmetic error'
-executefail 'while @divide(100, 0) { $missing }' 'arithmetic error'
+verify 'while true { "before" @divide(100, 0) "after" }' \
+    'errors with execute message' 'arithmetic error'
+verify 'while @divide(100, 0) { $missing }' \
+    'errors with execute message' 'arithmetic error'

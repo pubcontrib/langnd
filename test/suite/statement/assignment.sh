@@ -1,30 +1,56 @@
 suite 'statement/assignment'
 
-pass '$a=null'
-pass '$a=100' ''
-pass '$a="text"' ''
-pass '$A="val"' ''
-pass '$0="val"' ''
-pass '$_="val"' ''
-pass '$Text_100="val"' ''
-pass '$"(long) & [special] --> ID"="val"' ''
-pass '$a=100 $a' ''
-pass '$a="text" $a' ''
-pass '$a=100 $a=null $a' ''
-pass '$a=100 @write(@freeze($a), 1)' '100'
-pass '$a="text" @write($a, 1)' 'text'
-pass '$a=true @write(@freeze($a), 1)' 'true'
-pass '$a=100 $a=200 $a=300 @write(@freeze($a), 1)' '300'
-pass '$a=100 $b=$a @write(@freeze($b), 1)' '100'
-pass '$a=100 $a=$a @write(@freeze($a), 1)' '100'
-pass '$a=100 $b=200 @write(@freeze(@add($a, $b)), 1)' '300'
-pass '$a="this" $b=" & that" @write(@merge($a, $b), 1)' 'this & that'
-pass '$"long id"="found" @write($"long id", 1)' 'found'
-pass '$""="found" @write($"", 1)' 'found'
-pass '$"id"="found" @write($"id", 1)' 'found'
-pass '$id="found" @write($"id", 1)' 'found'
-pass '$"id"="found" @write($id, 1)' 'found'
+verify '$a=null' \
+    'prints to stdout' ''
+verify '$a=100' \
+    'prints to stdout' ''
+verify '$a="text"' \
+    'prints to stdout' ''
+verify '$A="val"' \
+    'prints to stdout' ''
+verify '$0="val"' \
+    'prints to stdout' ''
+verify '$_="val"' \
+    'prints to stdout' ''
+verify '$Text_100="val"' \
+    'prints to stdout' ''
+verify '$"(long) & [special] --> ID"="val"' \
+    'prints to stdout' ''
+verify '$a=100 $a' \
+    'prints to stdout' ''
+verify '$a="text" $a' \
+    'prints to stdout' ''
+verify '$a=100 $a=null $a' \
+    'prints to stdout' ''
+verify '$a=100 @write(@freeze($a), 1)' \
+    'prints to stdout' '100'
+verify '$a="text" @write($a, 1)' \
+    'prints to stdout' 'text'
+verify '$a=true @write(@freeze($a), 1)' \
+    'prints to stdout' 'true'
+verify '$a=100 $a=200 $a=300 @write(@freeze($a), 1)' \
+    'prints to stdout' '300'
+verify '$a=100 $b=$a @write(@freeze($b), 1)' \
+    'prints to stdout' '100'
+verify '$a=100 $a=$a @write(@freeze($a), 1)' \
+    'prints to stdout' '100'
+verify '$a=100 $b=200 @write(@freeze(@add($a, $b)), 1)' \
+    'prints to stdout' '300'
+verify '$a="this" $b=" & that" @write(@merge($a, $b), 1)' \
+    'prints to stdout' 'this & that'
+verify '$"long id"="found" @write($"long id", 1)' \
+    'prints to stdout' 'found'
+verify '$""="found" @write($"", 1)' \
+    'prints to stdout' 'found'
+verify '$"id"="found" @write($"id", 1)' \
+    'prints to stdout' 'found'
+verify '$id="found" @write($"id", 1)' \
+    'prints to stdout' 'found'
+verify '$"id"="found" @write($id, 1)' \
+    'prints to stdout' 'found'
 
-parsefail '$a=' '='
+verify '$a=' \
+    'errors with parse message' '='
 
-executefail '$huh' 'absent variable'
+verify '$huh' \
+    'errors with execute message' 'absent variable'

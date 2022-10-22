@@ -1,4 +1,6 @@
 suite 'statement/string'
 
-pass '"text"' ''
-pass '"\t\n\r !\"#$%&'"'"'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^`_abcdefghijklmnopqrstuvwxyz{|}~"' ''
+verify '"text"' \
+    'prints to stdout' ''
+verify '"\t\n\r !\"#$%&'"'"'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^`_abcdefghijklmnopqrstuvwxyz{|}~"' \
+    'prints to stdout' ''

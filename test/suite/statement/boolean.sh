@@ -1,4 +1,6 @@
 suite 'statement/boolean'
 
-pass 'false' ''
-pass 'true' ''
+verify 'false' \
+    'prints to stdout' ''
+verify 'true' \
+    'prints to stdout' ''

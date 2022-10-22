@@ -1,3 +1,4 @@
 suite 'token/whitespace'
 
-pass '' ''
+verify '' \
+    'prints to stdout' ''

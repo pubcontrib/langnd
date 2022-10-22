@@ -1,6 +1,10 @@
 suite 'function/or'
 
-pass '@write(@freeze(@or(false, false)), 1)' 'false'
-pass '@write(@freeze(@or(false, true)), 1)' 'true'
-pass '@write(@freeze(@or(true, false)), 1)' 'true'
-pass '@write(@freeze(@or(true, true)), 1)' 'true'
+verify '@write(@freeze(@or(false, false)), 1)' \
+    'prints to stdout' 'false'
+verify '@write(@freeze(@or(false, true)), 1)' \
+    'prints to stdout' 'true'
+verify '@write(@freeze(@or(true, false)), 1)' \
+    'prints to stdout' 'true'
+verify '@write(@freeze(@or(true, true)), 1)' \
+    'prints to stdout' 'true'

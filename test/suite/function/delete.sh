@@ -5,11 +5,16 @@ then
     file="${workspace}/delete.txt"
 
     printf 'TEXT FILE' > "$file"
-    pass '@delete("'"$file"'")' ''
+    verify '@delete("'"$file"'")' \
+        'prints to stdout' ''
     printf 'TEXT FILE' > "$file"
-    executefail '@delete("'"$file"'") @read("'"$file"'", null)' 'absent file'
+    verify '@delete("'"$file"'") @read("'"$file"'", null)' \
+        'errors with execute message' 'absent file'
 fi
 
-executefail '@delete(0)' 'unable to delete file'
-executefail '@delete(1)' 'unable to delete file'
-executefail '@delete(2)' 'unable to delete file'
+verify '@delete(0)' \
+    'errors with execute message' 'unable to delete file'
+verify '@delete(1)' \
+    'errors with execute message' 'unable to delete file'
+verify '@delete(2)' \
+    'errors with execute message' 'unable to delete file'

@@ -1,5 +1,8 @@
 suite 'statement/null'
 
-pass 'null' ''
-pass 'nullnull' ''
-pass 'null null' ''
+verify 'null' \
+    'prints to stdout' ''
+verify 'nullnull' \
+    'prints to stdout' ''
+verify 'null null' \
+    'prints to stdout' ''
