@@ -50,6 +50,10 @@ verify()
                 shift
                 capture_stream=2
                 ;;
+            'with stdin')
+                input="$1"
+                shift
+                ;;
             'exits with code')
                 expected_code=$1
                 shift
@@ -85,11 +89,23 @@ verify()
 
     if [ $capture_stream = 1 ]
     then
-        actual_output=`$PROGRAM -t -- "$source" 2>/dev/null`
+        if [ -z "$input" ]
+        then
+            actual_output=`$PROGRAM -t -- "$source" 2>/dev/null`
+        else
+            actual_output=`echo "$input" | $PROGRAM -t -- "$source" 2>/dev/null`
+        fi
+
         actual_code=$?
     elif [ $capture_stream = 2 ]
     then
-        actual_output=`$PROGRAM -t -- "$source" 2>&1`
+        if [ -z "$input" ]
+        then
+            actual_output=`$PROGRAM -t -- "$source" 2>&1`
+        else
+            actual_output=`echo "$input" | $PROGRAM -t -- "$source" 2>&1`
+        fi
+
         actual_code=$?
     else
         printf 'failed to capture stream\n' 1>&2
