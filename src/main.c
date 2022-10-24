@@ -5,13 +5,14 @@
 #include "utility.h"
 
 static int run_text(char *text);
+static int run_file(char *file);
 static int run_help();
 static int run_version();
 
 typedef enum
 {
-    PROGRAM_MODE_UNKNOWN,
     PROGRAM_MODE_TEXT,
+    PROGRAM_MODE_FILE,
     PROGRAM_MODE_HELP,
     PROGRAM_MODE_VERSION
 } program_mode_t;
@@ -21,7 +22,7 @@ int main(int argumentsCount, char **arguments)
     program_mode_t mode;
     int argumentsIndex;
 
-    mode = PROGRAM_MODE_UNKNOWN;
+    mode = PROGRAM_MODE_FILE;
 
     for (argumentsIndex = 1; argumentsIndex < argumentsCount; argumentsIndex++)
     {
@@ -54,6 +55,10 @@ int main(int argumentsCount, char **arguments)
                     mode = PROGRAM_MODE_TEXT;
                     break;
 
+                case 'f':
+                    mode = PROGRAM_MODE_FILE;
+                    break;
+
                 case 'h':
                     mode = PROGRAM_MODE_HELP;
                     break;
@@ -76,6 +81,19 @@ int main(int argumentsCount, char **arguments)
             if (argumentsIndex < argumentsCount)
             {
                 return run_text(arguments[argumentsIndex++]);
+            }
+            else
+            {
+                crash_with_message("missing required script argument");
+                break;
+            }
+        }
+
+        case PROGRAM_MODE_FILE:
+        {
+            if (argumentsIndex < argumentsCount)
+            {
+                return run_file(arguments[argumentsIndex++]);
             }
             else
             {
@@ -133,13 +151,53 @@ static int run_text(char *text)
     return PROGRAM_SUCCESS;
 }
 
+static int run_file(char *file)
+{
+    FILE *handle;
+    int status;
+    char *text;
+    size_t length;
+
+    handle = fopen(file, "rb");
+
+    if (!handle)
+    {
+        crash_with_message("missing script file %s", file);
+    }
+
+    fseek(handle, 0, SEEK_END);
+    length = ftell(handle);
+    fseek(handle, 0, SEEK_SET);
+
+    text = allocate(sizeof(char) * (length + 1));
+    fread(text, 1, length, handle);
+    text[length] = '\0';
+
+    if (ferror(handle))
+    {
+        free(text);
+        fclose(handle);
+
+        crash_with_message("script file read failed %s", file);
+    }
+
+    fclose(handle);
+    status = run_text(text);
+    free(text);
+
+    return status;
+}
+
 static int run_help()
 {
     printf("Usage:\n");
+    printf("  %s script\n", PROGRAM_NAME);
     printf("  %s -t script\n", PROGRAM_NAME);
+    printf("  %s -f script\n", PROGRAM_NAME);
     printf("\n");
     printf("Options:\n");
     printf("  -t  Set program to text mode.\n");
+    printf("  -f  Set program to file mode. Default mode.\n");
     printf("  -h  Show help.\n");
     printf("  -v  Show version.\n");
     return PROGRAM_SUCCESS;
