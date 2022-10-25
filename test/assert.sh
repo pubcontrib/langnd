@@ -101,9 +101,9 @@ verify()
     then
         if [ -z "$input" ]
         then
-            actual_output=`$PROGRAM -t -- "$source" 2>&1`
+            actual_output=`$PROGRAM -t -- "$source" 2>&1 > /dev/null`
         else
-            actual_output=`printf '%s' "$input" | $PROGRAM -t -- "$source" 2>&1`
+            actual_output=`printf '%s' "$input" | $PROGRAM -t -- "$source" 2>&1 > /dev/null`
         fi
 
         actual_code=$?
