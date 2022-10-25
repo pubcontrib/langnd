@@ -93,7 +93,7 @@ verify()
         then
             actual_output=`$PROGRAM -t -- "$source" 2>/dev/null`
         else
-            actual_output=`echo "$input" | $PROGRAM -t -- "$source" 2>/dev/null`
+            actual_output=`printf '%s' "$input" | $PROGRAM -t -- "$source" 2>/dev/null`
         fi
 
         actual_code=$?
@@ -103,7 +103,7 @@ verify()
         then
             actual_output=`$PROGRAM -t -- "$source" 2>&1`
         else
-            actual_output=`echo "$input" | $PROGRAM -t -- "$source" 2>&1`
+            actual_output=`printf '%s' "$input" | $PROGRAM -t -- "$source" 2>&1`
         fi
 
         actual_code=$?

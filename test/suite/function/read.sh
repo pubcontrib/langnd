@@ -7,7 +7,9 @@ verify '@write(@read(0, null), 1)' \
     'with stdin' 'TEXT INPUT' \
     'prints to stdout' 'TEXT INPUT'
 verify '@write(@read(0, null), 1)' \
-    'with stdin' 'LINE 1\nLINE 2\nLINE 3' \
+    'with stdin' 'LINE 1
+LINE 2
+LINE 3' \
     'prints to stdout' 'LINE 1
 LINE 2
 LINE 3'
@@ -18,10 +20,14 @@ verify '@write(@read(0, "\n"), 1)' \
     'with stdin' 'TEXT INPUT' \
     'prints to stdout' 'TEXT INPUT'
 verify '@write(@read(0, "\n"), 1)' \
-    'with stdin' 'LINE 1\nLINE 2\nLINE 3' \
+    'with stdin' 'LINE 1
+LINE 2
+LINE 3' \
     'prints to stdout' 'LINE 1'
 verify '@write(@read(0, "\n"), 1) @write(@read(0, "\n"), 1) @write(@read(0, "\n"), 1) @write(@read(0, "\n"), 1)' \
-    'with stdin' 'LINE 1\nLINE 2\nLINE 3' \
+    'with stdin' 'LINE 1
+LINE 2
+LINE 3' \
     'prints to stdout' 'LINE 1LINE 2LINE 3'
 
 if [ -z "$NO_PERSISTENCE" ]
