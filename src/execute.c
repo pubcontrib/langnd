@@ -799,7 +799,7 @@ static value_t *run_write(argument_iterator_t *arguments, map_t *variables)
             fclose(handle);
         }
 
-        return throw_error("unable to write to file");
+        return throw_error("io error");
     }
 
     if (flushable)
@@ -908,7 +908,7 @@ static value_t *run_read(argument_iterator_t *arguments, map_t *variables)
 
             free(text);
 
-            return throw_error("unable to read from file");
+            return throw_error("io error");
         }
 
         if (symbol == EOF || (terminator && terminator[0] == symbol))
@@ -951,7 +951,7 @@ static value_t *run_delete(argument_iterator_t *arguments, map_t *variables)
     switch (file->type)
     {
         case VALUE_TYPE_NUMBER:
-            return throw_error("unable to delete file");
+            return throw_error("io error");
 
         case VALUE_TYPE_STRING:
         {
@@ -961,7 +961,7 @@ static value_t *run_delete(argument_iterator_t *arguments, map_t *variables)
 
             if (remove(fileName) == -1)
             {
-                return throw_error("unable to delete file");
+                return throw_error("io error");
             }
 
             return new_null();
@@ -1452,7 +1452,7 @@ static value_t *run_length(argument_iterator_t *arguments, map_t *variables)
 
             if (length >= INT_MAX || integer_to_number(length, &number) != 0)
             {
-                return throw_error("unable to represent length");
+                return throw_error("constraint error");
             }
 
             return new_number(number);

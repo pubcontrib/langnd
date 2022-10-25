@@ -13,8 +13,8 @@ then
 fi
 
 verify '@delete(0)' \
-    'errors with execute message' 'unable to delete file'
+    'errors with execute message' 'io error'
 verify '@delete(1)' \
-    'errors with execute message' 'unable to delete file'
+    'errors with execute message' 'io error'
 verify '@delete(2)' \
-    'errors with execute message' 'unable to delete file'
+    'errors with execute message' 'io error'
