@@ -46,6 +46,7 @@ static value_t *run_equals(argument_iterator_t *arguments, map_t *variables);
 static value_t *run_write(argument_iterator_t *arguments, map_t *variables);
 static value_t *run_read(argument_iterator_t *arguments, map_t *variables);
 static value_t *run_delete(argument_iterator_t *arguments, map_t *variables);
+static value_t *run_query(argument_iterator_t *arguments, map_t *variables);
 static value_t *run_freeze(argument_iterator_t *arguments, map_t *variables);
 static value_t *run_type(argument_iterator_t *arguments, map_t *variables);
 static value_t *run_cast(argument_iterator_t *arguments, map_t *variables);
@@ -288,6 +289,10 @@ static value_t *apply_statement(statement_t *statement, map_t *variables)
             else if (strcmp(data->identifier->name, "delete") == 0)
             {
                 result = run_delete(&arguments, variables);
+            }
+            else if (strcmp(data->identifier->name, "query") == 0)
+            {
+                result = run_query(&arguments, variables);
             }
             else if (strcmp(data->identifier->name, "freeze") == 0)
             {
@@ -971,6 +976,20 @@ static value_t *run_delete(argument_iterator_t *arguments, map_t *variables)
             crash_with_message("unsupported branch EXECUTE_DELETE_TYPE");
             return new_null();
     }
+}
+
+static value_t *run_query(argument_iterator_t *arguments, map_t *variables)
+{
+    value_t *key;
+    char *value;
+
+    if (!next_argument(arguments, variables, VALUE_TYPE_STRING, &key))
+    {
+        return key;
+    }
+
+    value = getenv(view_string(key));
+    return value ? new_string(value) : throw_error("absent environment variable");
 }
 
 static value_t *run_freeze(argument_iterator_t *arguments, map_t *variables)

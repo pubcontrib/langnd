@@ -54,6 +54,7 @@ introduce
 . suite/function/write.sh
 . suite/function/read.sh
 . suite/function/delete.sh
+. suite/function/query.sh
 . suite/function/freeze.sh
 . suite/function/type.sh
 . suite/function/cast.sh
