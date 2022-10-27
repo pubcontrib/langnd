@@ -3,6 +3,23 @@ suite='unset'
 introduce()
 {
     count=0
+    source_format="${SOURCE_FORMAT:-text}"
+
+    case "$source_format" in
+        'text')
+            ;;
+        'file')
+            if [ -n "$NO_PERSISTENCE" ]
+            then
+                printf 'persistence is required\n' 1>&2
+                exit 1
+            fi
+            ;;
+        *)
+            printf 'invalid source format\n' 1>&2
+            exit 1
+            ;;
+    esac
 
     if [ -z "$NO_PERSISTENCE" ]
     then
@@ -90,31 +107,52 @@ verify()
     done
 
     count=`expr $count + 1`
+    actual_output=
 
-    if [ $capture_stream = 1 ]
+    if [ "$source_format" = 'text' ]
     then
-        if [ -z "$input" ]
+        if [ $capture_stream = 1 ]
         then
-            actual_output=`$PROGRAM -t -- "$source" 2>/dev/null`
-        else
-            actual_output=`printf '%s' "$input" | $PROGRAM -t -- "$source" 2>/dev/null`
+            if [ -z "$input" ]
+            then
+                actual_output=`$PROGRAM -t -- "$source" 2>/dev/null`
+            else
+                actual_output=`printf '%s' "$input" | $PROGRAM -t -- "$source" 2>/dev/null`
+            fi
+        elif [ $capture_stream = 2 ]
+        then
+            if [ -z "$input" ]
+            then
+                actual_output=`$PROGRAM -t -- "$source" 2>&1 > /dev/null`
+            else
+                actual_output=`printf '%s' "$input" | $PROGRAM -t -- "$source" 2>&1 > /dev/null`
+            fi
         fi
-
-        actual_code=$?
-    elif [ $capture_stream = 2 ]
+    elif [ "$source_format" = 'file' ]
     then
-        if [ -z "$input" ]
-        then
-            actual_output=`$PROGRAM -t -- "$source" 2>&1 > /dev/null`
-        else
-            actual_output=`printf '%s' "$input" | $PROGRAM -t -- "$source" 2>&1 > /dev/null`
-        fi
+        source_file="${workspace}/source.txt"
+        printf '%s' "$source" > "$source_file"
 
-        actual_code=$?
-    else
-        printf 'failed to capture stream\n' 1>&2
-        exit 1
+        if [ $capture_stream = 1 ]
+        then
+            if [ -z "$input" ]
+            then
+                actual_output=`$PROGRAM -f "$source_file" 2>/dev/null`
+            else
+                actual_output=`printf '%s' "$input" | $PROGRAM -f "$source_file" 2>/dev/null`
+            fi
+        elif [ $capture_stream = 2 ]
+        then
+            if [ -z "$input" ]
+            then
+                actual_output=`$PROGRAM -f "$source_file" 2>&1 > /dev/null`
+            else
+                actual_output=`printf '%s' "$input" | $PROGRAM -f "$source_file" 2>&1 > /dev/null`
+            fi
+        fi
     fi
+
+    actual_code=$?
 
     if [ $actual_code != $expected_code ]
     then
