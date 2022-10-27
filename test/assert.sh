@@ -14,7 +14,11 @@ introduce()
 conclude()
 {
     writeoutcome 'PASS' "`printf '%d tests ran successfully\n' $count`" 32
+    cleanup
+}
 
+cleanup()
+{
     if [ -z "$NO_PERSISTENCE" ]
     then
         rm -fr "$workspace"

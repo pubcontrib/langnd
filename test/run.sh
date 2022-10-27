@@ -15,6 +15,13 @@ fi
 
 . ./assert.sh
 
+crash()
+{
+    cleanup
+    exit 1
+}
+
+trap crash INT QUIT ABRT
 introduce
 
 . suite/token/unknown.sh
