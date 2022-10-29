@@ -55,6 +55,10 @@ verify()
     expected_code=0
     capture_stream=1
 
+    # Increment the test count
+    count=`expr $count + 1`
+
+    # Keep building up test setup while there are more arguments
     while [ "${1+x}" = 'x' ]
     do
         statement="$1"
@@ -155,8 +159,7 @@ verify()
         esac
     done
 
-    count=`expr $count + 1`
-
+    # Assure no test setup failed part way through
     if [ "${flaw+x}" = 'x' ]
     then
         writeoutcome 'FLAW' "`printf 'test %d is flawed\n' $count`" 31
@@ -166,6 +169,7 @@ verify()
         exit 1
     fi
 
+    # Run the test while waiting for output and an exit code
     actual_output=
 
     if [ "$source_format" = 'text' ]
@@ -213,6 +217,7 @@ verify()
 
     actual_code=$?
 
+    # Assure the run had the expected exit code
     if [ $actual_code != $expected_code ]
     then
         writeoutcome 'FAIL' "`printf 'test %d failed\n' $count`" 31
@@ -224,6 +229,7 @@ verify()
         exit 1
     fi
 
+    # Assure the run had the expected output
     if [ "$actual_output" != "$expected_output" ]
     then
         writeoutcome 'FAIL' "`printf 'test %d failed\n' $count`" 31
@@ -234,6 +240,8 @@ verify()
         writedetail 'Actual' "$actual_output"
         exit 1
     fi
+
+    # Any test making it this far passes
 }
 
 writeoutcome()
