@@ -57,56 +57,115 @@ verify()
 
     while [ "${1+x}" = 'x' ]
     do
-        action="$1"
+        statement="$1"
         shift
 
-        case "$action" in
+        case "$statement" in
             'prints to stdout')
+                if [ "${1+x}" != 'x' ]
+                then
+                    flaw='missing output'
+                    break
+                fi
+
                 expected_output="$1"
                 shift
                 capture_stream=1
                 ;;
+
             'prints to stderr')
+                if [ "${1+x}" != 'x' ]
+                then
+                    flaw='missing output'
+                    break
+                fi
+
                 expected_output="$1"
                 shift
                 capture_stream=2
                 ;;
+
             'with stdin')
+                if [ "${1+x}" != 'x' ]
+                then
+                    flaw='missing input'
+                    break
+                fi
+
                 input="$1"
                 shift
                 ;;
+
             'exits with code')
+                if [ "${1+x}" != 'x' ]
+                then
+                    flaw='missing exit code'
+                    break
+                fi
+
                 expected_code=$1
                 shift
                 ;;
+
             'errors with lex message')
+                if [ "${1+x}" != 'x' ]
+                then
+                    flaw='missing error hint'
+                    break
+                fi
+
                 expected_output="langnd: failed to lex code
     [hint] $1"
                 shift
                 capture_stream=2
                 expected_code=1
                 ;;
+
             'errors with parse message')
+                if [ "${1+x}" != 'x' ]
+                then
+                    flaw='missing error hint'
+                    break
+                fi
+
                 expected_output="langnd: failed to parse code
     [hint] $1"
                 shift
                 capture_stream=2
                 expected_code=1
                 ;;
+
             'errors with execute message')
+                if [ "${1+x}" != 'x' ]
+                then
+                    flaw='missing error hint'
+                    break
+                fi
+
                 expected_output="langnd: failed to execute code
     [hint] $1"
                 shift
                 capture_stream=2
                 expected_code=1
                 ;;
+
             *)
-                printf 'failed to verify test\n' 1>&2
-                exit 1
+                flaw='unknown test statement'
+                break
         esac
     done
 
     count=`expr $count + 1`
+
+    if [ "${flaw+x}" = 'x' ]
+    then
+        writeoutcome 'FLAW' "`printf 'test %d is flawed\n' $count`" 31
+        writedetail 'Reason' "$flaw"
+        writedetail 'Suite' "$suite"
+        writedetail 'Source' "$source"
+        exit 1
+    fi
+
     actual_output=
 
     if [ "$source_format" = 'text' ]
