@@ -8,6 +8,7 @@ introduce()
     case "$source_format" in
         'text')
             ;;
+
         'file')
             if [ -n "$NO_PERSISTENCE" ]
             then
@@ -15,6 +16,7 @@ introduce()
                 exit 1
             fi
             ;;
+
         *)
             printf 'invalid source format\n' 1>&2
             exit 1
