@@ -19,6 +19,7 @@ static statement_t *read_assignment_statement(capsule_t *capsule, identifier_t *
 static statement_t *read_invoke_statement(capsule_t *capsule, identifier_t *identifier);
 static statement_t *read_branch_statement(capsule_t *capsule);
 static statement_t *read_loop_statement(capsule_t *capsule);
+static statement_t *read_catch_statement(capsule_t *capsule);
 static char is_value_statement(statement_t *statement);
 static char is_literal_statement(statement_t *statement);
 static token_t *peek_token(capsule_t *capsule);
@@ -38,6 +39,7 @@ static statement_t *create_assignment_statement(identifier_t *identifier, statem
 static statement_t *create_invoke_statement(identifier_t *identifier, list_t *arguments);
 static statement_t *create_branch_statement(statement_t *condition, list_t *pass, list_t *fail);
 static statement_t *create_loop_statement(statement_t *condition, list_t *body);
+static statement_t *create_catch_statement(list_t *body);
 static statement_t *create_reference_statement(identifier_t *identifier);
 static statement_t *create_statement(statement_type_t type, void *data);
 static void destroy_statement_unsafe(void *statement);
@@ -237,6 +239,21 @@ void destroy_statement(statement_t *statement)
                 break;
             }
 
+            case STATEMENT_TYPE_CATCH:
+            {
+                catch_statement_data_t *data;
+
+                data = statement->data;
+
+                if (data->body)
+                {
+                    destroy_list(data->body);
+                }
+
+                free(data);
+                break;
+            }
+
             case STATEMENT_TYPE_REFERENCE:
             {
                 reference_statement_data_t *data;
@@ -366,6 +383,10 @@ static statement_t *read_any_statement(capsule_t *capsule)
         else if (strcmp(keyword, "while") == 0)
         {
             statement = read_loop_statement(capsule);
+        }
+        else if (strcmp(keyword, "catch") == 0)
+        {
+            statement = read_catch_statement(capsule);
         }
         else
         {
@@ -664,6 +685,49 @@ static statement_t *read_loop_statement(capsule_t *capsule)
     return create_loop_statement(condition, body);
 }
 
+static statement_t *read_catch_statement(capsule_t *capsule)
+{
+    list_t *body;
+    token_t *optional;
+
+    optional = peek_token(capsule);
+
+    if (!is_symbol_token('{', capsule->scanner.code, optional))
+    {
+        return create_unknown_statement();
+    }
+
+    next_token(capsule);
+    body = empty_list(destroy_statement_unsafe);
+
+    while (1)
+    {
+        statement_t *part;
+
+        optional = peek_token(capsule);
+
+        if (is_symbol_token('}', capsule->scanner.code, optional))
+        {
+            next_token(capsule);
+
+            break;
+        }
+
+        part = read_any_statement(capsule);
+
+        if (!part || part->type == STATEMENT_TYPE_UNKNOWN)
+        {
+            destroy_list(body);
+
+            return create_unknown_statement();
+        }
+
+        add_list_item(body, part);
+    }
+
+    return create_catch_statement(body);
+}
+
 static char is_value_statement(statement_t *statement)
 {
     if (is_literal_statement(statement))
@@ -676,6 +740,7 @@ static char is_value_statement(statement_t *statement)
         case STATEMENT_TYPE_REFERENCE:
         case STATEMENT_TYPE_INVOKE:
         case STATEMENT_TYPE_BRANCH:
+        case STATEMENT_TYPE_CATCH:
             return 1;
 
         default:
@@ -1000,6 +1065,16 @@ static statement_t *create_loop_statement(statement_t *condition, list_t *body)
     data->body = body;
 
     return create_statement(STATEMENT_TYPE_LOOP, data);
+}
+
+static statement_t *create_catch_statement(list_t *body)
+{
+    catch_statement_data_t *data;
+
+    data = allocate(sizeof(catch_statement_data_t));
+    data->body = body;
+
+    return create_statement(STATEMENT_TYPE_CATCH, data);
 }
 
 static statement_t *create_reference_statement(identifier_t *identifier)

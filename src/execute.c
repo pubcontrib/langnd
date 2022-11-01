@@ -464,6 +464,33 @@ static value_t *apply_statement(statement_t *statement, map_t *variables)
             return last;
         }
 
+        case STATEMENT_TYPE_CATCH:
+        {
+            catch_statement_data_t *data;
+            list_node_t *node;
+
+            data = statement->data;
+
+            for (node = data->body->head; node; node = node->next)
+            {
+                value_t *last;
+
+                last = apply_statement(node->value, variables);
+
+                if (last->thrown)
+                {
+                    last->thrown = 0;
+                    return last;
+                }
+                else
+                {
+                    dereference_value(last);
+                }
+            }
+
+            return new_null();
+        }
+
         case STATEMENT_TYPE_REFERENCE:
         {
             reference_statement_data_t *data;
