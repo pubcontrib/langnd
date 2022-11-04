@@ -22,12 +22,12 @@ verify '@write(@freeze(@divide(-123.456, -123.456)), 1)' \
     'prints to stdout' '1'
 
 verify '@divide(32767, 0.5)' \
-    'errors with execute message' 'arithmetic error'
+    'errors with execute message' '"arithmetic error"'
 verify '@divide(32767, -0.5)' \
-    'errors with execute message' 'arithmetic error'
+    'errors with execute message' '"arithmetic error"'
 verify '@divide(-32767, 0.5)' \
-    'errors with execute message' 'arithmetic error'
+    'errors with execute message' '"arithmetic error"'
 verify '@divide(-32767, -0.5)' \
-    'errors with execute message' 'arithmetic error'
+    'errors with execute message' '"arithmetic error"'
 verify '@divide(100, 0)' \
-    'errors with execute message' 'arithmetic error'
+    'errors with execute message' '"arithmetic error"'

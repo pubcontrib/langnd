@@ -64,6 +64,7 @@ static value_t *new_boolean(boolean_t boolean);
 static value_t *new_number(number_t number);
 static value_t *new_string(char *string);
 static value_t *steal_string(char *string);
+static char *represent_value(value_t *value);
 static boolean_t view_boolean(value_t *value);
 static number_t view_number(value_t *value);
 static char *view_string(value_t *value);
@@ -101,36 +102,17 @@ outcome_t *execute(char *code)
         value_t *result;
 
         result = apply_statement(node->value, variables);
-        result->owners -= 1;
 
         if (result->thrown)
         {
-            if (result->type == VALUE_TYPE_STRING)
-            {
-                char *message;
-
-                message = copy_string(result->data);
-
-                if (result->owners < 1)
-                {
-                    destroy_value(result);
-                }
-
-                outcome->errorMessage = copy_string("failed to execute code");
-                outcome->hintMessage = message;
-            }
-            else
-            {
-                crash_with_message("unsupported branch EXECUTE_THROWN_MESSAGE");
-            }
+            outcome->errorMessage = copy_string("failed to execute code");
+            outcome->hintMessage = represent_value(result);
+            dereference_value(result);
 
             break;
         }
 
-        if (result->owners < 1)
-        {
-            destroy_value(result);
-        }
+        dereference_value(result);
 
         node = node->next;
     }
@@ -1028,104 +1010,7 @@ static value_t *run_freeze(argument_iterator_t *arguments, map_t *variables)
         return value;
     }
 
-    switch (value->type)
-    {
-        case VALUE_TYPE_NULL:
-            return new_string("null");
-
-        case VALUE_TYPE_BOOLEAN:
-            return view_boolean(value) == TRUE ? new_string("true") : new_string("false");
-
-        case VALUE_TYPE_NUMBER:
-            return steal_string(represent_number(view_number(value)));
-
-        case VALUE_TYPE_STRING:
-        {
-            char *source, *destination;
-            size_t escapeCount, length, index;
-
-            source = view_string(value);
-            escapeCount = 0;
-            length = strlen(source);
-
-            for (index = 0; index < length; index++)
-            {
-                char symbol;
-
-                symbol = source[index];
-
-                if (symbol == '\t' || symbol == '\n' || symbol == '\r' || symbol == '"'|| symbol == '\\')
-                {
-                    escapeCount++;
-                }
-            }
-
-            if (escapeCount == 0)
-            {
-                destination = allocate(sizeof(char) * (length + 3));
-                destination[0] = '"';
-                memcpy(destination + 1, source, length);
-                destination[length + 1] = '"';
-                destination[length + 2] = '\0';
-            }
-            else
-            {
-                size_t placement;
-
-                destination = allocate(sizeof(char) * (length + escapeCount + 3));
-                placement = 0;
-                destination[placement++] = '"';
-
-                for (index = 0; index < length; index++)
-                {
-                    char symbol;
-
-                    symbol = source[index];
-
-                    switch (symbol)
-                    {
-                        case '\t':
-                            destination[placement++] = '\\';
-                            destination[placement++] = 't';
-                            break;
-
-                        case '\n':
-                            destination[placement++] = '\\';
-                            destination[placement++] = 'n';
-                            break;
-
-                        case '\r':
-                            destination[placement++] = '\\';
-                            destination[placement++] = 'r';
-                            break;
-
-                        case '"':
-                            destination[placement++] = '\\';
-                            destination[placement++] = '"';
-                            break;
-
-                        case '\\':
-                            destination[placement++] = '\\';
-                            destination[placement++] = '\\';
-                            break;
-
-                        default:
-                            destination[placement++] = symbol;
-                            break;
-                    }
-                }
-
-                destination[placement++] = '"';
-                destination[placement++] = '\0';
-            }
-
-            return steal_string(destination);
-        }
-
-        default:
-            crash_with_message("unsupported branch EXECUTE_FREEZE_TYPE");
-            return new_null();
-    }
+    return steal_string(represent_value(value));
 }
 
 static value_t *run_type(argument_iterator_t *arguments, map_t *variables)
@@ -1662,6 +1547,108 @@ static value_t *steal_string(char *data)
     value->owners = 1;
 
     return value;
+}
+
+static char *represent_value(value_t *value)
+{
+    switch (value->type)
+    {
+        case VALUE_TYPE_NULL:
+            return copy_string("null");
+
+        case VALUE_TYPE_BOOLEAN:
+            return view_boolean(value) == TRUE ? copy_string("true") : copy_string("false");
+
+        case VALUE_TYPE_NUMBER:
+            return represent_number(view_number(value));
+
+        case VALUE_TYPE_STRING:
+        {
+            char *source, *destination;
+            size_t escapeCount, length, index;
+
+            source = view_string(value);
+            escapeCount = 0;
+            length = strlen(source);
+
+            for (index = 0; index < length; index++)
+            {
+                char symbol;
+
+                symbol = source[index];
+
+                if (symbol == '\t' || symbol == '\n' || symbol == '\r' || symbol == '"'|| symbol == '\\')
+                {
+                    escapeCount++;
+                }
+            }
+
+            if (escapeCount == 0)
+            {
+                destination = allocate(sizeof(char) * (length + 3));
+                destination[0] = '"';
+                memcpy(destination + 1, source, length);
+                destination[length + 1] = '"';
+                destination[length + 2] = '\0';
+            }
+            else
+            {
+                size_t placement;
+
+                destination = allocate(sizeof(char) * (length + escapeCount + 3));
+                placement = 0;
+                destination[placement++] = '"';
+
+                for (index = 0; index < length; index++)
+                {
+                    char symbol;
+
+                    symbol = source[index];
+
+                    switch (symbol)
+                    {
+                        case '\t':
+                            destination[placement++] = '\\';
+                            destination[placement++] = 't';
+                            break;
+
+                        case '\n':
+                            destination[placement++] = '\\';
+                            destination[placement++] = 'n';
+                            break;
+
+                        case '\r':
+                            destination[placement++] = '\\';
+                            destination[placement++] = 'r';
+                            break;
+
+                        case '"':
+                            destination[placement++] = '\\';
+                            destination[placement++] = '"';
+                            break;
+
+                        case '\\':
+                            destination[placement++] = '\\';
+                            destination[placement++] = '\\';
+                            break;
+
+                        default:
+                            destination[placement++] = symbol;
+                            break;
+                    }
+                }
+
+                destination[placement++] = '"';
+                destination[placement++] = '\0';
+            }
+
+            return destination;
+        }
+
+        default:
+            crash_with_message("unsupported branch EXECUTE_REPRESENT_VALUE");
+            return NULL;
+    }
 }
 
 static boolean_t view_boolean(value_t *value)

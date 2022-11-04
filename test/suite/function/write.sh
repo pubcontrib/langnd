@@ -36,4 +36,4 @@ then
 fi
 
 verify '@write()' \
-    'errors with execute message' 'absent argument'
+    'errors with execute message' '"absent argument"'

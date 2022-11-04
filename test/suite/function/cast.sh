@@ -22,22 +22,22 @@ verify '@write(@cast("text", "STRING"), 1)' \
     'prints to stdout' 'text'
 
 verify '@cast(123.456, "NULL")' \
-    'errors with execute message' 'invalid cast'
+    'errors with execute message' '"invalid cast"'
 verify '@cast(true, "NULL")' \
-    'errors with execute message' 'invalid cast'
+    'errors with execute message' '"invalid cast"'
 verify '@cast("text", "NULL")' \
-    'errors with execute message' 'invalid cast'
+    'errors with execute message' '"invalid cast"'
 verify '@cast(null, "BOOLEAN")' \
-    'errors with execute message' 'invalid cast'
+    'errors with execute message' '"invalid cast"'
 verify '@cast(123.456, "BOOLEAN")' \
-    'errors with execute message' 'invalid cast'
+    'errors with execute message' '"invalid cast"'
 verify '@cast("text", "BOOLEAN")' \
-    'errors with execute message' 'invalid cast'
+    'errors with execute message' '"invalid cast"'
 verify '@cast(null, "NUMBER")' \
-    'errors with execute message' 'invalid cast'
+    'errors with execute message' '"invalid cast"'
 verify '@cast(true, "NUMBER")' \
-    'errors with execute message' 'invalid cast'
+    'errors with execute message' '"invalid cast"'
 verify '@cast("text", "NUMBER")' \
-    'errors with execute message' 'invalid cast'
+    'errors with execute message' '"invalid cast"'
 verify '@cast(null, "WRONG")' \
-    'errors with execute message' 'unknown type'
+    'errors with execute message' '"unknown type"'

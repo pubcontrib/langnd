@@ -21,6 +21,6 @@ verify 'while false { 100' \
     'errors with parse message' '100'
 
 verify 'while true { "before" @divide(100, 0) "after" }' \
-    'errors with execute message' 'arithmetic error'
+    'errors with execute message' '"arithmetic error"'
 verify 'while @divide(100, 0) { $missing }' \
-    'errors with execute message' 'arithmetic error'
+    'errors with execute message' '"arithmetic error"'

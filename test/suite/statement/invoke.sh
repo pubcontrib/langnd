@@ -16,6 +16,6 @@ verify '$a=1 @add($a=2, $a=3)' \
     'errors with parse message' '2, $a=3)'
 
 verify '@huh()' \
-    'errors with execute message' 'absent function'
+    'errors with execute message' '"absent function"'
 verify '@add' \
-    'errors with execute message' 'unexpected reference type'
+    'errors with execute message' '"unexpected reference type"'

@@ -24,8 +24,8 @@ verify '@write(@freeze(@subtract(-123.456, -123.456)), 1)' \
     'prints to stdout' '0'
 
 verify '@subtract(-32767, 32767)' \
-    'errors with execute message' 'arithmetic error'
+    'errors with execute message' '"arithmetic error"'
 verify '@subtract(-1, 32767)' \
-    'errors with execute message' 'arithmetic error'
+    'errors with execute message' '"arithmetic error"'
 verify '@subtract(-32767, 1)' \
-    'errors with execute message' 'arithmetic error'
+    'errors with execute message' '"arithmetic error"'

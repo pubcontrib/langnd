@@ -20,14 +20,14 @@ verify '@write(@freeze(@set("abc", 3, "123")), 1)' \
     'prints to stdout' '"ab123"'
 
 verify '@write(@freeze(@set("abc", 0, "x")), 1)' \
-    'errors with execute message' 'absent key'
+    'errors with execute message' '"absent key"'
 verify '@write(@freeze(@set("abc", 4, "x")), 1)' \
-    'errors with execute message' 'absent key'
+    'errors with execute message' '"absent key"'
 verify '@write(@freeze(@set("abc", 0, "")), 1)' \
-    'errors with execute message' 'absent key'
+    'errors with execute message' '"absent key"'
 verify '@write(@freeze(@set("abc", 4, "")), 1)' \
-    'errors with execute message' 'absent key'
+    'errors with execute message' '"absent key"'
 verify '@write(@freeze(@set("abc", 0, "xxx")), 1)' \
-    'errors with execute message' 'absent key'
+    'errors with execute message' '"absent key"'
 verify '@write(@freeze(@set("abc", 4, "xxx")), 1)' \
-    'errors with execute message' 'absent key'
+    'errors with execute message' '"absent key"'

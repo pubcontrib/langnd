@@ -14,4 +14,4 @@ verify '@write(@query("LND_TEST_VALUE"), 1)' \
     'prints to stdout' 'TEXT'
 unset LND_TEST_VALUE
 verify '@write(@query("LND_TEST_VALUE"), 1)' \
-    'errors with execute message' 'absent environment variable'
+    'errors with execute message' '"absent environment variable"'

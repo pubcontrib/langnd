@@ -8,6 +8,6 @@ verify '@write(@freeze(@unset("abc", 3)), 1)' \
     'prints to stdout' '"ab"'
 
 verify '@write(@freeze(@unset("abc", 0)), 1)' \
-    'errors with execute message' 'absent key'
+    'errors with execute message' '"absent key"'
 verify '@write(@freeze(@unset("abc", 4)), 1)' \
-    'errors with execute message' 'absent key'
+    'errors with execute message' '"absent key"'

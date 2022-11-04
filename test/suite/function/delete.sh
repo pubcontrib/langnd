@@ -9,12 +9,12 @@ then
         'prints to stdout' ''
     printf 'TEXT FILE' > "$file"
     verify '@delete("'"$file"'") @read("'"$file"'", null)' \
-        'errors with execute message' 'absent file'
+        'errors with execute message' '"absent file"'
 fi
 
 verify '@delete(0)' \
-    'errors with execute message' 'io error'
+    'errors with execute message' '"io error"'
 verify '@delete(1)' \
-    'errors with execute message' 'io error'
+    'errors with execute message' '"io error"'
 verify '@delete(2)' \
-    'errors with execute message' 'io error'
+    'errors with execute message' '"io error"'

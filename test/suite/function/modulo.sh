@@ -14,4 +14,4 @@ verify '@write(@freeze(@modulo(-123.456, -123.456)), 1)' \
     'prints to stdout' '0'
 
 verify '@modulo(100, 0)' \
-    'errors with execute message' 'arithmetic error'
+    'errors with execute message' '"arithmetic error"'

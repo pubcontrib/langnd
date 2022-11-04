@@ -6,4 +6,4 @@ verify '@write(@freeze(@not(true)), 1)' \
     'prints to stdout' 'false'
 
 verify '@not(@not())' \
-    'errors with execute message' 'absent argument'
+    'errors with execute message' '"absent argument"'

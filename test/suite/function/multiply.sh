@@ -20,10 +20,10 @@ verify '@write(@freeze(@multiply(-123.456, -123.456)), 1)' \
     'prints to stdout' '15241.382354'
 
 verify '@multiply(32767, 32767)' \
-    'errors with execute message' 'arithmetic error'
+    'errors with execute message' '"arithmetic error"'
 verify '@multiply(32767, -32767)' \
-    'errors with execute message' 'arithmetic error'
+    'errors with execute message' '"arithmetic error"'
 verify '@multiply(-32767, 32767)' \
-    'errors with execute message' 'arithmetic error'
+    'errors with execute message' '"arithmetic error"'
 verify '@multiply(-32767, -32767)' \
-    'errors with execute message' 'arithmetic error'
+    'errors with execute message' '"arithmetic error"'

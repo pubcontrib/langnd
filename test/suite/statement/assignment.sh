@@ -53,4 +53,4 @@ verify '$a=' \
     'errors with parse message' '='
 
 verify '$huh' \
-    'errors with execute message' 'absent variable'
+    'errors with execute message' '"absent variable"'

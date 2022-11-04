@@ -61,6 +61,6 @@ verify '$a=true if $a=false { }' \
     'errors with parse message' 'false { }'
 
 verify 'if true { "before" @divide(100, 0) "after" }' \
-    'errors with execute message' 'arithmetic error'
+    'errors with execute message' '"arithmetic error"'
 verify 'if @divide(100, 0) { $missing }' \
-    'errors with execute message' 'arithmetic error'
+    'errors with execute message' '"arithmetic error"'

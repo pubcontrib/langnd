@@ -63,6 +63,6 @@ LINE 3'
 fi
 
 verify '@read(0, "")' \
-    'errors with execute message' 'invalid terminator'
+    'errors with execute message' '"invalid terminator"'
 verify '@read(0, "END")' \
-    'errors with execute message' 'invalid terminator'
+    'errors with execute message' '"invalid terminator"'

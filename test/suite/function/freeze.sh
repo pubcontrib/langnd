@@ -96,4 +96,4 @@ verify '@write(@freeze(true), 1)' \
     'prints to stdout' 'true'
 
 verify '@freeze()' \
-    'errors with execute message' 'absent argument'
+    'errors with execute message' '"absent argument"'
