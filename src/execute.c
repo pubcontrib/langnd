@@ -473,6 +473,25 @@ static value_t *apply_statement(statement_t *statement, map_t *variables)
             return new_null();
         }
 
+        case STATEMENT_TYPE_THROW:
+        {
+            throw_statement_data_t *data;
+            value_t *test;
+
+            data = statement->data;
+            test = apply_statement(data->error, variables);
+
+            if (test->thrown)
+            {
+                return test;
+            }
+            else
+            {
+                test->thrown = 1;
+                return test;
+            }
+        }
+
         case STATEMENT_TYPE_REFERENCE:
         {
             reference_statement_data_t *data;

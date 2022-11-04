@@ -17,6 +17,7 @@ typedef enum
     STATEMENT_TYPE_BRANCH,
     STATEMENT_TYPE_LOOP,
     STATEMENT_TYPE_CATCH,
+    STATEMENT_TYPE_THROW,
     STATEMENT_TYPE_REFERENCE
 } statement_type_t;
 
@@ -82,6 +83,11 @@ typedef struct
 {
     list_t *body;
 } catch_statement_data_t;
+
+typedef struct
+{
+    statement_t *error;
+} throw_statement_data_t;
 
 typedef struct
 {

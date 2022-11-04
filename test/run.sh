@@ -39,6 +39,7 @@ introduce
 . suite/statement/branch.sh
 . suite/statement/loop.sh
 . suite/statement/catch.sh
+. suite/statement/throw.sh
 
 . suite/function/add.sh
 . suite/function/subtract.sh

@@ -20,6 +20,7 @@ static statement_t *read_invoke_statement(capsule_t *capsule, identifier_t *iden
 static statement_t *read_branch_statement(capsule_t *capsule);
 static statement_t *read_loop_statement(capsule_t *capsule);
 static statement_t *read_catch_statement(capsule_t *capsule);
+static statement_t *read_throw_statement(capsule_t *capsule);
 static char is_value_statement(statement_t *statement);
 static char is_literal_statement(statement_t *statement);
 static token_t *peek_token(capsule_t *capsule);
@@ -40,6 +41,7 @@ static statement_t *create_invoke_statement(identifier_t *identifier, list_t *ar
 static statement_t *create_branch_statement(statement_t *condition, list_t *pass, list_t *fail);
 static statement_t *create_loop_statement(statement_t *condition, list_t *body);
 static statement_t *create_catch_statement(list_t *body);
+static statement_t *create_throw_statement(statement_t *error);
 static statement_t *create_reference_statement(identifier_t *identifier);
 static statement_t *create_statement(statement_type_t type, void *data);
 static void destroy_statement_unsafe(void *statement);
@@ -254,6 +256,21 @@ void destroy_statement(statement_t *statement)
                 break;
             }
 
+            case STATEMENT_TYPE_THROW:
+            {
+                throw_statement_data_t *data;
+
+                data = statement->data;
+
+                if (data->error)
+                {
+                    destroy_statement(data->error);
+                }
+
+                free(data);
+                break;
+            }
+
             case STATEMENT_TYPE_REFERENCE:
             {
                 reference_statement_data_t *data;
@@ -387,6 +404,10 @@ static statement_t *read_any_statement(capsule_t *capsule)
         else if (strcmp(keyword, "catch") == 0)
         {
             statement = read_catch_statement(capsule);
+        }
+        else if (strcmp(keyword, "throw") == 0)
+        {
+            statement = read_throw_statement(capsule);
         }
         else
         {
@@ -726,6 +747,25 @@ static statement_t *read_catch_statement(capsule_t *capsule)
     }
 
     return create_catch_statement(body);
+}
+
+static statement_t *read_throw_statement(capsule_t *capsule)
+{
+    statement_t *error;
+
+    error = read_any_statement(capsule);
+
+    if (!error || !is_value_statement(error))
+    {
+        if (error)
+        {
+            destroy_statement(error);
+        }
+
+        return create_unknown_statement();
+    }
+
+    return create_throw_statement(error);
 }
 
 static char is_value_statement(statement_t *statement)
@@ -1075,6 +1115,16 @@ static statement_t *create_catch_statement(list_t *body)
     data->body = body;
 
     return create_statement(STATEMENT_TYPE_CATCH, data);
+}
+
+static statement_t *create_throw_statement(statement_t *error)
+{
+    throw_statement_data_t *data;
+
+    data = allocate(sizeof(throw_statement_data_t));
+    data->error = error;
+
+    return create_statement(STATEMENT_TYPE_THROW, data);
 }
 
 static statement_t *create_reference_statement(identifier_t *identifier)

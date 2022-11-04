@@ -24,3 +24,9 @@ verify '@write(@merge(catch { @divide(100, 0) }, "!"), 1)' \
     'prints to stdout' 'arithmetic error!'
 verify '$error=catch { @divide(100, 0) } @write(@merge($error, "!"), 1)' \
     'prints to stdout' 'arithmetic error!'
+verify '$error=catch { throw "custom error" } @write($error, 1)' \
+    'prints to stdout' 'custom error'
+verify '$error=catch { $me="custom error" throw $me } @write($error, 1)' \
+    'prints to stdout' 'custom error'
+verify '$error=catch { throw @merge("custom ", "error") } @write($error, 1)' \
+    'prints to stdout' 'custom error'
