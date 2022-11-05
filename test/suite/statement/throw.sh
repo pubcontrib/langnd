@@ -16,3 +16,6 @@ verify '$error=catch { @divide(100, 0) } throw $error' \
     'errors with execute message' '"arithmetic error"'
 verify 'throw @merge($missing, "!")' \
     'errors with execute message' '"absent variable"'
+
+verify 'throw' \
+    'errors with parse message' 'throw'
