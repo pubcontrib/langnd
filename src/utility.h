@@ -9,6 +9,22 @@
 #define PORTABLE_INT_LIMIT 2147483647
 #define PORTABLE_LONG_LIMIT 9223372036854775807
 
+typedef enum
+{
+    VALUE_TYPE_NULL = 0x01,
+    VALUE_TYPE_BOOLEAN = 0x02,
+    VALUE_TYPE_NUMBER = 0x04,
+    VALUE_TYPE_STRING = 0x08
+} value_type_t;
+
+typedef struct
+{
+    value_type_t type;
+    void *data;
+    int thrown;
+    int owners;
+} value_t;
+
 typedef struct map_chain_t
 {
     char *key;
@@ -49,6 +65,19 @@ static const boolean_t TRUE = 1;
 static const boolean_t FALSE = 0;
 
 void assure_portable_environment();
+int compare_values(value_t *left, value_t *right);
+char *represent_value(value_t *value);
+value_t *throw_error(char *message);
+value_t *new_null();
+value_t *new_boolean(boolean_t boolean);
+value_t *new_number(number_t number);
+value_t *new_string(char *string);
+value_t *steal_string(char *string);
+boolean_t view_boolean(value_t *value);
+number_t view_number(value_t *value);
+char *view_string(value_t *value);
+void destroy_value(value_t *value);
+void dereference_value(value_t *value);
 map_t *empty_map(int (*hash)(char *), void (*destroy)(void *), size_t capacity);
 int has_map_item(map_t *map, char *key);
 void *get_map_item(map_t *map, char *key);

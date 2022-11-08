@@ -33,6 +33,284 @@ void assure_portable_environment()
     }
 }
 
+int compare_values(value_t *left, value_t *right)
+{
+    if (left->type != right->type)
+    {
+        return left->type - right->type;
+    }
+
+    switch (left->type)
+    {
+        case VALUE_TYPE_NULL:
+            return 0;
+
+        case VALUE_TYPE_BOOLEAN:
+            return view_boolean(left) - view_boolean(right);
+
+        case VALUE_TYPE_NUMBER:
+        {
+            number_t x, y;
+
+            x = view_number(left);
+            y = view_number(right);
+
+            return x == y ? 0 : (x < y ? -1 : 1);
+        }
+
+        case VALUE_TYPE_STRING:
+            return strcmp(view_string(left), view_string(right));
+
+        default:
+            crash_with_message("unsupported branch EXECUTE_COMPARE_TYPE");
+            return 0;
+    }
+}
+
+char *represent_value(value_t *value)
+{
+    switch (value->type)
+    {
+        case VALUE_TYPE_NULL:
+            return copy_string("null");
+
+        case VALUE_TYPE_BOOLEAN:
+            return view_boolean(value) == TRUE ? copy_string("true") : copy_string("false");
+
+        case VALUE_TYPE_NUMBER:
+            return represent_number(view_number(value));
+
+        case VALUE_TYPE_STRING:
+        {
+            char *source, *destination;
+            size_t escapeCount, length, index;
+
+            source = view_string(value);
+            escapeCount = 0;
+            length = strlen(source);
+
+            for (index = 0; index < length; index++)
+            {
+                char symbol;
+
+                symbol = source[index];
+
+                if (symbol == '\t' || symbol == '\n' || symbol == '\r' || symbol == '"'|| symbol == '\\')
+                {
+                    escapeCount++;
+                }
+            }
+
+            if (escapeCount == 0)
+            {
+                destination = allocate(sizeof(char) * (length + 3));
+                destination[0] = '"';
+                memcpy(destination + 1, source, length);
+                destination[length + 1] = '"';
+                destination[length + 2] = '\0';
+            }
+            else
+            {
+                size_t placement;
+
+                destination = allocate(sizeof(char) * (length + escapeCount + 3));
+                placement = 0;
+                destination[placement++] = '"';
+
+                for (index = 0; index < length; index++)
+                {
+                    char symbol;
+
+                    symbol = source[index];
+
+                    switch (symbol)
+                    {
+                        case '\t':
+                            destination[placement++] = '\\';
+                            destination[placement++] = 't';
+                            break;
+
+                        case '\n':
+                            destination[placement++] = '\\';
+                            destination[placement++] = 'n';
+                            break;
+
+                        case '\r':
+                            destination[placement++] = '\\';
+                            destination[placement++] = 'r';
+                            break;
+
+                        case '"':
+                            destination[placement++] = '\\';
+                            destination[placement++] = '"';
+                            break;
+
+                        case '\\':
+                            destination[placement++] = '\\';
+                            destination[placement++] = '\\';
+                            break;
+
+                        default:
+                            destination[placement++] = symbol;
+                            break;
+                    }
+                }
+
+                destination[placement++] = '"';
+                destination[placement++] = '\0';
+            }
+
+            return destination;
+        }
+
+        default:
+            crash_with_message("unsupported branch EXECUTE_REPRESENT_VALUE");
+            return NULL;
+    }
+}
+
+value_t *throw_error(char *message)
+{
+    value_t *value;
+
+    value = new_string(message);
+    value->thrown = 1;
+
+    return value;
+}
+
+value_t *new_null()
+{
+    value_t *value;
+
+    value = allocate(sizeof(value_t));
+    value->type = VALUE_TYPE_NULL;
+    value->data = NULL;
+    value->thrown = 0;
+    value->owners = 1;
+
+    return value;
+}
+
+value_t *new_boolean(boolean_t boolean)
+{
+    value_t *value;
+    boolean_t *data;
+
+    data = allocate(sizeof(boolean_t));
+    data[0] = boolean;
+    value = allocate(sizeof(value_t));
+    value->type = VALUE_TYPE_BOOLEAN;
+    value->data = data;
+    value->thrown = 0;
+    value->owners = 1;
+
+    return value;
+}
+
+value_t *new_number(number_t number)
+{
+    value_t *value;
+    number_t *data;
+
+    data = allocate(sizeof(number_t));
+    data[0] = number;
+    value = allocate(sizeof(value_t));
+    value->type = VALUE_TYPE_NUMBER;
+    value->data = data;
+    value->thrown = 0;
+    value->owners = 1;
+
+    return value;
+}
+
+value_t *new_string(char *string)
+{
+    value_t *value;
+    char *data;
+
+    data = copy_string(string);
+    value = allocate(sizeof(value_t));
+    value->type = VALUE_TYPE_STRING;
+    value->data = data;
+    value->thrown = 0;
+    value->owners = 1;
+
+    return value;
+}
+
+value_t *steal_string(char *data)
+{
+    value_t *value;
+
+    value = allocate(sizeof(value_t));
+    value->type = VALUE_TYPE_STRING;
+    value->data = data;
+    value->thrown = 0;
+    value->owners = 1;
+
+    return value;
+}
+
+boolean_t view_boolean(value_t *value)
+{
+    if (value->type == VALUE_TYPE_BOOLEAN)
+    {
+        return ((boolean_t *) value->data)[0];
+    }
+    else
+    {
+        crash_with_message("unsupported branch EXECUTE_VIEW_BOOLEAN");
+        return FALSE;
+    }
+}
+
+number_t view_number(value_t *value)
+{
+    if (value->type == VALUE_TYPE_NUMBER)
+    {
+        return ((number_t *) value->data)[0];
+    }
+    else
+    {
+        crash_with_message("unsupported branch EXECUTE_VIEW_NUMBER");
+        return 0;
+    }
+}
+
+char *view_string(value_t *value)
+{
+    if (value->type == VALUE_TYPE_STRING)
+    {
+        return (char *) value->data;
+    }
+    else
+    {
+        crash_with_message("unsupported branch EXECUTE_VIEW_STRING");
+        return "";
+    }
+}
+
+void destroy_value(value_t *value)
+{
+    if (value->data)
+    {
+        free(value->data);
+    }
+
+    free(value);
+}
+
+void dereference_value(value_t *value)
+{
+    value->owners -= 1;
+
+    if (value->owners < 1)
+    {
+        destroy_value(value);
+    }
+}
+
 map_t *empty_map(int (*hash)(char *), void (*destroy)(void *), size_t capacity)
 {
     map_chain_t **chains;
