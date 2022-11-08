@@ -22,7 +22,6 @@ static statement_t *read_loop_statement(capsule_t *capsule);
 static statement_t *read_catch_statement(capsule_t *capsule);
 static statement_t *read_throw_statement(capsule_t *capsule);
 static char is_value_statement(statement_t *statement);
-static char is_literal_statement(statement_t *statement);
 static token_t *peek_token(capsule_t *capsule);
 static token_t *next_token(capsule_t *capsule);
 static token_t *scan_token(scanner_t *scanner);
@@ -32,10 +31,7 @@ static identifier_t *parse_identifier(char *code, token_t *token);
 static char *unescape_string(char *code, token_t *token);
 static char is_symbol_token(char symbol, char *code, token_t *token);
 static statement_t *create_unknown_statement();
-static statement_t *create_null_statement();
-static statement_t *create_boolean_statement(boolean_t value);
-static statement_t *create_number_statement(number_t value);
-static statement_t *create_string_statement(char *value);
+static statement_t *create_literal_statement(value_t *value);
 static statement_t *create_assignment_statement(identifier_t *identifier, statement_t *value);
 static statement_t *create_invoke_statement(identifier_t *identifier, list_t *arguments);
 static statement_t *create_branch_statement(statement_t *condition, list_t *pass, list_t *fail);
@@ -125,33 +121,13 @@ void destroy_statement(statement_t *statement)
     {
         switch (statement->type)
         {
-            case STATEMENT_TYPE_BOOLEAN:
+            case STATEMENT_TYPE_LITERAL:
             {
-                boolean_statement_data_t *data;
+                literal_statement_data_t *data;
 
                 data = statement->data;
 
-                free(data);
-                break;
-            }
-
-            case STATEMENT_TYPE_NUMBER:
-            {
-                number_statement_data_t *data;
-
-                data = statement->data;
-
-                free(data);
-                break;
-            }
-
-            case STATEMENT_TYPE_STRING:
-            {
-                string_statement_data_t *data;
-
-                data = statement->data;
-
-                free(data->value);
+                dereference_value(data->value);
                 free(data);
                 break;
             }
@@ -332,7 +308,7 @@ static statement_t *read_any_statement(capsule_t *capsule)
 
         free(text);
 
-        return create_number_statement(value);
+        return create_literal_statement(new_number(value));
     }
     else if (token->type == TOKEN_TYPE_STRING)
     {
@@ -340,7 +316,7 @@ static statement_t *read_any_statement(capsule_t *capsule)
 
         value = unescape_string(capsule->scanner.code, token);
 
-        return create_string_statement(value);
+        return create_literal_statement(steal_string(value));
     }
     else if (token->type == TOKEN_TYPE_IDENTIFIER)
     {
@@ -383,15 +359,15 @@ static statement_t *read_any_statement(capsule_t *capsule)
 
         if (strcmp(keyword, "null") == 0)
         {
-            statement = create_null_statement();
+            statement = create_literal_statement(new_null());
         }
         else if (strcmp(keyword, "false") == 0)
         {
-            statement = create_boolean_statement(FALSE);
+            statement = create_literal_statement(new_boolean(FALSE));
         }
         else if (strcmp(keyword, "true") == 0)
         {
-            statement = create_boolean_statement(TRUE);
+            statement = create_literal_statement(new_boolean(TRUE));
         }
         else if (strcmp(keyword, "if") == 0)
         {
@@ -770,32 +746,13 @@ static statement_t *read_throw_statement(capsule_t *capsule)
 
 static char is_value_statement(statement_t *statement)
 {
-    if (is_literal_statement(statement))
-    {
-        return 1;
-    }
-
     switch (statement->type)
     {
+        case STATEMENT_TYPE_LITERAL:
         case STATEMENT_TYPE_REFERENCE:
         case STATEMENT_TYPE_INVOKE:
         case STATEMENT_TYPE_BRANCH:
         case STATEMENT_TYPE_CATCH:
-            return 1;
-
-        default:
-            return 0;
-    }
-}
-
-static char is_literal_statement(statement_t *statement)
-{
-    switch (statement->type)
-    {
-        case STATEMENT_TYPE_NULL:
-        case STATEMENT_TYPE_BOOLEAN:
-        case STATEMENT_TYPE_NUMBER:
-        case STATEMENT_TYPE_STRING:
             return 1;
 
         default:
@@ -1027,39 +984,14 @@ static statement_t *create_unknown_statement()
     return create_statement(STATEMENT_TYPE_UNKNOWN, NULL);
 }
 
-static statement_t *create_null_statement()
+static statement_t *create_literal_statement(value_t *value)
 {
-    return create_statement(STATEMENT_TYPE_NULL, NULL);
-}
+    literal_statement_data_t *data;
 
-static statement_t *create_boolean_statement(boolean_t value)
-{
-    boolean_statement_data_t *data;
-
-    data = allocate(sizeof(boolean_statement_data_t));
+    data = allocate(sizeof(literal_statement_data_t));
     data->value = value;
 
-    return create_statement(STATEMENT_TYPE_BOOLEAN, data);
-}
-
-static statement_t *create_number_statement(number_t value)
-{
-    number_statement_data_t *data;
-
-    data = allocate(sizeof(number_statement_data_t));
-    data->value = value;
-
-    return create_statement(STATEMENT_TYPE_NUMBER, data);
-}
-
-static statement_t *create_string_statement(char *value)
-{
-    string_statement_data_t *data;
-
-    data = allocate(sizeof(string_statement_data_t));
-    data->value = value;
-
-    return create_statement(STATEMENT_TYPE_STRING, data);
+    return create_statement(STATEMENT_TYPE_LITERAL, data);
 }
 
 static statement_t *create_assignment_statement(identifier_t *identifier, statement_t *value)

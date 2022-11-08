@@ -113,34 +113,16 @@ static value_t *apply_statement(statement_t *statement, map_t *variables)
 {
     switch (statement->type)
     {
-        case STATEMENT_TYPE_NULL:
-            return new_null();
-
-        case STATEMENT_TYPE_BOOLEAN:
+        case STATEMENT_TYPE_LITERAL:
         {
-            boolean_statement_data_t *data;
+            literal_statement_data_t *data;
+            value_t *value;
 
             data = statement->data;
+            value = data->value;
+            value->owners += 1;
 
-            return new_boolean(data->value);
-        }
-
-        case STATEMENT_TYPE_NUMBER:
-        {
-            number_statement_data_t *data;
-
-            data = statement->data;
-
-            return new_number(data->value);
-        }
-
-        case STATEMENT_TYPE_STRING:
-        {
-            string_statement_data_t *data;
-
-            data = statement->data;
-
-            return new_string(data->value);
+            return value;
         }
 
         case STATEMENT_TYPE_ASSIGNMENT:

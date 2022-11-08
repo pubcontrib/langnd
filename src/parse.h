@@ -8,10 +8,7 @@
 typedef enum
 {
     STATEMENT_TYPE_UNKNOWN,
-    STATEMENT_TYPE_NULL,
-    STATEMENT_TYPE_BOOLEAN,
-    STATEMENT_TYPE_NUMBER,
-    STATEMENT_TYPE_STRING,
+    STATEMENT_TYPE_LITERAL,
     STATEMENT_TYPE_ASSIGNMENT,
     STATEMENT_TYPE_INVOKE,
     STATEMENT_TYPE_BRANCH,
@@ -41,18 +38,8 @@ typedef struct
 
 typedef struct
 {
-    boolean_t value;
-} boolean_statement_data_t;
-
-typedef struct
-{
-    number_t value;
-} number_statement_data_t;
-
-typedef struct
-{
-    char *value;
-} string_statement_data_t;
+    value_t *value;
+} literal_statement_data_t;
 
 typedef struct
 {
