@@ -15,6 +15,7 @@ typedef struct
 } capsule_t;
 
 static statement_t *read_any_statement(capsule_t *capsule);
+static statement_t *read_list_statement(capsule_t *capsule);
 static statement_t *read_assignment_statement(capsule_t *capsule, identifier_t *identifier);
 static statement_t *read_invoke_statement(capsule_t *capsule, identifier_t *identifier);
 static statement_t *read_branch_statement(capsule_t *capsule);
@@ -41,6 +42,7 @@ static statement_t *create_throw_statement(statement_t *error);
 static statement_t *create_reference_statement(identifier_t *identifier);
 static statement_t *create_statement(statement_type_t type, void *data);
 static void destroy_statement_unsafe(void *statement);
+static void dereference_value_unsafe(void *value);
 
 script_t *parse_script(char *code)
 {
@@ -127,7 +129,11 @@ void destroy_statement(statement_t *statement)
 
                 data = statement->data;
 
-                dereference_value(data->value);
+                if (data->value)
+                {
+                    dereference_value(data->value);
+                }
+
                 free(data);
                 break;
             }
@@ -395,8 +401,85 @@ static statement_t *read_any_statement(capsule_t *capsule)
 
         return statement;
     }
+    else if (token->type == TOKEN_TYPE_SYMBOL)
+    {
+        if (is_symbol_token('[', capsule->scanner.code, token))
+        {
+            return read_list_statement(capsule);
+        }
+    }
 
     return create_unknown_statement();
+}
+
+static statement_t *read_list_statement(capsule_t *capsule)
+{
+    list_t *items;
+    char ready;
+
+    items = empty_list(dereference_value_unsafe);
+    ready = 1;
+
+    while (1)
+    {
+        token_t *optional;
+
+        optional = peek_token(capsule);
+
+        if (is_symbol_token(']', capsule->scanner.code, optional))
+        {
+            next_token(capsule);
+
+            break;
+        }
+        else if (is_symbol_token(',', capsule->scanner.code, optional))
+        {
+            next_token(capsule);
+
+            if (ready)
+            {
+                destroy_list(items);
+
+                return create_unknown_statement();
+            }
+
+            ready = 1;
+        }
+        else
+        {
+            statement_t *item;
+            literal_statement_data_t *data;
+
+            if (!ready)
+            {
+                destroy_list(items);
+
+                return create_unknown_statement();
+            }
+
+            item = read_any_statement(capsule);
+
+            if (!item || item->type != STATEMENT_TYPE_LITERAL)
+            {
+                if (item)
+                {
+                    destroy_statement(item);
+                }
+
+                destroy_list(items);
+
+                return create_unknown_statement();
+            }
+
+            ready = 0;
+            data = (literal_statement_data_t *) item->data;
+            add_list_item(items, data->value);
+            data->value = NULL;
+            destroy_statement(item);
+        }
+    }
+
+    return create_literal_statement(steal_list(items));
 }
 
 static statement_t *read_assignment_statement(capsule_t *capsule, identifier_t *identifier)
@@ -788,7 +871,11 @@ static token_t *next_token(capsule_t *capsule)
 {
     if (capsule->ahead)
     {
-        capsule->present = capsule->future;
+        if (capsule->hasFuture)
+        {
+            capsule->present = capsule->future;
+        }
+
         capsule->hasPresent = capsule->hasFuture;
         capsule->ahead = 0;
     }
@@ -1083,4 +1170,9 @@ static statement_t *create_statement(statement_type_t type, void *data)
 static void destroy_statement_unsafe(void *statement)
 {
     destroy_statement((statement_t *) statement);
+}
+
+static void dereference_value_unsafe(void *value)
+{
+    dereference_value((value_t *) value);
 }

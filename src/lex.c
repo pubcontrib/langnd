@@ -75,7 +75,7 @@ void progress_scanner(scanner_t *scanner)
             read_keyword_token(scanner);
             return;
         }
-        else if (symbol == '=' || symbol == '(' || symbol == ')' || symbol == ',' || symbol == '{' || symbol == '}')
+        else if (symbol == '=' || symbol == '(' || symbol == ')' || symbol == ',' || symbol == '{' || symbol == '}' || symbol == '[' || symbol == ']')
         {
             scanner->token.type = TOKEN_TYPE_SYMBOL;
             return;

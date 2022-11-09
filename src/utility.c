@@ -252,6 +252,19 @@ value_t *steal_string(char *data)
     return value;
 }
 
+value_t *steal_list(list_t *data)
+{
+    value_t *value;
+
+    value = allocate(sizeof(value_t));
+    value->type = VALUE_TYPE_LIST;
+    value->data = data;
+    value->thrown = 0;
+    value->owners = 1;
+
+    return value;
+}
+
 boolean_t view_boolean(value_t *value)
 {
     if (value->type == VALUE_TYPE_BOOLEAN)
@@ -291,11 +304,40 @@ char *view_string(value_t *value)
     }
 }
 
+list_t *view_list(value_t *value)
+{
+    if (value->type == VALUE_TYPE_LIST)
+    {
+        return (list_t *) value->data;
+    }
+    else
+    {
+        crash_with_message("unsupported branch EXECUTE_VIEW_LIST");
+        return NULL;
+    }
+}
+
 void destroy_value(value_t *value)
 {
     if (value->data)
     {
-        free(value->data);
+        switch (value->type)
+        {
+            case VALUE_TYPE_NULL:
+            case VALUE_TYPE_BOOLEAN:
+            case VALUE_TYPE_NUMBER:
+            case VALUE_TYPE_STRING:
+                free(value->data);
+                break;
+
+            case VALUE_TYPE_LIST:
+                destroy_list(value->data);
+                break;
+
+            default:
+                crash_with_message("unsupported branch EXECUTE_DESTROY_VALUE");
+                break;
+        }
     }
 
     free(value);
