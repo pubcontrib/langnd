@@ -45,3 +45,14 @@ verify '999999999999999999999999999.9' \
     'errors with parse message' '999999999999999999999999999.9'
 verify '-999999999999999999999999999.9' \
     'errors with parse message' '-999999999999999999999999999.9'
+
+verify '.1' \
+    'errors with lex message' '.1'
+verify '-.1' \
+    'errors with lex message' '-.1'
+verify '0..1' \
+    'errors with lex message' '0..1'
+verify '-0..1' \
+    'errors with lex message' '-0..1'
+verify '--1' \
+    'errors with lex message' '--1'
