@@ -102,6 +102,7 @@ char *represent_number(number_t number);
 number_t truncate_number(number_t number);
 int hash_string(char *string);
 int add_with_overflow(int left, int right);
+char *merge_strings(char *start, char *expansion);
 char *copy_string(char *string);
 void *allocate(size_t size);
 void *allocate_with_zeros(size_t number, size_t size);

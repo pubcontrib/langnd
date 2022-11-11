@@ -163,6 +163,46 @@ char *represent_value(value_t *value)
             return destination;
         }
 
+        case VALUE_TYPE_LIST:
+        {
+            char *buffer, *swap;
+            list_t *list;
+            list_node_t *node;
+            int first;
+
+            list = view_list(value);
+            buffer = copy_string("[");
+            first = 1;
+
+            for (node = list->head; node; node = node->next)
+            {
+                char *item;
+
+                if (!first)
+                {
+                    swap = merge_strings(buffer, ", ");
+                    free(buffer);
+                    buffer = swap;
+                }
+                else
+                {
+                    first = 0;
+                }
+
+                item = represent_value(node->value);
+                swap = merge_strings(buffer, item);
+                free(buffer);
+                free(item);
+                buffer = swap;
+            }
+
+            swap = merge_strings(buffer, "]");
+            free(buffer);
+            buffer = swap;
+
+            return buffer;
+        }
+
         default:
             crash_with_message("unsupported branch EXECUTE_REPRESENT_VALUE");
             return NULL;
@@ -865,6 +905,22 @@ int add_with_overflow(int left, int right)
     {
         return left + right;
     }
+}
+
+char *merge_strings(char *left, char *right)
+{
+    char *sum;
+    size_t leftLength, rightLength;
+
+    leftLength = strlen(left);
+    rightLength = strlen(right);
+
+    sum = allocate(sizeof(char) * (leftLength + rightLength + 1));
+    memcpy(sum, left, leftLength);
+    memcpy(sum + leftLength, right, rightLength);
+    sum[leftLength + rightLength] = '\0';
+
+    return sum;
 }
 
 char *copy_string(char *string)

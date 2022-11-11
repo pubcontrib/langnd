@@ -94,6 +94,21 @@ verify '@write(@freeze(false), 1)' \
     'prints to stdout' 'false'
 verify '@write(@freeze(true), 1)' \
     'prints to stdout' 'true'
-
+verify '@write(@freeze([]), 1)' \
+    'prints to stdout' '[]'
+verify '@write(@freeze([null]), 1)' \
+    'prints to stdout' '[null]'
+verify '@write(@freeze([false]), 1)' \
+    'prints to stdout' '[false]'
+verify '@write(@freeze([0]), 1)' \
+    'prints to stdout' '[0]'
+verify '@write(@freeze([""]), 1)' \
+    'prints to stdout' '[""]'
+verify '@write(@freeze([[]]), 1)' \
+    'prints to stdout' '[[]]'
+verify '@write(@freeze([null, false, 0, "", []]), 1)' \
+    'prints to stdout' '[null, false, 0, "", []]'
+verify '@write(@freeze([null, false, 0, "", [null, false, 0, "", []]]), 1)' \
+    'prints to stdout' '[null, false, 0, "", [null, false, 0, "", []]]'
 verify '@freeze()' \
     'errors with execute message' '"absent argument"'
