@@ -1309,9 +1309,7 @@ static value_t *run_unset(argument_iterator_t *arguments, map_t *variables)
 
 static value_t *run_merge(argument_iterator_t *arguments, map_t *variables)
 {
-    value_t *left, *right, *result;
-    char *x, *y, *sum;
-    size_t length;
+    value_t *left, *right;
 
     if (!next_argument(arguments, variables, VALUE_TYPE_STRING, &left))
     {
@@ -1323,16 +1321,7 @@ static value_t *run_merge(argument_iterator_t *arguments, map_t *variables)
         return right;
     }
 
-    x = view_string(left);
-    y = view_string(right);
-    length = strlen(x) + strlen(y);
-    sum = allocate(sizeof(char) * length + 1);
-    memcpy(sum, x, strlen(x));
-    memcpy(sum + strlen(x), y, strlen(y));
-    sum[length] = '\0';
-    result = steal_string(sum);
-
-    return result;
+    return steal_string(merge_strings(view_string(left), view_string(right)));
 }
 
 static value_t *run_length(argument_iterator_t *arguments, map_t *variables)
