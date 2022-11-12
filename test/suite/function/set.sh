@@ -18,6 +18,22 @@ verify '@write(@freeze(@set("abc", 2, "123")), 1)' \
     'prints to stdout' '"a123c"'
 verify '@write(@freeze(@set("abc", 3, "123")), 1)' \
     'prints to stdout' '"ab123"'
+verify '@write(@freeze(@set(["a", "b", "c"], 1, "x")), 1)' \
+    'prints to stdout' '["x", "b", "c"]'
+verify '@write(@freeze(@set(["a", "b", "c"], 2, "x")), 1)' \
+    'prints to stdout' '["a", "x", "c"]'
+verify '@write(@freeze(@set(["a", "b", "c"], 3, "x")), 1)' \
+    'prints to stdout' '["a", "b", "x"]'
+verify '@write(@freeze(@set(["a", "b", "c"], 1, null)), 1)' \
+    'prints to stdout' '[null, "b", "c"]'
+verify '@write(@freeze(@set(["a", "b", "c"], 1, false)), 1)' \
+    'prints to stdout' '[false, "b", "c"]'
+verify '@write(@freeze(@set(["a", "b", "c"], 1, 0)), 1)' \
+    'prints to stdout' '[0, "b", "c"]'
+verify '@write(@freeze(@set(["a", "b", "c"], 1, "")), 1)' \
+    'prints to stdout' '["", "b", "c"]'
+verify '@write(@freeze(@set(["a", "b", "c"], 1, [])), 1)' \
+    'prints to stdout' '[[], "b", "c"]'
 
 verify '@write(@freeze(@set("abc", 0, "x")), 1)' \
     'errors with execute message' '"absent key"'
@@ -30,4 +46,8 @@ verify '@write(@freeze(@set("abc", 4, "")), 1)' \
 verify '@write(@freeze(@set("abc", 0, "xxx")), 1)' \
     'errors with execute message' '"absent key"'
 verify '@write(@freeze(@set("abc", 4, "xxx")), 1)' \
+    'errors with execute message' '"absent key"'
+verify '@write(@freeze(@set(["a", "b", "c"], 0, "x")), 1)' \
+    'errors with execute message' '"absent key"'
+verify '@write(@freeze(@set(["a", "b", "c"], 4, "x")), 1)' \
     'errors with execute message' '"absent key"'

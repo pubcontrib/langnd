@@ -1236,7 +1236,7 @@ static value_t *run_set(argument_iterator_t *arguments, map_t *variables)
 {
     value_t *collection, *key, *item;
 
-    if (!next_argument(arguments, variables, VALUE_TYPE_STRING, &collection))
+    if (!next_argument(arguments, variables, VALUE_TYPE_STRING | VALUE_TYPE_LIST, &collection))
     {
         return collection;
     }
@@ -1246,11 +1246,6 @@ static value_t *run_set(argument_iterator_t *arguments, map_t *variables)
         return key;
     }
 
-    if (!next_argument(arguments, variables, VALUE_TYPE_STRING, &item))
-    {
-        return item;
-    }
-
     switch (collection->type)
     {
         case VALUE_TYPE_STRING:
@@ -1258,6 +1253,11 @@ static value_t *run_set(argument_iterator_t *arguments, map_t *variables)
             char *source, *middle, *destination;
             int index;
             size_t sourceLength, beforeLength, middleLength, afterLength, destinationLength;
+
+            if (!next_argument(arguments, variables, VALUE_TYPE_STRING, &item))
+            {
+                return item;
+            }
 
             source = view_string(collection);
             middle = view_string(item);
@@ -1286,6 +1286,53 @@ static value_t *run_set(argument_iterator_t *arguments, map_t *variables)
             destination[destinationLength] = '\0';
 
             return steal_string(destination);
+        }
+
+        case VALUE_TYPE_LIST:
+        {
+            list_t *source, *destination;
+            list_node_t *node;
+            int index, cursor;
+
+            if (!next_argument(arguments, variables, VALUE_TYPE_NULL | VALUE_TYPE_BOOLEAN | VALUE_TYPE_NUMBER | VALUE_TYPE_STRING | VALUE_TYPE_LIST, &item))
+            {
+                return item;
+            }
+
+            source = view_list(collection);
+
+            if (number_to_integer(view_number(key), &index) != 0)
+            {
+                crash_with_message("unsupported branch EXECUTE_SET_INDEX");
+            }
+
+            if (index < 1 || (size_t) index > source->length)
+            {
+                return throw_error("absent key");
+            }
+
+            destination = empty_list(dereference_value_unsafe);
+
+            for (node = source->head, cursor = 0; node != NULL; node = node->next, cursor++)
+            {
+                if (index - 1 != cursor)
+                {
+                    value_t *copy;
+
+                    copy = node->value;
+                    copy->owners += 1;
+
+                    add_list_item(destination, copy);
+                }
+                else
+                {
+                    item->owners += 1;
+
+                    add_list_item(destination, item);
+                }
+            }
+
+            return steal_list(destination);
         }
 
         default:
