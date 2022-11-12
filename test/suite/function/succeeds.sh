@@ -64,6 +64,10 @@ verify '@write(@freeze(@succeeds("text", true)), 1)' \
     'prints to stdout' 'true'
 verify '@write(@freeze(@succeeds("text", [1, 2, 3])), 1)' \
     'prints to stdout' 'false'
+verify '@write(@freeze(@succeeds([1], [])), 1)' \
+    'prints to stdout' 'true'
+verify '@write(@freeze(@succeeds([], [1])), 1)' \
+    'prints to stdout' 'false'
 verify '@write(@freeze(@succeeds([1, 2, 3], [1, 2])), 1)' \
     'prints to stdout' 'true'
 verify '@write(@freeze(@succeeds([1, 2], [1, 2, 3])), 1)' \

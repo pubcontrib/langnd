@@ -68,6 +68,10 @@ verify '@write(@freeze(@equals("text", 100)), 1)' \
     'prints to stdout' 'false'
 verify '@write(@freeze(@equals("text", [1, 2, 3])), 1)' \
     'prints to stdout' 'false'
+verify '@write(@freeze(@equals([1], [])), 1)' \
+    'prints to stdout' 'false'
+verify '@write(@freeze(@equals([], [1])), 1)' \
+    'prints to stdout' 'false'
 verify '@write(@freeze(@equals([1, 2, 3], [1, 2])), 1)' \
     'prints to stdout' 'false'
 verify '@write(@freeze(@equals([1, 2], [1, 2, 3])), 1)' \

@@ -64,6 +64,10 @@ verify '@write(@freeze(@precedes("text", true)), 1)' \
     'prints to stdout' 'false'
 verify '@write(@freeze(@precedes("text", [1, 2, 3])), 1)' \
     'prints to stdout' 'true'
+verify '@write(@freeze(@precedes([1], [])), 1)' \
+    'prints to stdout' 'false'
+verify '@write(@freeze(@precedes([], [1])), 1)' \
+    'prints to stdout' 'true'
 verify '@write(@freeze(@precedes([1, 2, 3], [1, 2])), 1)' \
     'prints to stdout' 'false'
 verify '@write(@freeze(@precedes([1, 2], [1, 2, 3])), 1)' \
