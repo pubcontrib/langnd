@@ -1330,8 +1330,10 @@ static value_t *run_merge(argument_iterator_t *arguments, map_t *variables)
 static value_t *run_length(argument_iterator_t *arguments, map_t *variables)
 {
     value_t *collection;
+    size_t length;
+    number_t number;
 
-    if (!next_argument(arguments, variables, VALUE_TYPE_STRING, &collection))
+    if (!next_argument(arguments, variables, VALUE_TYPE_STRING | VALUE_TYPE_LIST, &collection))
     {
         return collection;
     }
@@ -1339,24 +1341,24 @@ static value_t *run_length(argument_iterator_t *arguments, map_t *variables)
     switch (collection->type)
     {
         case VALUE_TYPE_STRING:
-        {
-            size_t length;
-            number_t number;
-
             length = strlen(view_string(collection));
+            break;
 
-            if (length >= INT_MAX || integer_to_number(length, &number) != 0)
-            {
-                return throw_error("constraint error");
-            }
-
-            return new_number(number);
-        }
+        case VALUE_TYPE_LIST:
+            length = view_list(collection)->length;
+            break;
 
         default:
             crash_with_message("unsupported branch EXECUTE_LENGTH_TYPE");
             return new_null();
     }
+
+    if (length >= INT_MAX || integer_to_number(length, &number) != 0)
+    {
+        return throw_error("constraint error");
+    }
+
+    return new_number(number);
 }
 
 static int next_argument(argument_iterator_t *arguments, map_t *variables, int types, value_t **out)
