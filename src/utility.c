@@ -61,6 +61,41 @@ int compare_values(value_t *left, value_t *right)
         case VALUE_TYPE_STRING:
             return strcmp(view_string(left), view_string(right));
 
+        case VALUE_TYPE_LIST:
+        {
+            list_t *leftList, *rightList;
+            list_node_t *leftNode, *rightNode;
+
+            leftList = view_list(left);
+            rightList = view_list(right);
+            leftNode = leftList->head;
+            rightNode = rightList->head;
+
+            for (; leftNode != NULL; leftNode = leftNode->next, rightNode = rightNode->next)
+            {
+                int different;
+
+                if (!rightNode)
+                {
+                    return 1;
+                }
+
+                different = compare_values(leftNode->value, rightNode->value);
+
+                if (different)
+                {
+                    return different;
+                }
+            }
+
+            if (rightNode)
+            {
+                return -1;
+            }
+
+            return 0;
+        }
+
         default:
             crash_with_message("unsupported branch EXECUTE_COMPARE_TYPE");
             return 0;
