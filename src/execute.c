@@ -1156,8 +1156,9 @@ static value_t *run_cast(argument_iterator_t *arguments, map_t *variables)
 static value_t *run_get(argument_iterator_t *arguments, map_t *variables)
 {
     value_t *collection, *key;
+    int index;
 
-    if (!next_argument(arguments, variables, VALUE_TYPE_STRING, &collection))
+    if (!next_argument(arguments, variables, VALUE_TYPE_STRING | VALUE_TYPE_LIST, &collection))
     {
         return collection;
     }
@@ -1167,25 +1168,21 @@ static value_t *run_get(argument_iterator_t *arguments, map_t *variables)
         return key;
     }
 
+    if (number_to_integer(view_number(key), &index) != 0)
+    {
+        crash_with_message("unsupported branch EXECUTE_GET_INDEX");
+    }
+
     switch (collection->type)
     {
         case VALUE_TYPE_STRING:
         {
             char *string;
-            int index;
-            size_t length;
             char item[2];
 
             string = view_string(collection);
 
-            if (number_to_integer(view_number(key), &index) != 0)
-            {
-                crash_with_message("unsupported branch EXECUTE_GET_INDEX");
-            }
-
-            length = strlen(string);
-
-            if (index < 1 || (size_t) index > length)
+            if (index < 1 || (size_t) index > strlen(string))
             {
                 return throw_error("absent key");
             }
@@ -1194,6 +1191,39 @@ static value_t *run_get(argument_iterator_t *arguments, map_t *variables)
             item[1] = '\0';
 
             return new_string(item);
+        }
+
+        case VALUE_TYPE_LIST:
+        {
+            list_t *list;
+            list_node_t *node;
+            int cursor;
+
+            list = view_list(collection);
+
+            if (index < 1 || (size_t) index > list->length)
+            {
+                return throw_error("absent key");
+            }
+
+            node = list->head;
+            cursor = 0;
+
+            for (; node != NULL; node = node->next, cursor++)
+            {
+                if (index - 1 == cursor)
+                {
+                    value_t *item;
+
+                    item = node->value;
+                    item->owners += 1;
+
+                    return item;
+                }
+            }
+
+            crash_with_message("unsupported branch EXECUTE_GET_INDEX");
+            return new_null();
         }
 
         default:
