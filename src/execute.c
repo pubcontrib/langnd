@@ -989,7 +989,7 @@ static value_t *run_type(argument_iterator_t *arguments, map_t *variables)
 {
     value_t *value;
 
-    if (!next_argument(arguments, variables, VALUE_TYPE_NULL | VALUE_TYPE_BOOLEAN | VALUE_TYPE_NUMBER | VALUE_TYPE_STRING, &value))
+    if (!next_argument(arguments, variables, VALUE_TYPE_NULL | VALUE_TYPE_BOOLEAN | VALUE_TYPE_NUMBER | VALUE_TYPE_STRING | VALUE_TYPE_LIST, &value))
     {
         return value;
     }
@@ -1007,6 +1007,9 @@ static value_t *run_type(argument_iterator_t *arguments, map_t *variables)
 
         case VALUE_TYPE_STRING:
             return new_string("STRING");
+
+        case VALUE_TYPE_LIST:
+            return new_string("LIST");
 
         default:
             crash_with_message("unsupported branch EXECUTE_TYPE_TYPE");

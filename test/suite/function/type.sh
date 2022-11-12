@@ -8,3 +8,5 @@ verify '@write(@type(0), 1)' \
     'prints to stdout' 'NUMBER'
 verify '@write(@type(""), 1)' \
     'prints to stdout' 'STRING'
+verify '@write(@type([]), 1)' \
+    'prints to stdout' 'LIST'
