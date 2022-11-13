@@ -1344,8 +1344,9 @@ static value_t *run_set(argument_iterator_t *arguments, map_t *variables)
 static value_t *run_unset(argument_iterator_t *arguments, map_t *variables)
 {
     value_t *collection, *key;
+    int index;
 
-    if (!next_argument(arguments, variables, VALUE_TYPE_STRING, &collection))
+    if (!next_argument(arguments, variables, VALUE_TYPE_STRING | VALUE_TYPE_LIST, &collection))
     {
         return collection;
     }
@@ -1355,21 +1356,19 @@ static value_t *run_unset(argument_iterator_t *arguments, map_t *variables)
         return key;
     }
 
+    if (number_to_integer(view_number(key), &index) != 0)
+    {
+        crash_with_message("unsupported branch EXECUTE_UNSET_INDEX");
+    }
+
     switch (collection->type)
     {
         case VALUE_TYPE_STRING:
         {
             char *source, *destination;
-            int index;
             size_t length;
 
             source = view_string(collection);
-
-            if (number_to_integer(view_number(key), &index) != 0)
-            {
-                crash_with_message("unsupported branch EXECUTE_UNSET_INDEX");
-            }
-
             length = strlen(source);
 
             if (index < 1 || (size_t) index > length)
@@ -1383,6 +1382,37 @@ static value_t *run_unset(argument_iterator_t *arguments, map_t *variables)
             destination[length - 1] = '\0';
 
             return steal_string(destination);
+        }
+
+        case VALUE_TYPE_LIST:
+        {
+            list_t *source, *destination;
+            list_node_t *node;
+            int cursor;
+
+            source = view_list(collection);
+
+            if (index < 1 || (size_t) index > source->length)
+            {
+                return throw_error("absent key");
+            }
+
+            destination = empty_list(dereference_value_unsafe);
+
+            for (node = source->head, cursor = 0; node != NULL; node = node->next, cursor++)
+            {
+                if (index - 1 != cursor)
+                {
+                    value_t *copy;
+
+                    copy = node->value;
+                    copy->owners += 1;
+
+                    add_list_item(destination, copy);
+                }
+            }
+
+            return steal_list(destination);
         }
 
         default:
