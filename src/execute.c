@@ -1425,17 +1425,65 @@ static value_t *run_merge(argument_iterator_t *arguments, map_t *variables)
 {
     value_t *left, *right;
 
-    if (!next_argument(arguments, variables, VALUE_TYPE_STRING, &left))
+    if (!next_argument(arguments, variables, VALUE_TYPE_STRING | VALUE_TYPE_LIST, &left))
     {
         return left;
     }
 
-    if (!next_argument(arguments, variables, VALUE_TYPE_STRING, &right))
+    switch (left->type)
     {
-        return right;
-    }
+        case VALUE_TYPE_STRING:
+        {
+            if (!next_argument(arguments, variables, VALUE_TYPE_STRING, &right))
+            {
+                return right;
+            }
 
-    return steal_string(merge_strings(view_string(left), view_string(right)));
+            return steal_string(merge_strings(view_string(left), view_string(right)));
+        }
+
+        case VALUE_TYPE_LIST:
+        {
+            list_t *source, *destination;
+            list_node_t *node;
+
+            if (!next_argument(arguments, variables, VALUE_TYPE_LIST, &right))
+            {
+                return right;
+            }
+
+            destination = empty_list(dereference_value_unsafe);
+            source = view_list(left);
+
+            for (node = source->head; node != NULL; node = node->next)
+            {
+                value_t *copy;
+
+                copy = node->value;
+                copy->owners += 1;
+
+                add_list_item(destination, copy);
+            }
+
+            source = view_list(right);
+
+            for (node = source->head; node != NULL; node = node->next)
+            {
+                value_t *copy;
+
+                copy = node->value;
+                copy->owners += 1;
+
+                add_list_item(destination, copy);
+            }
+
+            return steal_list(destination);
+        }
+
+        default:
+            crash_with_message("unsupported branch EXECUTE_MERGE_TYPE");
+            return new_null();
+    }
 }
 
 static value_t *run_length(argument_iterator_t *arguments, map_t *variables)
