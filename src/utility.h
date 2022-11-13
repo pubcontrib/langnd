@@ -42,18 +42,12 @@ typedef struct
     map_chain_t **chains;
 } map_t;
 
-typedef struct list_node_t
-{
-    void *value;
-    struct list_node_t *next;
-} list_node_t;
-
 typedef struct
 {
     void (*destroy)(void *);
+    size_t capacity;
     size_t length;
-    list_node_t *head;
-    list_node_t *tail;
+    void **items;
 } list_t;
 
 /**
@@ -106,6 +100,7 @@ char *merge_strings(char *start, char *expansion);
 char *copy_string(char *string);
 void *allocate(size_t size);
 void *allocate_with_zeros(size_t number, size_t size);
+void *reallocate(void *memory, size_t size);
 void crash_with_message(char *format, ...);
 
 #endif

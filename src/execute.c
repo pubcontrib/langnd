@@ -10,7 +10,6 @@ typedef struct
 {
     list_t *statements;
     value_t **evaluated;
-    list_node_t *current;
     size_t index;
 } argument_iterator_t;
 
@@ -47,8 +46,9 @@ outcome_t *execute(char *code)
 {
     outcome_t *outcome;
     script_t *script;
-    list_node_t *node;
     map_t *variables;
+    list_t *statements;
+    size_t index;
 
     outcome = allocate(sizeof(outcome_t));
     outcome->errorMessage = NULL;
@@ -66,13 +66,13 @@ outcome_t *execute(char *code)
     }
 
     variables = empty_map(hash_string, dereference_value_unsafe, 8);
-    node = script->statements->head;
+    statements = script->statements;
 
-    while (node)
+    for (index = 0; index < statements->length; index++)
     {
         value_t *result;
 
-        result = apply_statement(node->value, variables);
+        result = apply_statement(statements->items[index], variables);
 
         if (result->thrown)
         {
@@ -84,8 +84,6 @@ outcome_t *execute(char *code)
         }
 
         dereference_value(result);
-
-        node = node->next;
     }
 
     destroy_map(variables);
@@ -154,12 +152,10 @@ static value_t *apply_statement(statement_t *statement, map_t *variables)
 
             if (data->arguments->length > 0)
             {
-                arguments.current = data->arguments->head;
                 arguments.evaluated = allocate_with_zeros(sizeof(value_t *), data->arguments->length);
             }
             else
             {
-                arguments.current = NULL;
                 arguments.evaluated = NULL;
             }
 
@@ -298,7 +294,7 @@ static value_t *apply_statement(statement_t *statement, map_t *variables)
             {
                 value_t *last;
                 list_t *body;
-                list_node_t *node;
+                size_t index;
 
                 body = view_boolean(test) ? data->pass : data->fail;
                 dereference_value(test);
@@ -306,14 +302,14 @@ static value_t *apply_statement(statement_t *statement, map_t *variables)
 
                 if (body)
                 {
-                    for (node = body->head; node; node = node->next)
+                    for (index = 0; index < body->length; index++)
                     {
                         if (last)
                         {
                             dereference_value(last);
                         }
 
-                        last = apply_statement(node->value, variables);
+                        last = apply_statement(body->items[index], variables);
 
                         if (last->thrown)
                         {
@@ -358,7 +354,8 @@ static value_t *apply_statement(statement_t *statement, map_t *variables)
 
                 if (test->type == VALUE_TYPE_BOOLEAN)
                 {
-                    list_node_t *node;
+                    list_t *body;
+                    size_t index;
 
                     if (!view_boolean(test))
                     {
@@ -367,15 +364,16 @@ static value_t *apply_statement(statement_t *statement, map_t *variables)
                     }
 
                     dereference_value(test);
+                    body = data->body;
 
-                    for (node = data->body->head; node; node = node->next)
+                    for (index = 0; index < body->length; index++)
                     {
                         if (last)
                         {
                             dereference_value(last);
                         }
 
-                        last = apply_statement(node->value, variables);
+                        last = apply_statement(body->items[index], variables);
 
                         if (last->thrown)
                         {
@@ -402,15 +400,17 @@ static value_t *apply_statement(statement_t *statement, map_t *variables)
         case STATEMENT_TYPE_CATCH:
         {
             catch_statement_data_t *data;
-            list_node_t *node;
+            list_t *body;
+            size_t index;
 
             data = statement->data;
+            body = data->body;
 
-            for (node = data->body->head; node; node = node->next)
+            for (index = 0; index < body->length; index++)
             {
                 value_t *last;
 
-                last = apply_statement(node->value, variables);
+                last = apply_statement(body->items[index], variables);
 
                 if (last->thrown)
                 {
@@ -1156,7 +1156,8 @@ static value_t *run_cast(argument_iterator_t *arguments, map_t *variables)
 static value_t *run_get(argument_iterator_t *arguments, map_t *variables)
 {
     value_t *collection, *key;
-    int index;
+    size_t index;
+    int number;
 
     if (!next_argument(arguments, variables, VALUE_TYPE_STRING | VALUE_TYPE_LIST, &collection))
     {
@@ -1168,7 +1169,7 @@ static value_t *run_get(argument_iterator_t *arguments, map_t *variables)
         return key;
     }
 
-    if (number_to_integer(view_number(key), &index) != 0)
+    if (number_to_integer(view_number(key), &number) != 0)
     {
         crash_with_message("unsupported branch EXECUTE_GET_INDEX");
     }
@@ -1182,12 +1183,13 @@ static value_t *run_get(argument_iterator_t *arguments, map_t *variables)
 
             string = view_string(collection);
 
-            if (index < 1 || (size_t) index > strlen(string))
+            if (number < 1 || (size_t) number > strlen(string))
             {
                 return throw_error("absent key");
             }
 
-            item[0] = string[index - 1];
+            index = number - 1;
+            item[0] = string[number - 1];
             item[1] = '\0';
 
             return new_string(item);
@@ -1196,26 +1198,24 @@ static value_t *run_get(argument_iterator_t *arguments, map_t *variables)
         case VALUE_TYPE_LIST:
         {
             list_t *list;
-            list_node_t *node;
-            int cursor;
+            size_t cursor;
 
             list = view_list(collection);
 
-            if (index < 1 || (size_t) index > list->length)
+            if (number < 1 || (size_t) number > list->length)
             {
                 return throw_error("absent key");
             }
 
-            node = list->head;
-            cursor = 0;
+            index = number - 1;
 
-            for (; node != NULL; node = node->next, cursor++)
+            for (cursor = 0; cursor < list->length; cursor++)
             {
-                if (index - 1 == cursor)
+                if (index == cursor)
                 {
                     value_t *item;
 
-                    item = node->value;
+                    item = list->items[cursor];
                     item->owners += 1;
 
                     return item;
@@ -1291,8 +1291,8 @@ static value_t *run_set(argument_iterator_t *arguments, map_t *variables)
         case VALUE_TYPE_LIST:
         {
             list_t *source, *destination;
-            list_node_t *node;
-            int index, cursor;
+            size_t index, cursor;
+            int number;
 
             if (!next_argument(arguments, variables, VALUE_TYPE_NULL | VALUE_TYPE_BOOLEAN | VALUE_TYPE_NUMBER | VALUE_TYPE_STRING | VALUE_TYPE_LIST, &item))
             {
@@ -1301,25 +1301,26 @@ static value_t *run_set(argument_iterator_t *arguments, map_t *variables)
 
             source = view_list(collection);
 
-            if (number_to_integer(view_number(key), &index) != 0)
+            if (number_to_integer(view_number(key), &number) != 0)
             {
                 crash_with_message("unsupported branch EXECUTE_SET_INDEX");
             }
 
-            if (index < 1 || (size_t) index > source->length)
+            if (number < 1 || (size_t) number > source->length)
             {
                 return throw_error("absent key");
             }
 
+            index = number - 1;
             destination = empty_list(dereference_value_unsafe);
 
-            for (node = source->head, cursor = 0; node != NULL; node = node->next, cursor++)
+            for (cursor = 0; cursor < source->length; cursor++)
             {
-                if (index - 1 != cursor)
+                if (index != cursor)
                 {
                     value_t *copy;
 
-                    copy = node->value;
+                    copy = source->items[cursor];
                     copy->owners += 1;
 
                     add_list_item(destination, copy);
@@ -1344,7 +1345,7 @@ static value_t *run_set(argument_iterator_t *arguments, map_t *variables)
 static value_t *run_unset(argument_iterator_t *arguments, map_t *variables)
 {
     value_t *collection, *key;
-    int index;
+    int number;
 
     if (!next_argument(arguments, variables, VALUE_TYPE_STRING | VALUE_TYPE_LIST, &collection))
     {
@@ -1356,7 +1357,7 @@ static value_t *run_unset(argument_iterator_t *arguments, map_t *variables)
         return key;
     }
 
-    if (number_to_integer(view_number(key), &index) != 0)
+    if (number_to_integer(view_number(key), &number) != 0)
     {
         crash_with_message("unsupported branch EXECUTE_UNSET_INDEX");
     }
@@ -1371,14 +1372,14 @@ static value_t *run_unset(argument_iterator_t *arguments, map_t *variables)
             source = view_string(collection);
             length = strlen(source);
 
-            if (index < 1 || (size_t) index > length)
+            if (number < 1 || (size_t) number > length)
             {
                 return throw_error("absent key");
             }
 
             destination = allocate(sizeof(char) * length);
-            memcpy(destination, source, index - 1);
-            memcpy(destination + index - 1, source + index, length - index);
+            memcpy(destination, source, number - 1);
+            memcpy(destination + number - 1, source + number, length - number);
             destination[length - 1] = '\0';
 
             return steal_string(destination);
@@ -1387,25 +1388,25 @@ static value_t *run_unset(argument_iterator_t *arguments, map_t *variables)
         case VALUE_TYPE_LIST:
         {
             list_t *source, *destination;
-            list_node_t *node;
-            int cursor;
+            size_t index, cursor;
 
             source = view_list(collection);
 
-            if (index < 1 || (size_t) index > source->length)
+            if (number < 1 || (size_t) number > source->length)
             {
                 return throw_error("absent key");
             }
 
+            index = number - 1;
             destination = empty_list(dereference_value_unsafe);
 
-            for (node = source->head, cursor = 0; node != NULL; node = node->next, cursor++)
+            for (cursor = 0; cursor < source->length; cursor++)
             {
-                if (index - 1 != cursor)
+                if (index != cursor)
                 {
                     value_t *copy;
 
-                    copy = node->value;
+                    copy = source->items[cursor];
                     copy->owners += 1;
 
                     add_list_item(destination, copy);
@@ -1445,7 +1446,7 @@ static value_t *run_merge(argument_iterator_t *arguments, map_t *variables)
         case VALUE_TYPE_LIST:
         {
             list_t *source, *destination;
-            list_node_t *node;
+            size_t index;
 
             if (!next_argument(arguments, variables, VALUE_TYPE_LIST, &right))
             {
@@ -1455,11 +1456,11 @@ static value_t *run_merge(argument_iterator_t *arguments, map_t *variables)
             destination = empty_list(dereference_value_unsafe);
             source = view_list(left);
 
-            for (node = source->head; node != NULL; node = node->next)
+            for (index = 0; index < source->length; index++)
             {
                 value_t *copy;
 
-                copy = node->value;
+                copy = source->items[index];
                 copy->owners += 1;
 
                 add_list_item(destination, copy);
@@ -1467,11 +1468,11 @@ static value_t *run_merge(argument_iterator_t *arguments, map_t *variables)
 
             source = view_list(right);
 
-            for (node = source->head; node != NULL; node = node->next)
+            for (index = 0; index < source->length; index++)
             {
                 value_t *copy;
 
-                copy = node->value;
+                copy = source->items[index];
                 copy->owners += 1;
 
                 add_list_item(destination, copy);
@@ -1530,8 +1531,7 @@ static int next_argument(argument_iterator_t *arguments, map_t *variables, int t
         return 0;
     }
 
-    result = apply_statement(arguments->current->value, variables);
-    arguments->current = arguments->current->next;
+    result = apply_statement(arguments->statements->items[arguments->index], variables);
     arguments->evaluated[arguments->index] = result;
     arguments->index += 1;
 

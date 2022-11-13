@@ -9,8 +9,7 @@ static void destroy_chain(map_chain_t *chain, void (*destroy)(void *));
 static map_chain_t *create_map_chain(char *key, void *value, map_chain_t *next);
 static map_t *create_map(int (*hash)(char *), void (*destroy)(void *), size_t length, size_t capacity, map_chain_t **chains);
 static void resize_map(map_t *map);
-static list_t *create_list(void (*destroy)(void *), size_t length, list_node_t *head, list_node_t *tail);
-static list_node_t *create_list_node(void *value, list_node_t *next);
+static list_t *create_list(void (*destroy)(void *), size_t capacity, size_t length, void **items);
 static int integer_digits(int integer);
 static int integer_power(int a, int b);
 static void crash(void);
@@ -64,23 +63,21 @@ int compare_values(value_t *left, value_t *right)
         case VALUE_TYPE_LIST:
         {
             list_t *leftList, *rightList;
-            list_node_t *leftNode, *rightNode;
+            size_t index;
 
             leftList = view_list(left);
             rightList = view_list(right);
-            leftNode = leftList->head;
-            rightNode = rightList->head;
 
-            for (; leftNode != NULL; leftNode = leftNode->next, rightNode = rightNode->next)
+            for (index = 0; index < leftList->length; index++)
             {
                 int different;
 
-                if (!rightNode)
+                if (index == rightList->length)
                 {
                     return 1;
                 }
 
-                different = compare_values(leftNode->value, rightNode->value);
+                different = compare_values(leftList->items[index], rightList->items[index]);
 
                 if (different)
                 {
@@ -88,7 +85,7 @@ int compare_values(value_t *left, value_t *right)
                 }
             }
 
-            if (rightNode)
+            if (index < rightList->length)
             {
                 return -1;
             }
@@ -202,14 +199,14 @@ char *represent_value(value_t *value)
         {
             char *buffer, *swap;
             list_t *list;
-            list_node_t *node;
+            size_t index;
             int first;
 
             list = view_list(value);
             buffer = copy_string("[");
             first = 1;
 
-            for (node = list->head; node; node = node->next)
+            for (index = 0; index < list->length; index++)
             {
                 char *item;
 
@@ -224,7 +221,7 @@ char *represent_value(value_t *value)
                     first = 0;
                 }
 
-                item = represent_value(node->value);
+                item = represent_value(list->items[index]);
                 swap = merge_strings(buffer, item);
                 free(buffer);
                 free(item);
@@ -559,48 +556,34 @@ void destroy_map(map_t *map)
 
 list_t *empty_list(void (*destroy)(void *))
 {
-    return create_list(destroy, 0, NULL, NULL);
+    size_t capacity;
+
+    capacity = 1;
+
+    return create_list(destroy, capacity, 0, allocate(sizeof(void *) * capacity));
 }
 
 void add_list_item(list_t *list, void *value)
 {
-    list_node_t *node;
-
-    node = create_list_node(value, NULL);
-
-    list->length += 1;
-
-    if (list->length == 1)
+    if (list->length == list->capacity)
     {
-        list->head = node;
-        list->tail = node;
+        list->capacity *= 2;
+        list->items = reallocate(list->items, sizeof(void *) * list->capacity);
     }
-    else
-    {
-        list->tail->next = node;
-        list->tail = node;
-    }
+
+    list->items[list->length++] = value;
 }
 
 void destroy_list(list_t *list)
 {
-    if (list->head)
+    size_t index;
+
+    for (index = 0; index < list->length; index++)
     {
-        list_node_t *node, *next;
-
-        for (node = list->head; node != NULL; node = next)
-        {
-            next = node->next;
-
-            if (node->value)
-            {
-                list->destroy(node->value);
-            }
-
-            free(node);
-        }
+        list->destroy(list->items[index]);
     }
 
+    free(list->items);
     free(list);
 }
 
@@ -1009,6 +992,23 @@ void *allocate_with_zeros(size_t number, size_t size)
     return memory;
 }
 
+void *reallocate(void *memory, size_t size)
+{
+    if (size == 0)
+    {
+        crash_with_message("zero memory requested");
+    }
+
+    memory = realloc(memory, size);
+
+    if (!memory)
+    {
+        crash_with_message("memory allocation failed");
+    }
+
+    return memory;
+}
+
 void crash_with_message(char *format, ...)
 {
     va_list arguments;
@@ -1108,28 +1108,17 @@ static void resize_map(map_t *map)
     free(existing);
 }
 
-static list_t *create_list(void (*destroy)(void *), size_t length, list_node_t *head, list_node_t *tail)
+static list_t *create_list(void (*destroy)(void *), size_t capacity, size_t length, void **items)
 {
     list_t *list;
 
     list = allocate(sizeof(list_t));
     list->destroy = destroy;
+    list->capacity = capacity;
     list->length = length;
-    list->head = head;
-    list->tail = tail;
+    list->items = items;
 
     return list;
-}
-
-static list_node_t *create_list_node(void *value, list_node_t *next)
-{
-    list_node_t *node;
-
-    node = allocate(sizeof(list_node_t));
-    node->value = value;
-    node->next = next;
-
-    return node;
 }
 
 static int integer_digits(int integer)
