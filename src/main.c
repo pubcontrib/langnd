@@ -133,7 +133,7 @@ static int run_text(char *text)
         }
         else
         {
-            crash_with_message("unsupported branch CLI_ERROR_MESSAGE");
+            crash_with_message("unsupported branch invoked");
         }
 
         if (outcome->hintMessage)

@@ -767,7 +767,7 @@ static value_t *run_write(argument_iterator_t *arguments, map_t *variables)
         }
 
         default:
-            crash_with_message("unsupported branch EXECUTE_WRITE_TYPE");
+            crash_with_message("unsupported branch invoked");
             return new_null();
     }
 
@@ -866,7 +866,7 @@ static value_t *run_read(argument_iterator_t *arguments, map_t *variables)
             break;
 
         default:
-            crash_with_message("unsupported branch EXECUTE_READ_TYPE");
+            crash_with_message("unsupported branch invoked");
             return new_null();
     }
 
@@ -954,7 +954,7 @@ static value_t *run_delete(argument_iterator_t *arguments, map_t *variables)
         }
 
         default:
-            crash_with_message("unsupported branch EXECUTE_DELETE_TYPE");
+            crash_with_message("unsupported branch invoked");
             return new_null();
     }
 }
@@ -1012,7 +1012,7 @@ static value_t *run_type(argument_iterator_t *arguments, map_t *variables)
             return new_string("LIST");
 
         default:
-            crash_with_message("unsupported branch EXECUTE_TYPE_TYPE");
+            crash_with_message("unsupported branch invoked");
             return new_null();
     }
 }
@@ -1171,7 +1171,7 @@ static value_t *run_get(argument_iterator_t *arguments, map_t *variables)
 
     if (number_to_integer(view_number(key), &number) != 0)
     {
-        crash_with_message("unsupported branch EXECUTE_GET_INDEX");
+        crash_with_message("unsupported branch invoked");
     }
 
     switch (collection->type)
@@ -1222,12 +1222,12 @@ static value_t *run_get(argument_iterator_t *arguments, map_t *variables)
                 }
             }
 
-            crash_with_message("unsupported branch EXECUTE_GET_INDEX");
+            crash_with_message("unsupported branch invoked");
             return new_null();
         }
 
         default:
-            crash_with_message("unsupported branch EXECUTE_GET_TYPE");
+            crash_with_message("unsupported branch invoked");
             return new_null();
     }
 }
@@ -1264,7 +1264,7 @@ static value_t *run_set(argument_iterator_t *arguments, map_t *variables)
 
             if (number_to_integer(view_number(key), &index) != 0)
             {
-                crash_with_message("unsupported branch EXECUTE_SET_INDEX");
+                crash_with_message("unsupported branch invoked");
             }
 
             sourceLength = strlen(source);
@@ -1303,7 +1303,7 @@ static value_t *run_set(argument_iterator_t *arguments, map_t *variables)
 
             if (number_to_integer(view_number(key), &number) != 0)
             {
-                crash_with_message("unsupported branch EXECUTE_SET_INDEX");
+                crash_with_message("unsupported branch invoked");
             }
 
             if (number < 1 || (size_t) number > source->length)
@@ -1337,7 +1337,7 @@ static value_t *run_set(argument_iterator_t *arguments, map_t *variables)
         }
 
         default:
-            crash_with_message("unsupported branch EXECUTE_SET_TYPE");
+            crash_with_message("unsupported branch invoked");
             return new_null();
     }
 }
@@ -1359,7 +1359,7 @@ static value_t *run_unset(argument_iterator_t *arguments, map_t *variables)
 
     if (number_to_integer(view_number(key), &number) != 0)
     {
-        crash_with_message("unsupported branch EXECUTE_UNSET_INDEX");
+        crash_with_message("unsupported branch invoked");
     }
 
     switch (collection->type)
@@ -1417,7 +1417,7 @@ static value_t *run_unset(argument_iterator_t *arguments, map_t *variables)
         }
 
         default:
-            crash_with_message("unsupported branch EXECUTE_SET_TYPE");
+            crash_with_message("unsupported branch invoked");
             return new_null();
     }
 }
@@ -1482,7 +1482,7 @@ static value_t *run_merge(argument_iterator_t *arguments, map_t *variables)
         }
 
         default:
-            crash_with_message("unsupported branch EXECUTE_MERGE_TYPE");
+            crash_with_message("unsupported branch invoked");
             return new_null();
     }
 }
@@ -1509,7 +1509,7 @@ static value_t *run_length(argument_iterator_t *arguments, map_t *variables)
             break;
 
         default:
-            crash_with_message("unsupported branch EXECUTE_LENGTH_TYPE");
+            crash_with_message("unsupported branch invoked");
             return new_null();
     }
 

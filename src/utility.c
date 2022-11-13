@@ -94,7 +94,7 @@ int compare_values(value_t *left, value_t *right)
         }
 
         default:
-            crash_with_message("unsupported branch EXECUTE_COMPARE_TYPE");
+            crash_with_message("unsupported branch invoked");
             return 0;
     }
 }
@@ -236,7 +236,7 @@ char *represent_value(value_t *value)
         }
 
         default:
-            crash_with_message("unsupported branch EXECUTE_REPRESENT_VALUE");
+            crash_with_message("unsupported branch invoked");
             return NULL;
     }
 }
@@ -345,7 +345,7 @@ boolean_t view_boolean(value_t *value)
     }
     else
     {
-        crash_with_message("unsupported branch EXECUTE_VIEW_BOOLEAN");
+        crash_with_message("unsupported branch invoked");
         return FALSE;
     }
 }
@@ -358,7 +358,7 @@ number_t view_number(value_t *value)
     }
     else
     {
-        crash_with_message("unsupported branch EXECUTE_VIEW_NUMBER");
+        crash_with_message("unsupported branch invoked");
         return 0;
     }
 }
@@ -371,7 +371,7 @@ char *view_string(value_t *value)
     }
     else
     {
-        crash_with_message("unsupported branch EXECUTE_VIEW_STRING");
+        crash_with_message("unsupported branch invoked");
         return "";
     }
 }
@@ -384,7 +384,7 @@ list_t *view_list(value_t *value)
     }
     else
     {
-        crash_with_message("unsupported branch EXECUTE_VIEW_LIST");
+        crash_with_message("unsupported branch invoked");
         return NULL;
     }
 }
@@ -407,7 +407,7 @@ void destroy_value(value_t *value)
                 break;
 
             default:
-                crash_with_message("unsupported branch EXECUTE_DESTROY_VALUE");
+                crash_with_message("unsupported branch invoked");
                 break;
         }
     }

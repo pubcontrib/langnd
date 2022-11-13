@@ -269,7 +269,7 @@ void destroy_statement(statement_t *statement)
             }
 
             default:
-                crash_with_message("unsupported branch PARSE_DESTROY_STATEMENT");
+                crash_with_message("unsupported branch invoked");
                 break;
         }
     }
@@ -393,7 +393,7 @@ static statement_t *read_any_statement(capsule_t *capsule)
         }
         else
         {
-            crash_with_message("unsupported branch PARSE_KEYWORD_TOKEN");
+            crash_with_message("unsupported branch invoked");
             return NULL;
         }
 
@@ -976,7 +976,7 @@ static identifier_t *parse_identifier(char *code, token_t *token)
     }
     else
     {
-        crash_with_message("unsupported branch PARSE_IDENTIFIER_PREFIX");
+        crash_with_message("unsupported branch invoked");
         return NULL;
     }
 
