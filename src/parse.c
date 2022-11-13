@@ -415,7 +415,7 @@ static statement_t *read_any_statement(capsule_t *capsule)
 static statement_t *read_list_statement(capsule_t *capsule)
 {
     list_t *items;
-    char ready;
+    int ready;
 
     items = empty_list(dereference_value_unsafe);
     ready = 1;
@@ -513,7 +513,7 @@ static statement_t *read_assignment_statement(capsule_t *capsule, identifier_t *
 static statement_t *read_invoke_statement(capsule_t *capsule, identifier_t *identifier)
 {
     list_t *arguments;
-    char ready;
+    int ready;
 
     arguments = empty_list(destroy_statement_unsafe);
     ready = 1;
