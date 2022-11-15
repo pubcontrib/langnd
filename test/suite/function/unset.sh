@@ -13,6 +13,11 @@ verify '@write(@freeze(@unset(["a", "b", "c"], 2)), 1)' \
 verify '@write(@freeze(@unset(["a", "b", "c"], 3)), 1)' \
     'prints to stdout' '["a", "b"]'
 
+verify '$list1=["x"] $list1=@set($list1, 1, $list1) $list2=@unset($list1, 1) @write(@freeze($list1), 1) @write(@freeze($list2), 1)' \
+    'prints to stdout' '[["x"]][]'
+verify '$list=["x"] $list=@set($list, 1, $list) $list=@unset($list, 1) @write(@freeze($list), 1)' \
+    'prints to stdout' '[]'
+
 verify '@write(@freeze(@unset("abc", 0)), 1)' \
     'errors with execute message' '"absent key"'
 verify '@write(@freeze(@unset("abc", 4)), 1)' \

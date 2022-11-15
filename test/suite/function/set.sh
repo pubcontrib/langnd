@@ -35,6 +35,11 @@ verify '@write(@freeze(@set(["a", "b", "c"], 1, "")), 1)' \
 verify '@write(@freeze(@set(["a", "b", "c"], 1, [])), 1)' \
     'prints to stdout' '[[], "b", "c"]'
 
+verify '$list1=["x"] $list2=@set($list1, 1, $list1) @write(@freeze($list1), 1) @write(@freeze($list2), 1)' \
+    'prints to stdout' '["x"][["x"]]'
+verify '$list=["x"] $list=@set($list, 1, $list) @write(@freeze($list), 1)' \
+    'prints to stdout' '[["x"]]'
+
 verify '@write(@freeze(@set("abc", 0, "x")), 1)' \
     'errors with execute message' '"absent key"'
 verify '@write(@freeze(@set("abc", 4, "x")), 1)' \
