@@ -2,9 +2,13 @@ suite 'statement/assignment'
 
 verify '$a=null' \
     'prints to stdout' ''
+verify '$a=true' \
+    'prints to stdout' ''
 verify '$a=100' \
     'prints to stdout' ''
 verify '$a="text"' \
+    'prints to stdout' ''
+verify '$a=[1, 2, 3]' \
     'prints to stdout' ''
 verify '$A="val"' \
     'prints to stdout' ''

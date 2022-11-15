@@ -30,6 +30,16 @@ verify '$error=catch { $me="custom error" throw $me } @write($error, 1)' \
     'prints to stdout' 'custom error'
 verify '$error=catch { throw @merge("custom ", "error") } @write($error, 1)' \
     'prints to stdout' 'custom error'
+verify '@write(@freeze(catch { throw null }), 1)' \
+    'prints to stdout' 'null'
+verify '@write(@freeze(catch { throw true }), 1)' \
+    'prints to stdout' 'true'
+verify '@write(@freeze(catch { throw 100 }), 1)' \
+    'prints to stdout' '100'
+verify '@write(@freeze(catch { throw "text" }), 1)' \
+    'prints to stdout' '"text"'
+verify '@write(@freeze(catch { throw [1, 2, 3] }), 1)' \
+    'prints to stdout' '[1, 2, 3]'
 
 verify 'catch' \
     'errors with parse message' 'catch'

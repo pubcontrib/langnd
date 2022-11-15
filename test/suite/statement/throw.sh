@@ -8,6 +8,8 @@ verify 'throw 100' \
     'errors with execute message' '100'
 verify 'throw "text"' \
     'errors with execute message' '"text"'
+verify 'throw [1, 2, 3]' \
+    'errors with execute message' '[1, 2, 3]'
 verify '$var="PANIC!" throw $var' \
     'errors with execute message' '"PANIC!"'
 verify 'throw @merge("PANIC", "!")' \

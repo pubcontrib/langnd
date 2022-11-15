@@ -20,6 +20,15 @@ verify 'while false 100' \
 verify 'while false { 100' \
     'errors with parse message' '100'
 
+verify 'while null { }' \
+    'errors with execute message' '"branch with non-boolean condition"'
+verify 'while 100 { }' \
+    'errors with execute message' '"branch with non-boolean condition"'
+verify 'while "text" { }' \
+    'errors with execute message' '"branch with non-boolean condition"'
+verify 'while [1, 2, 3] { }' \
+    'errors with execute message' '"branch with non-boolean condition"'
+
 verify 'while true { "before" @divide(100, 0) "after" }' \
     'errors with execute message' '"arithmetic error"'
 verify 'while @divide(100, 0) { $missing }' \

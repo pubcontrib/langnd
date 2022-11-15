@@ -60,6 +60,15 @@ verify 'if true { 100 } else { 200' \
 verify '$a=true if $a=false { }' \
     'errors with parse message' 'false { }'
 
+verify 'if null { }' \
+    'errors with execute message' '"branch with non-boolean condition"'
+verify 'if 100 { }' \
+    'errors with execute message' '"branch with non-boolean condition"'
+verify 'if "text" { }' \
+    'errors with execute message' '"branch with non-boolean condition"'
+verify 'if [1, 2, 3] { }' \
+    'errors with execute message' '"branch with non-boolean condition"'
+
 verify 'if true { "before" @divide(100, 0) "after" }' \
     'errors with execute message' '"arithmetic error"'
 verify 'if @divide(100, 0) { $missing }' \
