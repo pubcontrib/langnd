@@ -385,7 +385,7 @@ static value_t *apply_statement(statement_t *statement, map_t *variables)
                 {
                     dereference_value(test);
 
-                    return throw_error("branch with non-boolean condition");
+                    return throw_error("loop with non-boolean condition");
                 }
             }
 
