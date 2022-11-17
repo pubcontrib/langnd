@@ -977,7 +977,7 @@ static value_t *run_freeze(argument_iterator_t *arguments, map_t *variables)
 {
     value_t *value;
 
-    if (!next_argument(arguments, variables, VALUE_TYPE_NULL | VALUE_TYPE_BOOLEAN | VALUE_TYPE_NUMBER | VALUE_TYPE_STRING | VALUE_TYPE_LIST, &value))
+    if (!next_argument(arguments, variables, VALUE_TYPE_NULL | VALUE_TYPE_BOOLEAN | VALUE_TYPE_NUMBER | VALUE_TYPE_STRING | VALUE_TYPE_LIST | VALUE_TYPE_MAP, &value))
     {
         return value;
     }

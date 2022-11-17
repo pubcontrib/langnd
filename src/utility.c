@@ -10,6 +10,7 @@ static map_chain_t *create_map_chain(char *key, void *value, map_chain_t *next);
 static map_t *create_map(int (*hash)(char *), void (*destroy)(void *), size_t length, size_t capacity, map_chain_t **chains);
 static void resize_map(map_t *map);
 static list_t *create_list(void (*destroy)(void *), size_t capacity, size_t length, void **items);
+static int compare_strings_unsafe(const void *left, const void *right);
 static int integer_digits(int integer);
 static int integer_power(int a, int b);
 static void crash(void);
@@ -229,6 +230,89 @@ char *represent_value(value_t *value)
             }
 
             swap = merge_strings(buffer, "]");
+            free(buffer);
+            buffer = swap;
+
+            return buffer;
+        }
+
+        case VALUE_TYPE_MAP:
+        {
+            char *buffer, *swap;
+            map_t *map;
+            char **keys;
+            size_t index, placement;
+            int first;
+
+            map = view_map(value);
+
+            if (map->length > 0)
+            {
+                keys = allocate(sizeof(char *) * map->length);
+
+                for (index = 0, placement = 0; index < map->capacity; index++)
+                {
+                    if (map->chains[index])
+                    {
+                        map_chain_t *chain;
+
+                        for (chain = map->chains[index]; chain != NULL; chain = chain->next)
+                        {
+                            keys[placement++] = chain->key;
+                        }
+                    }
+                }
+
+                qsort(keys, map->length, sizeof(char *), compare_strings_unsafe);
+            }
+
+            buffer = copy_string("{");
+            first = 1;
+
+            for (index = 0; index < map->length; index++)
+            {
+                char *key, *representation;
+                value_t *value, *keyString;
+
+                if (!first)
+                {
+                    swap = merge_strings(buffer, ", ");
+                    free(buffer);
+                    buffer = swap;
+                }
+                else
+                {
+                    first = 0;
+                }
+
+                key = keys[index];
+                value = get_map_item(map, key);
+
+                keyString = new_string(key);
+                representation = represent_value(keyString);
+                swap = merge_strings(buffer, representation);
+                free(buffer);
+                free(representation);
+                destroy_value(keyString);
+                buffer = swap;
+
+                swap = merge_strings(buffer, ": ");
+                free(buffer);
+                buffer = swap;
+
+                representation = represent_value(value);
+                swap = merge_strings(buffer, representation);
+                free(buffer);
+                free(representation);
+                buffer = swap;
+            }
+
+            if (map->length > 0)
+            {
+                free(keys);
+            }
+
+            swap = merge_strings(buffer, "}");
             free(buffer);
             buffer = swap;
 
@@ -1149,6 +1233,11 @@ static list_t *create_list(void (*destroy)(void *), size_t capacity, size_t leng
     list->items = items;
 
     return list;
+}
+
+static int compare_strings_unsafe(const void *left, const void *right)
+{
+    return strcmp(*(const char **) left, *(const char **) right);
 }
 
 static int integer_digits(int integer)
