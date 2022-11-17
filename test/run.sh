@@ -35,6 +35,7 @@ introduce
 . suite/statement/number.sh
 . suite/statement/string.sh
 . suite/statement/list.sh
+. suite/statement/map.sh
 . suite/statement/assignment.sh
 . suite/statement/invoke.sh
 . suite/statement/branch.sh

@@ -337,6 +337,19 @@ value_t *steal_list(list_t *data)
     return value;
 }
 
+value_t *steal_map(map_t *data)
+{
+    value_t *value;
+
+    value = allocate(sizeof(value_t));
+    value->type = VALUE_TYPE_MAP;
+    value->data = data;
+    value->thrown = 0;
+    value->owners = 1;
+
+    return value;
+}
+
 boolean_t view_boolean(value_t *value)
 {
     if (value->type == VALUE_TYPE_BOOLEAN)
@@ -389,6 +402,19 @@ list_t *view_list(value_t *value)
     }
 }
 
+map_t *view_map(value_t *value)
+{
+    if (value->type == VALUE_TYPE_MAP)
+    {
+        return (map_t *) value->data;
+    }
+    else
+    {
+        crash_with_message("unsupported branch invoked");
+        return NULL;
+    }
+}
+
 void destroy_value(value_t *value)
 {
     if (value->data)
@@ -404,6 +430,10 @@ void destroy_value(value_t *value)
 
             case VALUE_TYPE_LIST:
                 destroy_list(value->data);
+                break;
+
+            case VALUE_TYPE_MAP:
+                destroy_map(value->data);
                 break;
 
             default:

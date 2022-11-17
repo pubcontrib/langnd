@@ -40,7 +40,7 @@ verify '$msg=if false { "first" } else { "second" } @write(@freeze($msg), 1)' \
 verify 'if' \
     'errors with parse message' 'if'
 verify 'if { }' \
-    'errors with parse message' '{ }'
+    'errors with parse message' '}'
 verify 'if true' \
     'errors with parse message' 'true'
 verify 'if true {' \

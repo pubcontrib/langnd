@@ -16,6 +16,7 @@ typedef struct
 
 static statement_t *read_any_statement(capsule_t *capsule);
 static statement_t *read_list_statement(capsule_t *capsule);
+static statement_t *read_map_statement(capsule_t *capsule);
 static statement_t *read_assignment_statement(capsule_t *capsule, identifier_t *identifier);
 static statement_t *read_invoke_statement(capsule_t *capsule, identifier_t *identifier);
 static statement_t *read_branch_statement(capsule_t *capsule);
@@ -407,6 +408,10 @@ static statement_t *read_any_statement(capsule_t *capsule)
         {
             return read_list_statement(capsule);
         }
+        else if (is_symbol_token('{', capsule->scanner.code, token))
+        {
+            return read_map_statement(capsule);
+        }
     }
 
     return create_unknown_statement();
@@ -480,6 +485,123 @@ static statement_t *read_list_statement(capsule_t *capsule)
     }
 
     return create_literal_statement(steal_list(items));
+}
+
+static statement_t *read_map_statement(capsule_t *capsule)
+{
+    map_t *mappings;
+    int mode; /* 0:wants_key, 1:wants_glue, 2:wants_value, 3:wants_delimiter_or_end */
+    char *hold;
+
+    mappings = empty_map(hash_string, dereference_value_unsafe, 1);
+    mode = 0;
+    hold = NULL;
+
+    while (1)
+    {
+        token_t *optional;
+
+        optional = peek_token(capsule);
+
+        if (mode == 0)
+        {
+            statement_t *key;
+            literal_statement_data_t *data;
+            value_t *steal;
+
+            if (is_symbol_token('}', capsule->scanner.code, optional))
+            {
+                next_token(capsule);
+
+                break;
+            }
+
+            key = read_any_statement(capsule);
+
+            if (!key || key->type != STATEMENT_TYPE_LITERAL)
+            {
+                if (key)
+                {
+                    destroy_statement(key);
+                }
+
+                destroy_map(mappings);
+
+                return create_unknown_statement();
+            }
+
+            mode = 1;
+            data = key->data;
+            steal = data->value;
+
+            if (steal->type != VALUE_TYPE_STRING)
+            {
+                destroy_statement(key);
+                destroy_map(mappings);
+
+                return create_unknown_statement();
+            }
+
+            hold = view_string(steal);
+            steal->data = NULL;
+            destroy_statement(key);
+        }
+        else if (mode == 1)
+        {
+            if (is_symbol_token(':', capsule->scanner.code, optional))
+            {
+                mode = 2;
+                next_token(capsule);
+
+                continue;
+            }
+            else
+            {
+                free(hold);
+                destroy_map(mappings);
+
+                return create_unknown_statement();
+            }
+        }
+        else if (mode == 2)
+        {
+            statement_t *value;
+            literal_statement_data_t *data;
+
+            value = read_any_statement(capsule);
+
+            if (!value || value->type != STATEMENT_TYPE_LITERAL)
+            {
+                if (value)
+                {
+                    destroy_statement(value);
+                }
+
+                free(hold);
+                destroy_map(mappings);
+
+                return create_unknown_statement();
+            }
+
+            mode = 3;
+            data = value->data;
+            set_map_item(mappings, hold, data->value);
+            hold = NULL;
+            data->value = NULL;
+            destroy_statement(value);
+        }
+        else if (mode == 3)
+        {
+            mode = 0;
+
+            if (is_symbol_token(',', capsule->scanner.code, optional))
+            {
+                next_token(capsule);
+            }
+        }
+    }
+
+    return create_literal_statement(steal_map(mappings));
 }
 
 static statement_t *read_assignment_statement(capsule_t *capsule, identifier_t *identifier)

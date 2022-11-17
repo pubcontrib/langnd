@@ -15,7 +15,8 @@ typedef enum
     VALUE_TYPE_BOOLEAN = 0x02,
     VALUE_TYPE_NUMBER = 0x04,
     VALUE_TYPE_STRING = 0x08,
-    VALUE_TYPE_LIST = 0x10
+    VALUE_TYPE_LIST = 0x10,
+    VALUE_TYPE_MAP = 0x20
 } value_type_t;
 
 typedef struct
@@ -69,10 +70,12 @@ value_t *new_number(number_t number);
 value_t *new_string(char *string);
 value_t *steal_string(char *string);
 value_t *steal_list(list_t *list);
+value_t *steal_map(map_t *map);
 boolean_t view_boolean(value_t *value);
 number_t view_number(value_t *value);
 char *view_string(value_t *value);
 list_t *view_list(value_t *value);
+map_t *view_map(value_t *value);
 void destroy_value(value_t *value);
 void dereference_value(value_t *value);
 map_t *empty_map(int (*hash)(char *), void (*destroy)(void *), size_t capacity);

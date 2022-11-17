@@ -10,7 +10,7 @@ verify '$i=1 while @precedes($i, 4) { $j=1 while @precedes($j, 4) { @write(@free
 verify 'while' \
     'errors with parse message' 'while'
 verify 'while { }' \
-    'errors with parse message' '{ }'
+    'errors with parse message' '}'
 verify 'while false {' \
     'errors with parse message' '{'
 verify 'while false }' \
