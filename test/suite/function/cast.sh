@@ -29,6 +29,8 @@ verify '@cast("text", "NULL")' \
     'errors with execute message' '"invalid cast"'
 verify '@cast([1], "NULL")' \
     'errors with execute message' '"invalid cast"'
+verify '@cast({}, "NULL")' \
+    'errors with execute message' '"invalid cast"'
 verify '@cast(null, "BOOLEAN")' \
     'errors with execute message' '"invalid cast"'
 verify '@cast(123.456, "BOOLEAN")' \
@@ -36,6 +38,8 @@ verify '@cast(123.456, "BOOLEAN")' \
 verify '@cast("text", "BOOLEAN")' \
     'errors with execute message' '"invalid cast"'
 verify '@cast([1], "BOOLEAN")' \
+    'errors with execute message' '"invalid cast"'
+verify '@cast({}, "BOOLEAN")' \
     'errors with execute message' '"invalid cast"'
 verify '@cast(null, "NUMBER")' \
     'errors with execute message' '"invalid cast"'
@@ -45,7 +49,11 @@ verify '@cast("text", "NUMBER")' \
     'errors with execute message' '"invalid cast"'
 verify '@cast([1], "NUMBER")' \
     'errors with execute message' '"invalid cast"'
+verify '@cast({}, "NUMBER")' \
+    'errors with execute message' '"invalid cast"'
 verify '@cast([1], "STRING")' \
+    'errors with execute message' '"invalid cast"'
+verify '@cast({}, "STRING")' \
     'errors with execute message' '"invalid cast"'
 verify '@cast(null, "LIST")' \
     'errors with execute message' '"invalid cast"'
@@ -56,6 +64,20 @@ verify '@cast(true, "LIST")' \
 verify '@cast("text", "LIST")' \
     'errors with execute message' '"invalid cast"'
 verify '@cast([1], "LIST")' \
+    'errors with execute message' '"invalid cast"'
+verify '@cast({}, "LIST")' \
+    'errors with execute message' '"invalid cast"'
+verify '@cast(null, "MAP")' \
+    'errors with execute message' '"invalid cast"'
+verify '@cast(123.456, "MAP")' \
+    'errors with execute message' '"invalid cast"'
+verify '@cast(true, "MAP")' \
+    'errors with execute message' '"invalid cast"'
+verify '@cast("text", "MAP")' \
+    'errors with execute message' '"invalid cast"'
+verify '@cast([1], "MAP")' \
+    'errors with execute message' '"invalid cast"'
+verify '@cast({}, "MAP")' \
     'errors with execute message' '"invalid cast"'
 verify '@cast(null, "WRONG")' \
     'errors with execute message' '"unknown type"'
