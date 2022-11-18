@@ -1496,7 +1496,7 @@ static value_t *run_length(argument_iterator_t *arguments, map_t *variables)
     size_t length;
     number_t number;
 
-    if (!next_argument(arguments, variables, VALUE_TYPE_STRING | VALUE_TYPE_LIST, &collection))
+    if (!next_argument(arguments, variables, VALUE_TYPE_STRING | VALUE_TYPE_LIST | VALUE_TYPE_MAP, &collection))
     {
         return collection;
     }
@@ -1509,6 +1509,10 @@ static value_t *run_length(argument_iterator_t *arguments, map_t *variables)
 
         case VALUE_TYPE_LIST:
             length = view_list(collection)->length;
+            break;
+
+        case VALUE_TYPE_MAP:
+            length = view_map(collection)->length;
             break;
 
         default:
