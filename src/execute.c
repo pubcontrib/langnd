@@ -40,6 +40,7 @@ static value_t *run_merge(argument_iterator_t *arguments, map_t *variables);
 static value_t *run_length(argument_iterator_t *arguments, map_t *variables);
 static int next_argument(argument_iterator_t *arguments, map_t *variables, int types, value_t **out);
 static int has_next_argument(argument_iterator_t *arguments);
+static void copy_map_items(map_t *source, map_t *destination);
 static void dereference_value_unsafe(void *value);
 
 outcome_t *execute(char *code)
@@ -1384,7 +1385,6 @@ static value_t *run_set(argument_iterator_t *arguments, map_t *variables)
         case VALUE_TYPE_MAP:
         {
             map_t *source, *destination;
-            size_t index;
 
             if (!next_argument(arguments, variables, VALUE_TYPE_STRING, &key))
             {
@@ -1399,23 +1399,7 @@ static value_t *run_set(argument_iterator_t *arguments, map_t *variables)
             source = view_map(collection);
             destination = empty_map(hash_string, dereference_value_unsafe, source->capacity);
 
-            for (index = 0; index < source->capacity; index++)
-            {
-                if (source->chains[index])
-                {
-                    map_chain_t *chain;
-
-                    for (chain = source->chains[index]; chain != NULL; chain = chain->next)
-                    {
-                        value_t *copy;
-
-                        copy = get_map_item(source, chain->key);
-                        copy->owners += 1;
-
-                        set_map_item(destination, copy_string(chain->key), copy);
-                    }
-                }
-            }
+            copy_map_items(source, destination);
 
             item->owners += 1;
             set_map_item(destination, copy_string(view_string(key)), item);
@@ -1517,7 +1501,6 @@ static value_t *run_unset(argument_iterator_t *arguments, map_t *variables)
         case VALUE_TYPE_MAP:
         {
             map_t *source, *destination;
-            size_t index;
 
             if (!next_argument(arguments, variables, VALUE_TYPE_STRING, &key))
             {
@@ -1527,24 +1510,7 @@ static value_t *run_unset(argument_iterator_t *arguments, map_t *variables)
             source = view_map(collection);
             destination = empty_map(hash_string, dereference_value_unsafe, 1);
 
-            for (index = 0; index < source->capacity; index++)
-            {
-                if (source->chains[index])
-                {
-                    map_chain_t *chain;
-
-                    for (chain = source->chains[index]; chain != NULL; chain = chain->next)
-                    {
-                        value_t *copy;
-
-                        copy = get_map_item(source, chain->key);
-                        copy->owners += 1;
-
-                        set_map_item(destination, copy_string(chain->key), copy);
-                    }
-                }
-            }
-
+            copy_map_items(source, destination);
             unset_map_item(destination, view_string(key));
 
             return steal_map(destination);
@@ -1618,7 +1584,6 @@ static value_t *run_merge(argument_iterator_t *arguments, map_t *variables)
         case VALUE_TYPE_MAP:
         {
             map_t *source, *destination;
-            size_t index;
 
             if (!next_argument(arguments, variables, VALUE_TYPE_MAP, &right))
             {
@@ -1628,43 +1593,11 @@ static value_t *run_merge(argument_iterator_t *arguments, map_t *variables)
             source = view_map(left);
             destination = empty_map(hash_string, dereference_value_unsafe, source->capacity);
 
-            for (index = 0; index < source->capacity; index++)
-            {
-                if (source->chains[index])
-                {
-                    map_chain_t *chain;
-
-                    for (chain = source->chains[index]; chain != NULL; chain = chain->next)
-                    {
-                        value_t *copy;
-
-                        copy = get_map_item(source, chain->key);
-                        copy->owners += 1;
-
-                        set_map_item(destination, copy_string(chain->key), copy);
-                    }
-                }
-            }
+            copy_map_items(source, destination);
 
             source = view_map(right);
 
-            for (index = 0; index < source->capacity; index++)
-            {
-                if (source->chains[index])
-                {
-                    map_chain_t *chain;
-
-                    for (chain = source->chains[index]; chain != NULL; chain = chain->next)
-                    {
-                        value_t *copy;
-
-                        copy = get_map_item(source, chain->key);
-                        copy->owners += 1;
-
-                        set_map_item(destination, copy_string(chain->key), copy);
-                    }
-                }
-            }
+            copy_map_items(source, destination);
 
             return steal_map(destination);
         }
@@ -1747,6 +1680,29 @@ static int next_argument(argument_iterator_t *arguments, map_t *variables, int t
 static int has_next_argument(argument_iterator_t *arguments)
 {
     return arguments->index < arguments->statements->length;
+}
+
+static void copy_map_items(map_t *source, map_t *destination)
+{
+    size_t index;
+
+    for (index = 0; index < source->capacity; index++)
+    {
+        if (source->chains[index])
+        {
+            map_chain_t *chain;
+
+            for (chain = source->chains[index]; chain != NULL; chain = chain->next)
+            {
+                value_t *copy;
+
+                copy = get_map_item(source, chain->key);
+                copy->owners += 1;
+
+                set_map_item(destination, copy_string(chain->key), copy);
+            }
+        }
+    }
 }
 
 static void dereference_value_unsafe(void *value)
