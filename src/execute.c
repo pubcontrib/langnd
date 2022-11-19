@@ -1432,21 +1432,10 @@ static value_t *run_set(argument_iterator_t *arguments, map_t *variables)
 static value_t *run_unset(argument_iterator_t *arguments, map_t *variables)
 {
     value_t *collection, *key;
-    int number;
 
-    if (!next_argument(arguments, variables, VALUE_TYPE_STRING | VALUE_TYPE_LIST, &collection))
+    if (!next_argument(arguments, variables, VALUE_TYPE_STRING | VALUE_TYPE_LIST | VALUE_TYPE_MAP, &collection))
     {
         return collection;
-    }
-
-    if (!next_argument(arguments, variables, VALUE_TYPE_NUMBER, &key))
-    {
-        return key;
-    }
-
-    if (number_to_integer(view_number(key), &number) != 0)
-    {
-        crash_with_message("unsupported branch invoked");
     }
 
     switch (collection->type)
@@ -1454,7 +1443,18 @@ static value_t *run_unset(argument_iterator_t *arguments, map_t *variables)
         case VALUE_TYPE_STRING:
         {
             char *source, *destination;
+            int number;
             size_t length;
+
+            if (!next_argument(arguments, variables, VALUE_TYPE_NUMBER, &key))
+            {
+                return key;
+            }
+
+            if (number_to_integer(view_number(key), &number) != 0)
+            {
+                crash_with_message("unsupported branch invoked");
+            }
 
             source = view_string(collection);
             length = strlen(source);
@@ -1475,7 +1475,18 @@ static value_t *run_unset(argument_iterator_t *arguments, map_t *variables)
         case VALUE_TYPE_LIST:
         {
             list_t *source, *destination;
+            int number;
             size_t index, cursor;
+
+            if (!next_argument(arguments, variables, VALUE_TYPE_NUMBER, &key))
+            {
+                return key;
+            }
+
+            if (number_to_integer(view_number(key), &number) != 0)
+            {
+                crash_with_message("unsupported branch invoked");
+            }
 
             source = view_list(collection);
 
@@ -1501,6 +1512,42 @@ static value_t *run_unset(argument_iterator_t *arguments, map_t *variables)
             }
 
             return steal_list(destination);
+        }
+
+        case VALUE_TYPE_MAP:
+        {
+            map_t *source, *destination;
+            size_t index;
+
+            if (!next_argument(arguments, variables, VALUE_TYPE_STRING, &key))
+            {
+                return key;
+            }
+
+            source = view_map(collection);
+            destination = empty_map(hash_string, dereference_value_unsafe, 1);
+
+            for (index = 0; index < source->capacity; index++)
+            {
+                if (source->chains[index])
+                {
+                    map_chain_t *chain;
+
+                    for (chain = source->chains[index]; chain != NULL; chain = chain->next)
+                    {
+                        value_t *copy;
+
+                        copy = get_map_item(source, chain->key);
+                        copy->owners += 1;
+
+                        set_map_item(destination, copy_string(chain->key), copy);
+                    }
+                }
+            }
+
+            unset_map_item(destination, view_string(key));
+
+            return steal_map(destination);
         }
 
         default:
