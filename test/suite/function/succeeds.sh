@@ -10,6 +10,8 @@ verify '@write(@freeze(@succeeds(null, "text")), 1)' \
     'prints to stdout' 'false'
 verify '@write(@freeze(@succeeds(null, [1, 2, 3])), 1)' \
     'prints to stdout' 'false'
+verify '@write(@freeze(@succeeds(null, {"a": 1, "b": 2, "c": 3})), 1)' \
+    'prints to stdout' 'false'
 verify '@write(@freeze(@succeeds(false, true)), 1)' \
     'prints to stdout' 'false'
 verify '@write(@freeze(@succeeds(true, false)), 1)' \
@@ -23,6 +25,8 @@ verify '@write(@freeze(@succeeds(true, 100)), 1)' \
 verify '@write(@freeze(@succeeds(true, "text")), 1)' \
     'prints to stdout' 'false'
 verify '@write(@freeze(@succeeds(true, [1, 2, 3])), 1)' \
+    'prints to stdout' 'false'
+verify '@write(@freeze(@succeeds(true, {"a": 1, "b": 2, "c": 3})), 1)' \
     'prints to stdout' 'false'
 verify '@write(@freeze(@succeeds(100, 200)), 1)' \
     'prints to stdout' 'false'
@@ -46,6 +50,8 @@ verify '@write(@freeze(@succeeds(100, "text")), 1)' \
     'prints to stdout' 'false'
 verify '@write(@freeze(@succeeds(100, [1, 2, 3])), 1)' \
     'prints to stdout' 'false'
+verify '@write(@freeze(@succeeds(100, {"a": 1, "b": 2, "c": 3})), 1)' \
+    'prints to stdout' 'false'
 verify '@write(@freeze(@succeeds("text", "word")), 1)' \
     'prints to stdout' 'false'
 verify '@write(@freeze(@succeeds("word", "text")), 1)' \
@@ -63,6 +69,8 @@ verify '@write(@freeze(@succeeds("text", 100)), 1)' \
 verify '@write(@freeze(@succeeds("text", true)), 1)' \
     'prints to stdout' 'true'
 verify '@write(@freeze(@succeeds("text", [1, 2, 3])), 1)' \
+    'prints to stdout' 'false'
+verify '@write(@freeze(@succeeds("text", {"a": 1, "b": 2, "c": 3})), 1)' \
     'prints to stdout' 'false'
 verify '@write(@freeze(@succeeds([1], [])), 1)' \
     'prints to stdout' 'true'
@@ -85,4 +93,32 @@ verify '@write(@freeze(@succeeds([1, 2, 3], 100)), 1)' \
 verify '@write(@freeze(@succeeds([1, 2, 3], true)), 1)' \
     'prints to stdout' 'true'
 verify '@write(@freeze(@succeeds([1, 2, 3], "text")), 1)' \
+    'prints to stdout' 'true'
+verify '@write(@freeze(@succeeds([1, 2, 3], {"a": 1, "b": 2, "c": 3})), 1)' \
+    'prints to stdout' 'false'
+verify '@write(@freeze(@succeeds({"a": 1}, {})), 1)' \
+    'prints to stdout' 'true'
+verify '@write(@freeze(@succeeds({}, {"a": 1})), 1)' \
+    'prints to stdout' 'false'
+verify '@write(@freeze(@succeeds({"a": 1, "b": 2, "c": 3}, {"a": 1, "b": 2})), 1)' \
+    'prints to stdout' 'true'
+verify '@write(@freeze(@succeeds({"a": 1, "b": 2}, {"a": 1, "b": 2, "c": 3})), 1)' \
+    'prints to stdout' 'false'
+verify '@write(@freeze(@succeeds({"c": 3, "b": 2, "a": 1}, {"a": 1, "b": 2, "c": 3})), 1)' \
+    'prints to stdout' 'false'
+verify '@write(@freeze(@succeeds({"a": 1, "b": 2, "c": 3}, {"c": 3, "b": 2, "a": 1})), 1)' \
+    'prints to stdout' 'false'
+verify '@write(@freeze(@succeeds({"a": 1, "b": 2, "c": 3}, {"a": 1, "b": 2, "c": 3})), 1)' \
+    'prints to stdout' 'false'
+verify '@write(@freeze(@succeeds({"a": 2}, {"a": 1})), 1)' \
+    'prints to stdout' 'true'
+verify '@write(@freeze(@succeeds({"a": 1}, {"a": 2})), 1)' \
+    'prints to stdout' 'false'
+verify '@write(@freeze(@succeeds({"a": 1, "b": 2, "c": 3}, null)), 1)' \
+    'prints to stdout' 'true'
+verify '@write(@freeze(@succeeds({"a": 1, "b": 2, "c": 3}, 100)), 1)' \
+    'prints to stdout' 'true'
+verify '@write(@freeze(@succeeds({"a": 1, "b": 2, "c": 3}, true)), 1)' \
+    'prints to stdout' 'true'
+verify '@write(@freeze(@succeeds({"a": 1, "b": 2, "c": 3}, "text")), 1)' \
     'prints to stdout' 'true'
