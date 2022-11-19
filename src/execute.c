@@ -1163,30 +1163,29 @@ static value_t *run_cast(argument_iterator_t *arguments, map_t *variables)
 static value_t *run_get(argument_iterator_t *arguments, map_t *variables)
 {
     value_t *collection, *key;
-    size_t index;
-    int number;
 
-    if (!next_argument(arguments, variables, VALUE_TYPE_STRING | VALUE_TYPE_LIST, &collection))
+    if (!next_argument(arguments, variables, VALUE_TYPE_STRING | VALUE_TYPE_LIST | VALUE_TYPE_MAP, &collection))
     {
         return collection;
-    }
-
-    if (!next_argument(arguments, variables, VALUE_TYPE_NUMBER, &key))
-    {
-        return key;
-    }
-
-    if (number_to_integer(view_number(key), &number) != 0)
-    {
-        crash_with_message("unsupported branch invoked");
     }
 
     switch (collection->type)
     {
         case VALUE_TYPE_STRING:
         {
-            char *string;
             char item[2];
+            char *string;
+            int number;
+
+            if (!next_argument(arguments, variables, VALUE_TYPE_NUMBER, &key))
+            {
+                return key;
+            }
+
+            if (number_to_integer(view_number(key), &number) != 0)
+            {
+                crash_with_message("unsupported branch invoked");
+            }
 
             string = view_string(collection);
 
@@ -1195,7 +1194,6 @@ static value_t *run_get(argument_iterator_t *arguments, map_t *variables)
                 return throw_error("absent key");
             }
 
-            index = number - 1;
             item[0] = string[number - 1];
             item[1] = '\0';
 
@@ -1205,7 +1203,18 @@ static value_t *run_get(argument_iterator_t *arguments, map_t *variables)
         case VALUE_TYPE_LIST:
         {
             list_t *list;
-            size_t cursor;
+            size_t index, cursor;
+            int number;
+
+            if (!next_argument(arguments, variables, VALUE_TYPE_NUMBER, &key))
+            {
+                return key;
+            }
+
+            if (number_to_integer(view_number(key), &number) != 0)
+            {
+                crash_with_message("unsupported branch invoked");
+            }
 
             list = view_list(collection);
 
@@ -1231,6 +1240,30 @@ static value_t *run_get(argument_iterator_t *arguments, map_t *variables)
 
             crash_with_message("unsupported branch invoked");
             return new_null();
+        }
+
+        case VALUE_TYPE_MAP:
+        {
+            value_t *value;
+            map_t *map;
+
+            if (!next_argument(arguments, variables, VALUE_TYPE_STRING, &key))
+            {
+                return key;
+            }
+
+            map = view_map(collection);
+            value = get_map_item(map, view_string(key));
+
+            if (value)
+            {
+                value->owners += 1;
+                return value;
+            }
+            else
+            {
+                return throw_error("absent key");
+            }
         }
 
         default:
