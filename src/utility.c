@@ -95,6 +95,86 @@ int compare_values(value_t *left, value_t *right)
             return 0;
         }
 
+        case VALUE_TYPE_MAP:
+        {
+            map_t *leftMap, *rightMap;
+            char **leftKeys, **rightKeys;
+            int direction;
+            size_t index;
+
+            leftMap = view_map(left);
+            rightMap = view_map(right);
+
+            if (leftMap->length == 0 && rightMap->length == 0)
+            {
+                return 0;
+            }
+
+            if (leftMap->length == 0 && rightMap->length > 0)
+            {
+                return -1;
+            }
+
+            if (rightMap->length == 0)
+            {
+                return 1;
+            }
+
+            leftKeys = list_map_keys(leftMap);
+            rightKeys = list_map_keys(rightMap);
+            direction = 0;
+
+            for (index = 0; index < leftMap->length; index++)
+            {
+                char *leftKey, *rightKey;
+                value_t *leftValue, *rightValue;
+                int different;
+
+                if (index == rightMap->length)
+                {
+                    direction = 1;
+                    break;
+                }
+
+                leftKey = leftKeys[index];
+                rightKey = rightKeys[index];
+                different = strcmp(leftKey, rightKey);
+
+                if (different)
+                {
+                    direction = different;
+                    break;
+                }
+
+                leftValue = get_map_item(leftMap, leftKey);
+                rightValue = get_map_item(rightMap, rightKey);
+
+                if (!rightValue)
+                {
+                    direction = -1;
+                    break;
+                }
+
+                different = compare_values(leftValue, rightValue);
+
+                if (different)
+                {
+                    direction = different;
+                    break;
+                }
+            }
+
+            free(leftKeys);
+            free(rightKeys);
+
+            if (direction == 0 && index < rightMap->length)
+            {
+                return -1;
+            }
+
+            return direction;
+        }
+
         default:
             crash_with_message("unsupported branch invoked");
             return 0;
