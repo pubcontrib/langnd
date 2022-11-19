@@ -1560,7 +1560,7 @@ static value_t *run_merge(argument_iterator_t *arguments, map_t *variables)
 {
     value_t *left, *right;
 
-    if (!next_argument(arguments, variables, VALUE_TYPE_STRING | VALUE_TYPE_LIST, &left))
+    if (!next_argument(arguments, variables, VALUE_TYPE_STRING | VALUE_TYPE_LIST | VALUE_TYPE_MAP, &left))
     {
         return left;
     }
@@ -1613,6 +1613,60 @@ static value_t *run_merge(argument_iterator_t *arguments, map_t *variables)
             }
 
             return steal_list(destination);
+        }
+
+        case VALUE_TYPE_MAP:
+        {
+            map_t *source, *destination;
+            size_t index;
+
+            if (!next_argument(arguments, variables, VALUE_TYPE_MAP, &right))
+            {
+                return right;
+            }
+
+            source = view_map(left);
+            destination = empty_map(hash_string, dereference_value_unsafe, source->capacity);
+
+            for (index = 0; index < source->capacity; index++)
+            {
+                if (source->chains[index])
+                {
+                    map_chain_t *chain;
+
+                    for (chain = source->chains[index]; chain != NULL; chain = chain->next)
+                    {
+                        value_t *copy;
+
+                        copy = get_map_item(source, chain->key);
+                        copy->owners += 1;
+
+                        set_map_item(destination, copy_string(chain->key), copy);
+                    }
+                }
+            }
+
+            source = view_map(right);
+
+            for (index = 0; index < source->capacity; index++)
+            {
+                if (source->chains[index])
+                {
+                    map_chain_t *chain;
+
+                    for (chain = source->chains[index]; chain != NULL; chain = chain->next)
+                    {
+                        value_t *copy;
+
+                        copy = get_map_item(source, chain->key);
+                        copy->owners += 1;
+
+                        set_map_item(destination, copy_string(chain->key), copy);
+                    }
+                }
+            }
+
+            return steal_map(destination);
         }
 
         default:
