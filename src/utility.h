@@ -84,7 +84,7 @@ void *get_map_item(map_t *map, char *key);
 void set_map_item(map_t *map, char *key, void *value);
 void unset_map_item(map_t *map, char *key);
 void destroy_map(map_t *map);
-list_t *empty_list(void (*destroy)(void *));
+list_t *empty_list(void (*destroy)(void *), size_t capacity);
 void add_list_item(list_t *list, void *value);
 void destroy_list(list_t *list);
 int add_numbers(number_t left, number_t right, number_t *out);

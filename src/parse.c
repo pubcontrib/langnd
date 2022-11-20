@@ -58,7 +58,7 @@ script_t *parse_script(char *code)
     capsule.ahead = 0;
     start_scanner(&capsule.scanner, code);
 
-    statements = empty_list(destroy_statement_unsafe);
+    statements = empty_list(destroy_statement_unsafe, 1);
     errorMessage = NULL;
     hintMessage = NULL;
 
@@ -422,7 +422,7 @@ static statement_t *read_list_statement(capsule_t *capsule)
     list_t *items;
     int ready;
 
-    items = empty_list(dereference_value_unsafe);
+    items = empty_list(dereference_value_unsafe, 1);
     ready = 1;
 
     while (1)
@@ -637,7 +637,7 @@ static statement_t *read_invoke_statement(capsule_t *capsule, identifier_t *iden
     list_t *arguments;
     int ready;
 
-    arguments = empty_list(destroy_statement_unsafe);
+    arguments = empty_list(destroy_statement_unsafe, 1);
     ready = 1;
 
     while (1)
@@ -738,7 +738,7 @@ static statement_t *read_branch_statement(capsule_t *capsule)
     }
 
     next_token(capsule);
-    pass = empty_list(destroy_statement_unsafe);
+    pass = empty_list(destroy_statement_unsafe, 1);
     fail = NULL;
 
     while (1)
@@ -790,7 +790,7 @@ static statement_t *read_branch_statement(capsule_t *capsule)
             }
 
             next_token(capsule);
-            fail = empty_list(destroy_statement_unsafe);
+            fail = empty_list(destroy_statement_unsafe, 1);
 
             while (1)
             {
@@ -856,7 +856,7 @@ static statement_t *read_loop_statement(capsule_t *capsule)
     }
 
     next_token(capsule);
-    body = empty_list(destroy_statement_unsafe);
+    body = empty_list(destroy_statement_unsafe, 1);
 
     while (1)
     {
@@ -900,7 +900,7 @@ static statement_t *read_catch_statement(capsule_t *capsule)
     }
 
     next_token(capsule);
-    body = empty_list(destroy_statement_unsafe);
+    body = empty_list(destroy_statement_unsafe, 1);
 
     while (1)
     {

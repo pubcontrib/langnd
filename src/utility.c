@@ -729,12 +729,8 @@ void destroy_map(map_t *map)
     free(map);
 }
 
-list_t *empty_list(void (*destroy)(void *))
+list_t *empty_list(void (*destroy)(void *), size_t capacity)
 {
-    size_t capacity;
-
-    capacity = 1;
-
     return create_list(destroy, capacity, 0, allocate(sizeof(void *) * capacity));
 }
 

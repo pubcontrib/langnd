@@ -1358,7 +1358,7 @@ static value_t *run_set(argument_iterator_t *arguments, map_t *variables)
             }
 
             index = number - 1;
-            destination = empty_list(dereference_value_unsafe);
+            destination = empty_list(dereference_value_unsafe, source->capacity);
 
             for (cursor = 0; cursor < source->length; cursor++)
             {
@@ -1480,7 +1480,7 @@ static value_t *run_unset(argument_iterator_t *arguments, map_t *variables)
             }
 
             index = number - 1;
-            destination = empty_list(dereference_value_unsafe);
+            destination = empty_list(dereference_value_unsafe, 1);
 
             for (cursor = 0; cursor < source->length; cursor++)
             {
@@ -1553,7 +1553,7 @@ static value_t *run_merge(argument_iterator_t *arguments, map_t *variables)
                 return right;
             }
 
-            destination = empty_list(dereference_value_unsafe);
+            destination = empty_list(dereference_value_unsafe, 1);
             source = view_list(left);
 
             for (index = 0; index < source->length; index++)
