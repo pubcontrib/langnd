@@ -134,6 +134,3 @@ verify '@write(@freeze({"3": null, "2": null, "1": null}), 1)' \
     'prints to stdout' '{"1": null, "2": null, "3": null}'
 verify '@write(@freeze({"x": 1, "x": 2, "x": 3}), 1)' \
     'prints to stdout' '{"x": 3}'
-
-verify '@freeze()' \
-    'errors with execute message' '"absent argument"'

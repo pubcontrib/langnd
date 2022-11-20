@@ -34,6 +34,3 @@ then
     verify '@write("FIRST", "'"$file"'") @write("LAST", "'"$file"'") @write(@read("'"$file"'", null), 1)' \
         'prints to stdout' 'LAST'
 fi
-
-verify '@write()' \
-    'errors with execute message' '"absent argument"'

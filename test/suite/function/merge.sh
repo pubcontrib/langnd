@@ -32,6 +32,3 @@ verify '@write(@freeze(@merge({"this": 1}, {"that": 2, "other": 3})), 1)' \
     'prints to stdout' '{"other": 3, "that": 2, "this": 1}'
 verify '@write(@freeze(@merge({"this": 1}, {"this": 2})), 1)' \
     'prints to stdout' '{"this": 2}'
-
-verify '@merge("this", " & that")' \
-    'prints to stdout' ''
