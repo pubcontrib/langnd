@@ -456,39 +456,39 @@ value_t *new_string(char *string)
     return value;
 }
 
-value_t *steal_string(char *data)
+value_t *steal_string(char *string)
 {
     value_t *value;
 
     value = allocate(sizeof(value_t));
     value->type = VALUE_TYPE_STRING;
-    value->data = data;
+    value->data = string;
     value->thrown = 0;
     value->owners = 1;
 
     return value;
 }
 
-value_t *steal_list(list_t *data)
+value_t *steal_list(list_t *list)
 {
     value_t *value;
 
     value = allocate(sizeof(value_t));
     value->type = VALUE_TYPE_LIST;
-    value->data = data;
+    value->data = list;
     value->thrown = 0;
     value->owners = 1;
 
     return value;
 }
 
-value_t *steal_map(map_t *data)
+value_t *steal_map(map_t *map)
 {
     value_t *value;
 
     value = allocate(sizeof(value_t));
     value->type = VALUE_TYPE_MAP;
-    value->data = data;
+    value->data = map;
     value->thrown = 0;
     value->owners = 1;
 
