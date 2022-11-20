@@ -40,6 +40,8 @@ verify '@write(@freeze(catch { throw "text" }), 1)' \
     'prints to stdout' '"text"'
 verify '@write(@freeze(catch { throw [1, 2, 3] }), 1)' \
     'prints to stdout' '[1, 2, 3]'
+verify '@write(@freeze(catch { throw {"a": 1, "b": 2, "c": 3} }), 1)' \
+    'prints to stdout' '{"a": 1, "b": 2, "c": 3}'
 
 verify 'catch' \
     'errors with parse message' 'catch'

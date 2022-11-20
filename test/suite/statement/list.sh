@@ -2,7 +2,7 @@ suite 'statement/list'
 
 verify '[]' \
     'prints to stdout' ''
-verify '[null, 0, false, "", []]' \
+verify '[null, 0, false, "", [], {}]' \
     'prints to stdout' ''
 
 verify '[' \

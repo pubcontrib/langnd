@@ -10,6 +10,8 @@ verify 'throw "text"' \
     'errors with execute message' '"text"'
 verify 'throw [1, 2, 3]' \
     'errors with execute message' '[1, 2, 3]'
+verify 'throw {"a": 1, "b": 2, "c": 3}' \
+    'errors with execute message' '{"a": 1, "b": 2, "c": 3}'
 verify '$var="PANIC!" throw $var' \
     'errors with execute message' '"PANIC!"'
 verify 'throw @merge("PANIC", "!")' \

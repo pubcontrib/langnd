@@ -68,6 +68,8 @@ verify 'if "text" { }' \
     'errors with execute message' '"branch with non-boolean condition"'
 verify 'if [1, 2, 3] { }' \
     'errors with execute message' '"branch with non-boolean condition"'
+verify 'if {"a": 1, "b": 2, "c": 3} { }' \
+    'errors with execute message' '"branch with non-boolean condition"'
 
 verify 'if true { "before" @divide(100, 0) "after" }' \
     'errors with execute message' '"arithmetic error"'

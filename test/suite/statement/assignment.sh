@@ -10,6 +10,8 @@ verify '$a="text"' \
     'prints to stdout' ''
 verify '$a=[1, 2, 3]' \
     'prints to stdout' ''
+verify '$a={"a": 1, "b": 2, "c": 3}' \
+    'prints to stdout' ''
 verify '$A="val"' \
     'prints to stdout' ''
 verify '$0="val"' \
