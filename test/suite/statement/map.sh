@@ -2,7 +2,7 @@ suite 'statement/map'
 
 verify '{}' \
     'prints to stdout' ''
-verify '{"null": null, "number": 0, "boolean": false, "string": "", "list": [], "map": {}}' \
+verify '{"null": null, "boolean": false, "number": 0, "string": "", "list": [], "map": {}}' \
     'prints to stdout' ''
 
 verify '{' \

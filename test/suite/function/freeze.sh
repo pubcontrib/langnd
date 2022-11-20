@@ -1,5 +1,11 @@
 suite 'function/freeze'
 
+verify '@write(@freeze(null), 1)' \
+    'prints to stdout' 'null'
+verify '@write(@freeze(false), 1)' \
+    'prints to stdout' 'false'
+verify '@write(@freeze(true), 1)' \
+    'prints to stdout' 'true'
 verify '@write(@freeze(0), 1)' \
     'prints to stdout' '0'
 verify '@write(@freeze(1), 1)' \
@@ -88,12 +94,6 @@ verify '@write(@freeze("text"), 1)' \
     'prints to stdout' '"text"'
 verify '@write(@freeze("\t\n\r !\"#$%&'"'"'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^`_abcdefghijklmnopqrstuvwxyz{|}~"), 1)' \
     'prints to stdout' '"\t\n\r !\"#$%&'"'"'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^`_abcdefghijklmnopqrstuvwxyz{|}~"'
-verify '@write(@freeze(null), 1)' \
-    'prints to stdout' 'null'
-verify '@write(@freeze(false), 1)' \
-    'prints to stdout' 'false'
-verify '@write(@freeze(true), 1)' \
-    'prints to stdout' 'true'
 verify '@write(@freeze([]), 1)' \
     'prints to stdout' '[]'
 verify '@write(@freeze([null]), 1)' \

@@ -28,12 +28,18 @@ verify '$a="text" $a' \
     'prints to stdout' ''
 verify '$a=100 $a=null $a' \
     'prints to stdout' ''
-verify '$a=100 @write(@freeze($a), 1)' \
-    'prints to stdout' '100'
-verify '$a="text" @write($a, 1)' \
-    'prints to stdout' 'text'
+verify '$a=null @write(@freeze($a), 1)' \
+    'prints to stdout' 'null'
 verify '$a=true @write(@freeze($a), 1)' \
     'prints to stdout' 'true'
+verify '$a=100 @write(@freeze($a), 1)' \
+    'prints to stdout' '100'
+verify '$a="text" @write(@freeze($a), 1)' \
+    'prints to stdout' '"text"'
+verify '$a=[1, 2, 3] @write(@freeze($a), 1)' \
+    'prints to stdout' '[1, 2, 3]'
+verify '$a={"a": 1, "b": 2, "c": 3} @write(@freeze($a), 1)' \
+    'prints to stdout' '{"a": 1, "b": 2, "c": 3}'
 verify '$a=100 $a=200 $a=300 @write(@freeze($a), 1)' \
     'prints to stdout' '300'
 verify '$a=100 $b=$a @write(@freeze($b), 1)' \
