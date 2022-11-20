@@ -67,5 +67,6 @@ introduce
 . suite/function/unset.sh
 . suite/function/merge.sh
 . suite/function/length.sh
+. suite/function/keys.sh
 
 conclude

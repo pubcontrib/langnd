@@ -38,6 +38,7 @@ static value_t *run_set(argument_iterator_t *arguments, map_t *variables);
 static value_t *run_unset(argument_iterator_t *arguments, map_t *variables);
 static value_t *run_merge(argument_iterator_t *arguments, map_t *variables);
 static value_t *run_length(argument_iterator_t *arguments, map_t *variables);
+static value_t *run_keys(argument_iterator_t *arguments, map_t *variables);
 static int next_argument(argument_iterator_t *arguments, map_t *variables, int types, value_t **out);
 static int has_next_argument(argument_iterator_t *arguments);
 static void copy_map_items(map_t *source, map_t *destination);
@@ -257,6 +258,10 @@ static value_t *apply_statement(statement_t *statement, map_t *variables)
             else if (strcmp(data->identifier->name, "length") == 0)
             {
                 result = run_length(&arguments, variables);
+            }
+            else if (strcmp(data->identifier->name, "keys") == 0)
+            {
+                result = run_keys(&arguments, variables);
             }
             else
             {
@@ -1644,6 +1649,111 @@ static value_t *run_length(argument_iterator_t *arguments, map_t *variables)
     }
 
     return new_number(number);
+}
+
+static value_t *run_keys(argument_iterator_t *arguments, map_t *variables)
+{
+    value_t *collection;
+
+    if (!next_argument(arguments, variables, VALUE_TYPE_STRING | VALUE_TYPE_LIST | VALUE_TYPE_MAP, &collection))
+    {
+        return collection;
+    }
+
+    switch (collection->type)
+    {
+        case VALUE_TYPE_STRING:
+        {
+            char *string;
+            list_t *keys;
+            number_t number;
+            size_t length, index;
+
+            string = view_string(collection);
+            length = strlen(string);
+
+            if (length >= INT_MAX || integer_to_number(length, &number) != 0)
+            {
+                return throw_error("constraint error");
+            }
+
+            keys = empty_list(dereference_value_unsafe, 1);
+
+            for (index = 0; index < length; index++)
+            {
+                number_t key;
+
+                if (index + 1 >= INT_MAX || integer_to_number(index + 1, &key) != 0)
+                {
+                    destroy_list(keys);
+
+                    return throw_error("constraint error");
+                }
+
+                add_list_item(keys, new_number(key));
+            }
+
+            return steal_list(keys);
+        }
+
+        case VALUE_TYPE_LIST:
+        {
+            list_t *list, *keys;
+            number_t number;
+            size_t length, index;
+
+            list = view_list(collection);
+            length = list->length;
+
+            if (length >= INT_MAX || integer_to_number(length, &number) != 0)
+            {
+                return throw_error("constraint error");
+            }
+
+            keys = empty_list(dereference_value_unsafe, 1);
+
+            for (index = 0; index < length; index++)
+            {
+                number_t key;
+
+                if (index + 1 >= INT_MAX || integer_to_number(index + 1, &key) != 0)
+                {
+                    destroy_list(keys);
+
+                    return throw_error("constraint error");
+                }
+
+                add_list_item(keys, new_number(key));
+            }
+
+            return steal_list(keys);
+        }
+
+        case VALUE_TYPE_MAP:
+        {
+            map_t *map;
+            list_t *keys;
+            char **rawKeys;
+            size_t index;
+
+            map = view_map(collection);
+            keys = empty_list(dereference_value_unsafe, 1);
+            rawKeys = list_map_keys(map);
+
+            for (index = 0; index < map->length; index++)
+            {
+                add_list_item(keys, new_string(rawKeys[index]));
+            }
+
+            free(rawKeys);
+
+            return steal_list(keys);
+        }
+
+        default:
+            crash_with_message("unsupported branch invoked");
+            return new_null();
+    }
 }
 
 static int next_argument(argument_iterator_t *arguments, map_t *variables, int types, value_t **out)

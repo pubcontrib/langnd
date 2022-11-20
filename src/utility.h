@@ -79,6 +79,7 @@ map_t *view_map(value_t *value);
 void destroy_value(value_t *value);
 void dereference_value(value_t *value);
 map_t *empty_map(int (*hash)(char *), void (*destroy)(void *), size_t capacity);
+char **list_map_keys(map_t *map);
 int has_map_item(map_t *map, char *key);
 void *get_map_item(map_t *map, char *key);
 void set_map_item(map_t *map, char *key, void *value);

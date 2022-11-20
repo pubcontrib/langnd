@@ -10,7 +10,6 @@ static map_chain_t *create_map_chain(char *key, void *value, map_chain_t *next);
 static map_t *create_map(int (*hash)(char *), void (*destroy)(void *), size_t length, size_t capacity, map_chain_t **chains);
 static void resize_map(map_t *map);
 static list_t *create_list(void (*destroy)(void *), size_t capacity, size_t length, void **items);
-static char **list_map_keys(map_t *map);
 static int compare_strings_unsafe(const void *left, const void *right);
 static int integer_digits(int integer);
 static int integer_power(int a, int b);
@@ -607,6 +606,36 @@ map_t *empty_map(int (*hash)(char *), void (*destroy)(void *), size_t capacity)
     chains = allocate_with_zeros(capacity, sizeof(map_t *));
 
     return create_map(hash, destroy, 0, capacity, chains);
+}
+
+char **list_map_keys(map_t *map)
+{
+    char **keys;
+    size_t index, placement;
+
+    if (map->length == 0)
+    {
+        return NULL;
+    }
+
+    keys = allocate(sizeof(char *) * map->length);
+
+    for (index = 0, placement = 0; index < map->capacity; index++)
+    {
+        if (map->chains[index])
+        {
+            map_chain_t *chain;
+
+            for (chain = map->chains[index]; chain != NULL; chain = chain->next)
+            {
+                keys[placement++] = chain->key;
+            }
+        }
+    }
+
+    qsort(keys, map->length, sizeof(char *), compare_strings_unsafe);
+
+    return keys;
 }
 
 int has_map_item(map_t *map, char *key)
@@ -1290,36 +1319,6 @@ static list_t *create_list(void (*destroy)(void *), size_t capacity, size_t leng
     list->items = items;
 
     return list;
-}
-
-static char **list_map_keys(map_t *map)
-{
-    char **keys;
-    size_t index, placement;
-
-    if (map->length == 0)
-    {
-        return NULL;
-    }
-
-    keys = allocate(sizeof(char *) * map->length);
-
-    for (index = 0, placement = 0; index < map->capacity; index++)
-    {
-        if (map->chains[index])
-        {
-            map_chain_t *chain;
-
-            for (chain = map->chains[index]; chain != NULL; chain = chain->next)
-            {
-                keys[placement++] = chain->key;
-            }
-        }
-    }
-
-    qsort(keys, map->length, sizeof(char *), compare_strings_unsafe);
-
-    return keys;
 }
 
 static int compare_strings_unsafe(const void *left, const void *right)
