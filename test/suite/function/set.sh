@@ -68,19 +68,19 @@ verify '$map1={"k": "x"} $map2=@set($map1, "m", $map1) @write(@freeze($map1), 1)
 verify '$map={"k": "x"} $map=@set($map, "k", $map) @write(@freeze($map), 1)' \
     'prints to stdout' '{"k": {"k": "x"}}'
 
-verify '@write(@freeze(@set("abc", 0, "x")), 1)' \
+verify '@set("abc", 0, "x")' \
     'errors with execute message' '"absent key"'
-verify '@write(@freeze(@set("abc", 4, "x")), 1)' \
+verify '@set("abc", 4, "x")' \
     'errors with execute message' '"absent key"'
-verify '@write(@freeze(@set("abc", 0, "")), 1)' \
+verify '@set("abc", 0, "")' \
     'errors with execute message' '"absent key"'
-verify '@write(@freeze(@set("abc", 4, "")), 1)' \
+verify '@set("abc", 4, "")' \
     'errors with execute message' '"absent key"'
-verify '@write(@freeze(@set("abc", 0, "xxx")), 1)' \
+verify '@set("abc", 0, "xxx")' \
     'errors with execute message' '"absent key"'
-verify '@write(@freeze(@set("abc", 4, "xxx")), 1)' \
+verify '@set("abc", 4, "xxx")' \
     'errors with execute message' '"absent key"'
-verify '@write(@freeze(@set(["a", "b", "c"], 0, "x")), 1)' \
+verify '@set(["a", "b", "c"], 0, "x")' \
     'errors with execute message' '"absent key"'
-verify '@write(@freeze(@set(["a", "b", "c"], 4, "x")), 1)' \
+verify '@set(["a", "b", "c"], 4, "x")' \
     'errors with execute message' '"absent key"'

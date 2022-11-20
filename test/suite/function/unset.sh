@@ -26,11 +26,11 @@ verify '$list1=["x"] $list1=@set($list1, 1, $list1) $list2=@unset($list1, 1) @wr
 verify '$list=["x"] $list=@set($list, 1, $list) $list=@unset($list, 1) @write(@freeze($list), 1)' \
     'prints to stdout' '[]'
 
-verify '@write(@freeze(@unset("abc", 0)), 1)' \
+verify '@unset("abc", 0)' \
     'errors with execute message' '"absent key"'
-verify '@write(@freeze(@unset("abc", 4)), 1)' \
+verify '@unset("abc", 4)' \
     'errors with execute message' '"absent key"'
-verify '@write(@freeze(@unset(["a", "b", "c"], 0)), 1)' \
+verify '@unset(["a", "b", "c"], 0)' \
     'errors with execute message' '"absent key"'
-verify '@write(@freeze(@unset(["a", "b", "c"], 4)), 1)' \
+verify '@unset(["a", "b", "c"], 4)' \
     'errors with execute message' '"absent key"'

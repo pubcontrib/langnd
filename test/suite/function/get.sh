@@ -32,13 +32,13 @@ verify '$map={"k": "x"} $value=@get($map, "k") @write(@freeze($value), 1)' \
 verify '$map={"m": {"k": "x"}} $map=@get($map, "m") $value=@get($map, "k") @write(@freeze($value), 1)' \
     'prints to stdout' '"x"'
 
-verify '@write(@freeze(@get("abc", 0)), 1)' \
+verify '@get("abc", 0)' \
     'errors with execute message' '"absent key"'
-verify '@write(@freeze(@get("abc", 4)), 1)' \
+verify '@get("abc", 4)' \
     'errors with execute message' '"absent key"'
-verify '@write(@freeze(@get(["a", "b", "c"], 0)), 1)' \
+verify '@get(["a", "b", "c"], 0)' \
     'errors with execute message' '"absent key"'
-verify '@write(@freeze(@get(["a", "b", "c"], 4)), 1)' \
+verify '@get(["a", "b", "c"], 4)' \
     'errors with execute message' '"absent key"'
-verify '@write(@freeze(@get({"a": 1, "b": 2, "c": 3}, "d")), 1)' \
+verify '@get({"a": 1, "b": 2, "c": 3}, "d")' \
     'errors with execute message' '"absent key"'
