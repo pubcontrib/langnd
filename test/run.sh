@@ -68,5 +68,6 @@ introduce
 . suite/function/merge.sh
 . suite/function/length.sh
 . suite/function/keys.sh
+. suite/function/sort.sh
 
 conclude

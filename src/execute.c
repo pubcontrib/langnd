@@ -39,9 +39,12 @@ static value_t *run_unset(argument_iterator_t *arguments, map_t *variables);
 static value_t *run_merge(argument_iterator_t *arguments, map_t *variables);
 static value_t *run_length(argument_iterator_t *arguments, map_t *variables);
 static value_t *run_keys(argument_iterator_t *arguments, map_t *variables);
+static value_t *run_sort(argument_iterator_t *arguments, map_t *variables);
 static int next_argument(argument_iterator_t *arguments, map_t *variables, int types, value_t **out);
 static int has_next_argument(argument_iterator_t *arguments);
 static void copy_map_items(map_t *source, map_t *destination);
+static int compare_values_ascending(const void *left, const void *right);
+static int compare_values_descending(const void *left, const void *right);
 static void dereference_value_unsafe(void *value);
 
 outcome_t *execute(char *code)
@@ -262,6 +265,10 @@ static value_t *apply_statement(statement_t *statement, map_t *variables)
             else if (strcmp(data->identifier->name, "keys") == 0)
             {
                 result = run_keys(&arguments, variables);
+            }
+            else if (strcmp(data->identifier->name, "sort") == 0)
+            {
+                result = run_sort(&arguments, variables);
             }
             else
             {
@@ -1756,6 +1763,49 @@ static value_t *run_keys(argument_iterator_t *arguments, map_t *variables)
     }
 }
 
+static value_t *run_sort(argument_iterator_t *arguments, map_t *variables)
+{
+    value_t *collection, *direction;
+    list_t *source, *destination;
+    int ascending;
+    size_t index;
+
+    if (!next_argument(arguments, variables, VALUE_TYPE_LIST, &collection))
+    {
+        return collection;
+    }
+
+    if (!next_argument(arguments, variables, VALUE_TYPE_STRING, &direction))
+    {
+        return direction;
+    }
+
+    if (strcmp(view_string(direction), "+") == 0) {
+        ascending = 1;
+    } else if (strcmp(view_string(direction), "-") == 0) {
+        ascending = 0;
+    } else {
+        return throw_error("invalid direction");
+    }
+
+    source = view_list(collection);
+    destination = empty_list(dereference_value_unsafe, 1);
+
+    for (index = 0; index < source->length; index++)
+    {
+        value_t *copy;
+
+        copy = source->items[index];
+        copy->owners += 1;
+
+        add_list_item(destination, copy);
+    }
+
+    qsort(destination->items, destination->length, sizeof(value_t *), ascending ? compare_values_ascending : compare_values_descending);
+
+    return steal_list(destination);
+}
+
 static int next_argument(argument_iterator_t *arguments, map_t *variables, int types, value_t **out)
 {
     value_t *result;
@@ -1813,6 +1863,16 @@ static void copy_map_items(map_t *source, map_t *destination)
             }
         }
     }
+}
+
+static int compare_values_ascending(const void *left, const void *right)
+{
+    return compare_values(*(value_t **) left, *(value_t **) right);
+}
+
+static int compare_values_descending(const void *left, const void *right)
+{
+    return compare_values(*(value_t **) left, *(value_t **) right) * -1;
 }
 
 static void dereference_value_unsafe(void *value)

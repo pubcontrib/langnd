@@ -35,9 +35,13 @@ void assure_portable_environment()
 
 int compare_values(value_t *left, value_t *right)
 {
-    if (left->type != right->type)
+    if (left->type < right->type)
     {
-        return left->type - right->type;
+        return -1;
+    }
+    else if (left->type > right->type)
+    {
+        return 1;
     }
 
     switch (left->type)
@@ -141,7 +145,7 @@ int compare_values(value_t *left, value_t *right)
 
                 if (different)
                 {
-                    direction = different;
+                    direction = different < 0 ? -1 : 1;
                     break;
                 }
 
