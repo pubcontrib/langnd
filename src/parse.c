@@ -27,11 +27,11 @@ static char is_value_statement(statement_t *statement);
 static token_t *peek_token(capsule_t *capsule);
 static token_t *next_token(capsule_t *capsule);
 static token_t *scan_token(scanner_t *scanner);
-static char *substring_using_token(char *code, token_t *token);
-static char *substring_to_newline(char *code, size_t start, size_t limit);
-static identifier_t *parse_identifier(char *code, token_t *token);
-static char *unescape_string(char *code, token_t *token);
-static char is_symbol_token(char symbol, char *code, token_t *token);
+static string_t *substring_using_token(string_t *code, token_t *token);
+static string_t *substring_to_newline(string_t *code, size_t start, size_t limit);
+static identifier_t *parse_identifier(string_t *code, token_t *token);
+static string_t *unescape_string(string_t *code, token_t *token);
+static char is_symbol_token(char symbol, string_t *code, token_t *token);
 static statement_t *create_unknown_statement();
 static statement_t *create_literal_statement(value_t *value);
 static statement_t *create_assignment_statement(identifier_t *identifier, statement_t *value);
@@ -45,13 +45,13 @@ static statement_t *create_statement(statement_type_t type, void *data);
 static void destroy_statement_unsafe(void *statement);
 static void dereference_value_unsafe(void *value);
 
-script_t *parse_script(char *code)
+script_t *parse_script(string_t *code)
 {
     capsule_t capsule;
     script_t *script;
     list_t *statements;
-    char *errorMessage;
-    char *hintMessage;
+    string_t *errorMessage;
+    string_t *hintMessage;
 
     capsule.hasPresent = 0;
     capsule.hasFuture = 0;
@@ -75,7 +75,7 @@ script_t *parse_script(char *code)
                 destroy_list(statements);
                 destroy_statement(statement);
                 statements = NULL;
-                errorMessage = copy_string("failed to parse code");
+                errorMessage = cstring_to_string("failed to parse code");
                 hintMessage = substring_to_newline(capsule.scanner.code, capsule.present.start, 80);
                 break;
             }
@@ -86,7 +86,7 @@ script_t *parse_script(char *code)
 
     if (capsule.scanner.state == SCANNER_STATE_ERRORED)
     {
-        errorMessage = copy_string("failed to lex code");
+        errorMessage = cstring_to_string("failed to lex code");
         hintMessage = substring_to_newline(capsule.scanner.code, capsule.scanner.token.start, 80);
     }
 
@@ -102,12 +102,12 @@ void destroy_script(script_t *script)
 {
     if (script->errorMessage)
     {
-        free(script->errorMessage);
+        destroy_string(script->errorMessage);
     }
 
     if (script->hintMessage)
     {
-        free(script->hintMessage);
+        destroy_string(script->hintMessage);
     }
 
     if (script->statements)
@@ -282,7 +282,7 @@ void destroy_identifier(identifier_t *identifier)
 {
     if (identifier->name)
     {
-        free(identifier->name);
+        destroy_string(identifier->name);
     }
 
     free(identifier);
@@ -302,24 +302,24 @@ static statement_t *read_any_statement(capsule_t *capsule)
     if (token->type == TOKEN_TYPE_NUMBER)
     {
         number_t value;
-        char *text;
+        string_t *text;
 
         text = substring_using_token(capsule->scanner.code, token);
 
         if (string_to_number(text, &value) != 0)
         {
-            free(text);
+            destroy_string(text);
 
             return create_unknown_statement();
         }
 
-        free(text);
+        destroy_string(text);
 
         return create_literal_statement(new_number(value));
     }
     else if (token->type == TOKEN_TYPE_STRING)
     {
-        char *value;
+        string_t *value;
 
         value = unescape_string(capsule->scanner.code, token);
 
@@ -360,35 +360,35 @@ static statement_t *read_any_statement(capsule_t *capsule)
     else if (token->type == TOKEN_TYPE_KEYWORD)
     {
         statement_t *statement;
-        char *keyword;
+        string_t *keyword;
 
         keyword = substring_using_token(capsule->scanner.code, token);
 
-        if (strcmp(keyword, "null") == 0)
+        if (is_keyword_match(keyword, "null"))
         {
             statement = create_literal_statement(new_null());
         }
-        else if (strcmp(keyword, "false") == 0)
+        else if (is_keyword_match(keyword, "false"))
         {
             statement = create_literal_statement(new_boolean(FALSE));
         }
-        else if (strcmp(keyword, "true") == 0)
+        else if (is_keyword_match(keyword, "true"))
         {
             statement = create_literal_statement(new_boolean(TRUE));
         }
-        else if (strcmp(keyword, "if") == 0)
+        else if (is_keyword_match(keyword, "if"))
         {
             statement = read_branch_statement(capsule);
         }
-        else if (strcmp(keyword, "while") == 0)
+        else if (is_keyword_match(keyword, "while"))
         {
             statement = read_loop_statement(capsule);
         }
-        else if (strcmp(keyword, "catch") == 0)
+        else if (is_keyword_match(keyword, "catch"))
         {
             statement = read_catch_statement(capsule);
         }
-        else if (strcmp(keyword, "throw") == 0)
+        else if (is_keyword_match(keyword, "throw"))
         {
             statement = read_throw_statement(capsule);
         }
@@ -398,7 +398,7 @@ static statement_t *read_any_statement(capsule_t *capsule)
             return NULL;
         }
 
-        free(keyword);
+        destroy_string(keyword);
 
         return statement;
     }
@@ -491,7 +491,7 @@ static statement_t *read_map_statement(capsule_t *capsule)
 {
     map_t *mappings;
     int mode; /* 0:wants_key, 1:wants_glue, 2:wants_value, 3:wants_delimiter_or_end */
-    char *hold;
+    string_t *hold;
 
     mappings = empty_map(hash_string, dereference_value_unsafe, 1);
     mode = 0;
@@ -557,7 +557,7 @@ static statement_t *read_map_statement(capsule_t *capsule)
             }
             else
             {
-                free(hold);
+                destroy_string(hold);
                 destroy_map(mappings);
 
                 return create_unknown_statement();
@@ -577,7 +577,7 @@ static statement_t *read_map_statement(capsule_t *capsule)
                     destroy_statement(value);
                 }
 
-                free(hold);
+                destroy_string(hold);
                 destroy_map(mappings);
 
                 return create_unknown_statement();
@@ -771,13 +771,13 @@ static statement_t *read_branch_statement(capsule_t *capsule)
 
     if (optional && optional->type == TOKEN_TYPE_KEYWORD)
     {
-        char *keyword;
+        string_t *keyword;
 
         keyword = substring_using_token(capsule->scanner.code, optional);
 
-        if (strcmp(keyword, "else") == 0)
+        if (is_keyword_match(keyword, "else"))
         {
-            free(keyword);
+            destroy_string(keyword);
             next_token(capsule);
             optional = peek_token(capsule);
 
@@ -821,7 +821,7 @@ static statement_t *read_branch_statement(capsule_t *capsule)
         }
         else
         {
-            free(keyword);
+            destroy_string(keyword);
         }
     }
 
@@ -1042,57 +1042,53 @@ static token_t *scan_token(scanner_t *scanner)
     return NULL;
 }
 
-static char *substring_using_token(char *code, token_t *token)
+static string_t *substring_using_token(string_t *code, token_t *token)
 {
-    char *text;
-    size_t textLength;
+    char *bytes;
+    size_t length;
 
-    textLength = token->end - token->start;
-    text = allocate(sizeof(char) * (textLength + 1));
-    memcpy(text, code + token->start, textLength);
-    text[textLength] = '\0';
+    length = token->end - token->start;
+    bytes = allocate(sizeof(char) * length);
+    memcpy(bytes, code->bytes + token->start, length);
 
-    return text;
+    return create_string(bytes, length);
 }
 
-static char *substring_to_newline(char *code, size_t start, size_t limit)
+static string_t *substring_to_newline(string_t *code, size_t start, size_t limit)
 {
-    char *line;
-    size_t lineLength, codeLength;
+    char *bytes;
+    size_t length;
 
-    codeLength = strlen(code);
-
-    for (lineLength = 0; lineLength < limit; lineLength++)
+    for (length = 0; length < limit; length++)
     {
         size_t offset;
 
-        offset = start + lineLength;
+        offset = start + length;
 
-        if (offset >= codeLength|| code[offset] == '\n')
+        if (offset >= code->length|| code->bytes[offset] == '\n')
         {
             break;
         }
     }
 
-    line = allocate(sizeof(char) * (lineLength + 1));
-    memcpy(line, code + start, lineLength);
-    line[lineLength] = '\0';
+    bytes = allocate(sizeof(char) * length);
+    memcpy(bytes, code->bytes + start, length);
 
-    return line;
+    return create_string(bytes, length);
 }
 
-static identifier_t *parse_identifier(char *code, token_t *token)
+static identifier_t *parse_identifier(string_t *code, token_t *token)
 {
     identifier_t *identifier;
     identifier_type_t type;
-    char *name;
+    string_t *name;
     token_t offset;
 
-    if (code[token->start] == '$')
+    if (code->bytes[token->start] == '$')
     {
         type = IDENTIFIER_TYPE_VARIABLE;
     }
-    else if (code[token->start] == '@')
+    else if (code->bytes[token->start] == '@')
     {
         type = IDENTIFIER_TYPE_FUNCTION;
     }
@@ -1105,7 +1101,7 @@ static identifier_t *parse_identifier(char *code, token_t *token)
     offset.start = token->start + 1;
     offset.end = token->end;
 
-    if (code[offset.start] != '"')
+    if (code->bytes[offset.start] != '"')
     {
         name = substring_using_token(code, &offset);
     }
@@ -1121,53 +1117,59 @@ static identifier_t *parse_identifier(char *code, token_t *token)
     return identifier;
 }
 
-static char *unescape_string(char *code, token_t *token)
+static string_t *unescape_string(string_t *code, token_t *token)
 {
-    char *text;
-    size_t textLength, escapeCount, index, placement;
+    char *bytes;
+    size_t length, escapeCount, index, placement;
 
     escapeCount = 0;
 
     for (index = token->start; index < token->end; index++)
     {
-        if (code[index] == '\\')
+        if (code->bytes[index] == '\\')
         {
             escapeCount++;
             index++;
         }
     }
 
-    textLength = token->end - token->start - 2 - escapeCount;
-    text = allocate(sizeof(char) * (textLength + 1));
+    length = token->end - token->start - 2 - escapeCount;
+
+    if (length == 0)
+    {
+        return empty_string();
+    }
+
+    bytes = allocate(sizeof(char) * length);
 
     for (index = token->start + 1, placement = 0; index < token->end - 1; index++)
     {
-        if (code[index] != '\\')
+        if (code->bytes[index] != '\\')
         {
-            text[placement++] = code[index];
+            bytes[placement++] = code->bytes[index];
         }
         else
         {
-            switch (code[++index])
+            switch (code->bytes[++index])
             {
                 case 't':
-                    text[placement++] = '\t';
+                    bytes[placement++] = '\t';
                     break;
 
                 case 'n':
-                    text[placement++] = '\n';
+                    bytes[placement++] = '\n';
                     break;
 
                 case 'r':
-                    text[placement++] = '\r';
+                    bytes[placement++] = '\r';
                     break;
 
                 case '"':
-                    text[placement++] = '"';
+                    bytes[placement++] = '"';
                     break;
 
                 case '\\':
-                    text[placement++] = '\\';
+                    bytes[placement++] = '\\';
                     break;
 
                 default:
@@ -1176,16 +1178,14 @@ static char *unescape_string(char *code, token_t *token)
         }
     }
 
-    text[textLength] = '\0';
-
-    return text;
+    return create_string(bytes, length);
 }
 
-static char is_symbol_token(char symbol, char *code, token_t *token)
+static char is_symbol_token(char symbol, string_t *code, token_t *token)
 {
     return token
         && token->type == TOKEN_TYPE_SYMBOL
-        && code[token->start] == symbol;
+        && code->bytes[token->start] == symbol;
 }
 
 static statement_t *create_unknown_statement()

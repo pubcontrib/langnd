@@ -1,15 +1,16 @@
 #ifndef EXECUTE_H
 #define EXECUTE_H
 
+#include "utility.h"
 #include <stddef.h>
 
 typedef struct
 {
-    char *errorMessage;
-    char *hintMessage;
+    string_t *errorMessage;
+    string_t *hintMessage;
 } outcome_t;
 
-outcome_t *execute(char *code);
+outcome_t *execute(string_t *code);
 void destroy_outcome(outcome_t *outcome);
 
 #endif

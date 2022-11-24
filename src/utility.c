@@ -6,8 +6,8 @@
 #include "utility.h"
 
 static void destroy_chain(map_chain_t *chain, void (*destroy)(void *));
-static map_chain_t *create_map_chain(char *key, void *value, map_chain_t *next);
-static map_t *create_map(int (*hash)(char *), void (*destroy)(void *), size_t length, size_t capacity, map_chain_t **chains);
+static map_chain_t *create_map_chain(string_t *key, void *value, map_chain_t *next);
+static map_t *create_map(int (*hash)(string_t *), void (*destroy)(void *), size_t length, size_t capacity, map_chain_t **chains);
 static void resize_map(map_t *map);
 static list_t *create_list(void (*destroy)(void *), size_t capacity, size_t length, void **items);
 static int compare_strings_unsafe(const void *left, const void *right);
@@ -63,7 +63,7 @@ int compare_values(value_t *left, value_t *right)
         }
 
         case VALUE_TYPE_STRING:
-            return strcmp(view_string(left), view_string(right));
+            return compare_strings(view_string(left), view_string(right));
 
         case VALUE_TYPE_LIST:
         {
@@ -101,7 +101,7 @@ int compare_values(value_t *left, value_t *right)
         case VALUE_TYPE_MAP:
         {
             map_t *leftMap, *rightMap;
-            char **leftKeys, **rightKeys;
+            string_t **leftKeys, **rightKeys;
             int direction;
             size_t index;
 
@@ -129,7 +129,7 @@ int compare_values(value_t *left, value_t *right)
 
             for (index = 0; index < leftMap->length; index++)
             {
-                char *leftKey, *rightKey;
+                string_t *leftKey, *rightKey;
                 value_t *leftValue, *rightValue;
                 int different;
 
@@ -141,7 +141,7 @@ int compare_values(value_t *left, value_t *right)
 
                 leftKey = leftKeys[index];
                 rightKey = rightKeys[index];
-                different = strcmp(leftKey, rightKey);
+                different = compare_strings(leftKey, rightKey);
 
                 if (different)
                 {
@@ -184,33 +184,32 @@ int compare_values(value_t *left, value_t *right)
     }
 }
 
-char *represent_value(value_t *value)
+string_t *represent_value(value_t *value)
 {
     switch (value->type)
     {
         case VALUE_TYPE_NULL:
-            return copy_string("null");
+            return cstring_to_string("null");
 
         case VALUE_TYPE_BOOLEAN:
-            return view_boolean(value) == TRUE ? copy_string("true") : copy_string("false");
+            return view_boolean(value) == TRUE ? cstring_to_string("true") : cstring_to_string("false");
 
         case VALUE_TYPE_NUMBER:
             return represent_number(view_number(value));
 
         case VALUE_TYPE_STRING:
         {
-            char *source, *destination;
-            size_t escapeCount, length, index;
+            string_t *source;
+            size_t escapeCount, index;
 
             source = view_string(value);
             escapeCount = 0;
-            length = strlen(source);
 
-            for (index = 0; index < length; index++)
+            for (index = 0; index < source->length; index++)
             {
                 char symbol;
 
-                symbol = source[index];
+                symbol = source->bytes[index];
 
                 if (symbol == '\t' || symbol == '\n' || symbol == '\r' || symbol == '"'|| symbol == '\\')
                 {
@@ -220,25 +219,29 @@ char *represent_value(value_t *value)
 
             if (escapeCount == 0)
             {
-                destination = allocate(sizeof(char) * (length + 3));
+                char *destination;
+
+                destination = allocate(sizeof(char) * (source->length + 2));
                 destination[0] = '"';
-                memcpy(destination + 1, source, length);
-                destination[length + 1] = '"';
-                destination[length + 2] = '\0';
+                memcpy(destination + 1, source->bytes, source->length);
+                destination[source->length + 1] = '"';
+
+                return create_string(destination, source->length + 2);
             }
             else
             {
+                char *destination;
                 size_t placement;
 
-                destination = allocate(sizeof(char) * (length + escapeCount + 3));
+                destination = allocate(sizeof(char) * (source->length + escapeCount + 2));
                 placement = 0;
                 destination[placement++] = '"';
 
-                for (index = 0; index < length; index++)
+                for (index = 0; index < source->length; index++)
                 {
                     char symbol;
 
-                    symbol = source[index];
+                    symbol = source->bytes[index];
 
                     switch (symbol)
                     {
@@ -274,32 +277,29 @@ char *represent_value(value_t *value)
                 }
 
                 destination[placement++] = '"';
-                destination[placement++] = '\0';
-            }
 
-            return destination;
+                return create_string(destination, source->length + escapeCount + 2);
+            }
         }
 
         case VALUE_TYPE_LIST:
         {
-            char *buffer, *swap;
+            string_t *buffer;
             list_t *list;
             size_t index;
             int first;
 
             list = view_list(value);
-            buffer = copy_string("[");
+            buffer = cstring_to_string("[");
             first = 1;
 
             for (index = 0; index < list->length; index++)
             {
-                char *item;
+                string_t *item;
 
                 if (!first)
                 {
-                    swap = merge_strings(buffer, ", ");
-                    free(buffer);
-                    buffer = swap;
+                    extend_string_by_cstring(buffer, ", ");
                 }
                 else
                 {
@@ -307,42 +307,36 @@ char *represent_value(value_t *value)
                 }
 
                 item = represent_value(list->items[index]);
-                swap = merge_strings(buffer, item);
-                free(buffer);
-                free(item);
-                buffer = swap;
+                extend_string_by_string(buffer, item);
+                destroy_string(item);
             }
 
-            swap = merge_strings(buffer, "]");
-            free(buffer);
-            buffer = swap;
+            extend_string_by_cstring(buffer, "]");
 
             return buffer;
         }
 
         case VALUE_TYPE_MAP:
         {
-            char *buffer, *swap;
+            string_t *buffer;
             map_t *map;
-            char **keys;
+            string_t **keys;
             size_t index;
             int first;
 
             map = view_map(value);
             keys = list_map_keys(map);
-            buffer = copy_string("{");
+            buffer = cstring_to_string("{");
             first = 1;
 
             for (index = 0; index < map->length; index++)
             {
-                char *key, *representation;
+                string_t *key, *representation;
                 value_t *value, *keyString;
 
                 if (!first)
                 {
-                    swap = merge_strings(buffer, ", ");
-                    free(buffer);
-                    buffer = swap;
+                    extend_string_by_cstring(buffer, ", ");
                 }
                 else
                 {
@@ -350,25 +344,19 @@ char *represent_value(value_t *value)
                 }
 
                 key = keys[index];
-                value = get_map_item(map, key);
-
-                keyString = new_string(key);
+                keyString = steal_string(key);
                 representation = represent_value(keyString);
-                swap = merge_strings(buffer, representation);
-                free(buffer);
-                free(representation);
+                extend_string_by_string(buffer, representation);
+                destroy_string(representation);
+                keyString->data = NULL;
                 destroy_value(keyString);
-                buffer = swap;
 
-                swap = merge_strings(buffer, ": ");
-                free(buffer);
-                buffer = swap;
+                extend_string_by_cstring(buffer, ": ");
 
+                value = get_map_item(map, key);
                 representation = represent_value(value);
-                swap = merge_strings(buffer, representation);
-                free(buffer);
-                free(representation);
-                buffer = swap;
+                extend_string_by_string(buffer, representation);
+                destroy_string(representation);
             }
 
             if (keys)
@@ -376,9 +364,7 @@ char *represent_value(value_t *value)
                 free(keys);
             }
 
-            swap = merge_strings(buffer, "}");
-            free(buffer);
-            buffer = swap;
+            extend_string_by_cstring(buffer, "}");
 
             return buffer;
         }
@@ -393,7 +379,7 @@ value_t *throw_error(char *message)
 {
     value_t *value;
 
-    value = new_string(message);
+    value = steal_string(cstring_to_string(message));
     value->thrown = 1;
 
     return value;
@@ -444,22 +430,7 @@ value_t *new_number(number_t number)
     return value;
 }
 
-value_t *new_string(char *string)
-{
-    value_t *value;
-    char *data;
-
-    data = copy_string(string);
-    value = allocate(sizeof(value_t));
-    value->type = VALUE_TYPE_STRING;
-    value->data = data;
-    value->thrown = 0;
-    value->owners = 1;
-
-    return value;
-}
-
-value_t *steal_string(char *string)
+value_t *steal_string(string_t *string)
 {
     value_t *value;
 
@@ -524,16 +495,16 @@ number_t view_number(value_t *value)
     }
 }
 
-char *view_string(value_t *value)
+string_t *view_string(value_t *value)
 {
     if (value->type == VALUE_TYPE_STRING)
     {
-        return (char *) value->data;
+        return (string_t *) value->data;
     }
     else
     {
         crash_with_message("unsupported branch invoked");
-        return "";
+        return NULL;
     }
 }
 
@@ -572,8 +543,11 @@ void destroy_value(value_t *value)
             case VALUE_TYPE_NULL:
             case VALUE_TYPE_BOOLEAN:
             case VALUE_TYPE_NUMBER:
-            case VALUE_TYPE_STRING:
                 free(value->data);
+                break;
+
+            case VALUE_TYPE_STRING:
+                destroy_string(value->data);
                 break;
 
             case VALUE_TYPE_LIST:
@@ -603,7 +577,7 @@ void dereference_value(value_t *value)
     }
 }
 
-map_t *empty_map(int (*hash)(char *), void (*destroy)(void *), size_t capacity)
+map_t *empty_map(int (*hash)(string_t *), void (*destroy)(void *), size_t capacity)
 {
     map_chain_t **chains;
 
@@ -612,9 +586,9 @@ map_t *empty_map(int (*hash)(char *), void (*destroy)(void *), size_t capacity)
     return create_map(hash, destroy, 0, capacity, chains);
 }
 
-char **list_map_keys(map_t *map)
+string_t **list_map_keys(map_t *map)
 {
-    char **keys;
+    string_t **keys;
     size_t index, placement;
 
     if (map->length == 0)
@@ -622,7 +596,7 @@ char **list_map_keys(map_t *map)
         return NULL;
     }
 
-    keys = allocate(sizeof(char *) * map->length);
+    keys = allocate(sizeof(string_t *) * map->length);
 
     for (index = 0, placement = 0; index < map->capacity; index++)
     {
@@ -637,17 +611,17 @@ char **list_map_keys(map_t *map)
         }
     }
 
-    qsort(keys, map->length, sizeof(char *), compare_strings_unsafe);
+    qsort(keys, map->length, sizeof(string_t *), compare_strings_unsafe);
 
     return keys;
 }
 
-int has_map_item(map_t *map, char *key)
+int has_map_item(map_t *map, string_t *key)
 {
     return get_map_item(map, key) != NULL;
 }
 
-void *get_map_item(map_t *map, char *key)
+void *get_map_item(map_t *map, string_t *key)
 {
     map_chain_t *chain;
     int hash, index;
@@ -657,7 +631,7 @@ void *get_map_item(map_t *map, char *key)
 
     for (chain = map->chains[index]; chain != NULL; chain = chain->next)
     {
-        if (strcmp(key, chain->key) == 0)
+        if (compare_strings(key, chain->key) == 0)
         {
             return chain->value;
         }
@@ -666,7 +640,7 @@ void *get_map_item(map_t *map, char *key)
     return NULL;
 }
 
-void set_map_item(map_t *map, char *key, void *value)
+void set_map_item(map_t *map, string_t *key, void *value)
 {
     map_chain_t *chain, *last, *created;
     int hash, index;
@@ -676,9 +650,9 @@ void set_map_item(map_t *map, char *key, void *value)
 
     for (chain = map->chains[index], last = NULL; chain != NULL; chain = chain->next)
     {
-        if (strcmp(key, chain->key) == 0)
+        if (compare_strings(key, chain->key) == 0)
         {
-            free(key);
+            destroy_string(key);
             map->destroy(chain->value);
             chain->value = value;
             return;
@@ -706,7 +680,7 @@ void set_map_item(map_t *map, char *key, void *value)
     }
 }
 
-void unset_map_item(map_t *map, char *key)
+void unset_map_item(map_t *map, string_t *key)
 {
     map_chain_t *chain, *previous;
     int hash, index;
@@ -716,7 +690,7 @@ void unset_map_item(map_t *map, char *key)
 
     for (chain = map->chains[index], previous = NULL; chain != NULL; chain = chain->next)
     {
-        if (strcmp(key, chain->key) == 0)
+        if (compare_strings(key, chain->key) == 0)
         {
             if (previous)
             {
@@ -789,6 +763,204 @@ void destroy_list(list_t *list)
 
     free(list->items);
     free(list);
+}
+
+string_t *empty_string()
+{
+    return create_string(NULL, 0);
+}
+
+string_t *create_string(char *bytes, size_t length)
+{
+    string_t *string;
+
+    string = allocate(sizeof(string_t));
+    string->bytes = bytes;
+    string->length = length;
+
+    return string;
+}
+
+string_t *cstring_to_string(char *cstring)
+{
+    char *bytes;
+    size_t length;
+
+    length = strlen(cstring);
+
+    if (length > 0)
+    {
+        bytes = allocate(sizeof(char) * length);
+        memcpy(bytes, cstring, length);
+    }
+    else
+    {
+        bytes = NULL;
+    }
+
+    return create_string(bytes, length);
+}
+
+char *string_to_cstring(string_t *string)
+{
+    char *cstring;
+
+    cstring = allocate(sizeof(char) * (string->length + 1));
+
+    if (string->length > 0)
+    {
+        memcpy(cstring, string->bytes, string->length);
+    }
+
+    cstring[string->length] = '\0';
+
+    return cstring;
+}
+
+string_t *copy_string(string_t *string)
+{
+    char *bytes;
+    size_t length;
+
+    length = string->length;
+
+    if (length > 0)
+    {
+        bytes = allocate(sizeof(char) * length);
+        memcpy(bytes, string->bytes, length);
+    }
+    else
+    {
+        bytes = NULL;
+    }
+
+    return create_string(bytes, length);
+}
+
+string_t *merge_strings(string_t *left, string_t *right)
+{
+    char *sum;
+    size_t length;
+
+    length = left->length + right->length;
+
+    if (length > 0)
+    {
+        sum = allocate(sizeof(char) * length);
+        memcpy(sum, left->bytes, left->length);
+        memcpy(sum + left->length, right->bytes, right->length);
+    }
+    else
+    {
+        sum = NULL;
+    }
+
+    return create_string(sum, length);
+}
+
+void extend_string_by_cstring(string_t *origin, char *extension)
+{
+    char *bytes;
+    size_t length;
+
+    length = origin->length + strlen(extension);
+
+    if (length > 0)
+    {
+        bytes = reallocate(origin->bytes, sizeof(char) * length);
+        memcpy(bytes + origin->length, extension, strlen(extension));
+    }
+    else
+    {
+        bytes = NULL;
+    }
+
+    origin->bytes = bytes;
+    origin->length = length;
+}
+
+void extend_string_by_string(string_t *origin, string_t *extension)
+{
+    char *bytes;
+    size_t length;
+
+    length = origin->length + extension->length;
+
+    if (length > 0)
+    {
+        bytes = reallocate(origin->bytes, sizeof(char) * length);
+        memcpy(bytes + origin->length, extension->bytes, extension->length);
+    }
+    else
+    {
+        bytes = NULL;
+    }
+
+    origin->bytes = bytes;
+    origin->length = length;
+}
+
+int compare_strings(string_t *left, string_t *right)
+{
+    size_t index;
+
+    for (index = 0; index < left->length; index++)
+    {
+        int different;
+
+        if (index == right->length)
+        {
+            return 1;
+        }
+
+        different = (unsigned char) left->bytes[index] - (unsigned char) right->bytes[index];
+
+        if (different)
+        {
+            return different;
+        }
+    }
+
+    if (index < right->length)
+    {
+        return -1;
+    }
+
+    return 0;
+}
+
+int is_keyword_match(string_t *left, char *right)
+{
+    size_t index;
+
+    index = 0;
+
+    while (right[index])
+    {
+        if (index >= left->length)
+        {
+            return 0;
+        }
+
+        if (left->bytes[index] != right[index])
+        {
+            return 0;
+        }
+
+        index++;
+    }
+
+    return index == left->length;
+}
+
+void destroy_string(string_t *string)
+{
+    if (string->bytes)
+    {
+        free(string->bytes);
+    }
+
+    free(string);
 }
 
 int add_numbers(number_t left, number_t right, number_t *out)
@@ -884,10 +1056,10 @@ int modulo_numbers(number_t left, number_t right, number_t *out)
     return 0;
 }
 
-int string_to_number(char *text, number_t *out)
+int string_to_number(string_t *text, number_t *out)
 {
     int number, whole, fraction, wholeIndex, fractionIndex, negative, decimal, point;
-    size_t index, length;
+    size_t index;
 
     whole = 0;
     fraction = 0;
@@ -896,27 +1068,26 @@ int string_to_number(char *text, number_t *out)
     negative = 0;
     decimal = 0;
     point = -1;
-    length = strlen(text);
 
-    for (index = 0; index < length; index++)
+    for (index = 0; index < text->length; index++)
     {
-        if (text[index] == '.')
+        if (text->bytes[index] == '.')
         {
             point = index;
             break;
         }
     }
 
-    if (point > 6 || (point == -1 && length > 6))
+    if (point > 6 || (point == -1 && text->length > 6))
     {
         return 1;
     }
 
-    for (index = 0; index < length; index++)
+    for (index = 0; index < text->length; index++)
     {
         char symbol;
 
-        symbol = text[index];
+        symbol = text->bytes[index];
 
         if (symbol >= '0' && symbol <= '9')
         {
@@ -926,7 +1097,7 @@ int string_to_number(char *text, number_t *out)
 
             if (!decimal)
             {
-                places = (point == -1 ? (int) length : point) - (negative ? 1 : 0) - wholeIndex++;
+                places = (point == -1 ? (int) text->length : point) - (negative ? 1 : 0) - wholeIndex++;
                 whole += digit * integer_power(10, places - 1);
 
                 if (whole > 32767)
@@ -1011,9 +1182,9 @@ int number_to_integer(number_t number, int *out)
     return 0;
 }
 
-char *represent_number(number_t number)
+string_t *represent_number(number_t number)
 {
-    char *string;
+    char *bytes;
     int whole, fraction, negative, decimal;
     size_t wholeDigits, fractionDigits, decimalWidth, length, index, zero;
 
@@ -1034,18 +1205,18 @@ char *represent_number(number_t number)
     decimal = fraction > 0;
     decimalWidth = 6;
     length = (negative ? 1 : 0) + wholeDigits + (decimal ? (decimalWidth + 1) : 0);
-    string = allocate(sizeof(char) * length + 1);
+    bytes = allocate(sizeof(char) * length);
     index = (negative ? 1 : 0) + wholeDigits - 1;
 
     if (negative)
     {
-        string[0] = '-';
+        bytes[0] = '-';
         whole *= -1;
     }
 
     if (whole == 0)
     {
-        string[index] = '0';
+        bytes[index] = '0';
     }
 
     while (whole > 0)
@@ -1054,13 +1225,13 @@ char *represent_number(number_t number)
 
         next = whole / 10;
         digit = whole - (next * 10);
-        string[index--] = '0' + digit;
+        bytes[index--] = '0' + digit;
         whole = next;
     }
 
     if (decimal)
     {
-        string[(negative ? 1 : 0) + wholeDigits] = '.';
+        bytes[(negative ? 1 : 0) + wholeDigits] = '.';
     }
 
     index = length - 1;
@@ -1071,7 +1242,7 @@ char *represent_number(number_t number)
 
         next = fraction / 10;
         digit = fraction - (next * 10);
-        string[index--] = '0' + digit;
+        bytes[index--] = '0' + digit;
         fraction = next;
     }
 
@@ -1079,13 +1250,11 @@ char *represent_number(number_t number)
     {
         for (zero = fractionDigits; zero < decimalWidth; zero++)
         {
-            string[index--] = '0';
+            bytes[index--] = '0';
         }
     }
 
-    string[length] = '\0';
-
-    return string;
+    return create_string(bytes, length);
 }
 
 number_t truncate_number(number_t number)
@@ -1093,17 +1262,16 @@ number_t truncate_number(number_t number)
     return (number / 65536) * 65536;
 }
 
-int hash_string(char *string)
+int hash_string(string_t *string)
 {
     int hash;
-    size_t index, length;
+    size_t index;
 
     hash = 0;
-    length = strlen(string);
 
-    for (index = 0; index < length; index++)
+    for (index = 0; index < string->length; index++)
     {
-        hash = add_with_overflow(hash, string[index]);
+        hash = add_with_overflow(hash, string->bytes[index]);
     }
 
     return hash;
@@ -1127,35 +1295,6 @@ int add_with_overflow(int left, int right)
     {
         return left + right;
     }
-}
-
-char *merge_strings(char *left, char *right)
-{
-    char *sum;
-    size_t leftLength, rightLength;
-
-    leftLength = strlen(left);
-    rightLength = strlen(right);
-
-    sum = allocate(sizeof(char) * (leftLength + rightLength + 1));
-    memcpy(sum, left, leftLength);
-    memcpy(sum + leftLength, right, rightLength);
-    sum[leftLength + rightLength] = '\0';
-
-    return sum;
-}
-
-char *copy_string(char *string)
-{
-    char *copy;
-    size_t length;
-
-    length = strlen(string);
-    copy = allocate(length + 1);
-    memcpy(copy, string, length);
-    copy[length] = '\0';
-
-    return copy;
 }
 
 void *allocate(size_t size)
@@ -1230,7 +1369,7 @@ static void destroy_chain(map_chain_t *chain, void (*destroy)(void *))
 {
     if (chain->key)
     {
-        free(chain->key);
+        destroy_string(chain->key);
     }
 
     if (chain->value)
@@ -1246,7 +1385,7 @@ static void destroy_chain(map_chain_t *chain, void (*destroy)(void *))
     free(chain);
 }
 
-static map_chain_t *create_map_chain(char *key, void *value, map_chain_t *next)
+static map_chain_t *create_map_chain(string_t *key, void *value, map_chain_t *next)
 {
     map_chain_t *chain;
 
@@ -1258,7 +1397,7 @@ static map_chain_t *create_map_chain(char *key, void *value, map_chain_t *next)
     return chain;
 }
 
-static map_t *create_map(int (*hash)(char *), void (*destroy)(void *), size_t length, size_t capacity, map_chain_t **chains)
+static map_t *create_map(int (*hash)(string_t *), void (*destroy)(void *), size_t length, size_t capacity, map_chain_t **chains)
 {
     map_t *map;
 
@@ -1327,7 +1466,7 @@ static list_t *create_list(void (*destroy)(void *), size_t capacity, size_t leng
 
 static int compare_strings_unsafe(const void *left, const void *right)
 {
-    return strcmp(*(const char **) left, *(const char **) right);
+    return compare_strings(*(string_t **) left, *(string_t **) right);
 }
 
 static int integer_digits(int integer)

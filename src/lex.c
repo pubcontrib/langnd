@@ -18,10 +18,9 @@ static int is_letter_symbol(char symbol);
 static int is_short_identifier_symbol(char symbol);
 static int is_keyword_symbol(char symbol);
 
-void start_scanner(scanner_t *scanner, char *code)
+void start_scanner(scanner_t *scanner, string_t *code)
 {
     scanner->code = code;
-    scanner->codeLength = strlen(code);
     scanner->state = SCANNER_STATE_RUNNING;
     scanner->token.start = 0;
     scanner->token.end = 0;
@@ -292,13 +291,13 @@ static void read_keyword_token(scanner_t *scanner)
 
             codeIndex = scanner->token.start + keywordIndex;
 
-            if (codeIndex >= scanner->codeLength)
+            if (codeIndex >= scanner->code->length)
             {
                 scanner->state = SCANNER_STATE_ERRORED;
                 return;
             }
 
-            if (scanner->code[codeIndex] != keyword[keywordIndex])
+            if (scanner->code->bytes[codeIndex] != keyword[keywordIndex])
             {
                 match = 0;
                 break;
@@ -317,17 +316,17 @@ static void read_keyword_token(scanner_t *scanner)
 
 static int has_another_symbol(scanner_t *scanner)
 {
-    return scanner->token.end < scanner->codeLength;
+    return scanner->token.end < scanner->code->length;
 }
 
 static char read_next_symbol(scanner_t *scanner)
 {
-    return scanner->code[scanner->token.end++];
+    return scanner->code->bytes[scanner->token.end++];
 }
 
 static char peek_next_symbol(scanner_t *scanner)
 {
-    return scanner->code[scanner->token.end];
+    return scanner->code->bytes[scanner->token.end];
 }
 
 static int is_whitespace_symbol(char symbol)

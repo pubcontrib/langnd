@@ -1,6 +1,7 @@
 #ifndef LEX_H
 #define LEX_H
 
+#include "utility.h"
 #include <stddef.h>
 
 typedef enum
@@ -31,13 +32,12 @@ typedef enum
 
 typedef struct
 {
-    char *code;
-    size_t codeLength;
+    string_t *code;
     scanner_state_t state;
     token_t token;
 } scanner_t;
 
-void start_scanner(scanner_t *scanner, char *code);
+void start_scanner(scanner_t *scanner, string_t *code);
 void progress_scanner(scanner_t *scanner);
 
 #endif

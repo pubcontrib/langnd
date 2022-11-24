@@ -47,7 +47,7 @@ static int compare_values_ascending(const void *left, const void *right);
 static int compare_values_descending(const void *left, const void *right);
 static void dereference_value_unsafe(void *value);
 
-outcome_t *execute(char *code)
+outcome_t *execute(string_t *code)
 {
     outcome_t *outcome;
     script_t *script;
@@ -81,7 +81,7 @@ outcome_t *execute(char *code)
 
         if (result->thrown)
         {
-            outcome->errorMessage = copy_string("failed to execute code");
+            outcome->errorMessage = cstring_to_string("failed to execute code");
             outcome->hintMessage = represent_value(result);
             dereference_value(result);
 
@@ -101,12 +101,12 @@ void destroy_outcome(outcome_t *outcome)
 {
     if (outcome->errorMessage)
     {
-        free(outcome->errorMessage);
+        destroy_string(outcome->errorMessage);
     }
 
     if (outcome->hintMessage)
     {
-        free(outcome->hintMessage);
+        destroy_string(outcome->hintMessage);
     }
 
     free(outcome);
@@ -166,107 +166,107 @@ static value_t *apply_statement(statement_t *statement, map_t *variables)
 
             arguments.index = 0;
 
-            if (strcmp(data->identifier->name, "add") == 0)
+            if (is_keyword_match(data->identifier->name, "add"))
             {
                 result = run_add(&arguments, variables);
             }
-            else if (strcmp(data->identifier->name, "subtract") == 0)
+            else if (is_keyword_match(data->identifier->name, "subtract"))
             {
                 result = run_subtract(&arguments, variables);
             }
-            else if (strcmp(data->identifier->name, "multiply") == 0)
+            else if (is_keyword_match(data->identifier->name, "multiply"))
             {
                 result = run_multiply(&arguments, variables);
             }
-            else if (strcmp(data->identifier->name, "divide") == 0)
+            else if (is_keyword_match(data->identifier->name, "divide"))
             {
                 result = run_divide(&arguments, variables);
             }
-            else if (strcmp(data->identifier->name, "modulo") == 0)
+            else if (is_keyword_match(data->identifier->name, "modulo"))
             {
                 result = run_modulo(&arguments, variables);
             }
-            else if (strcmp(data->identifier->name, "truncate") == 0)
+            else if (is_keyword_match(data->identifier->name, "truncate"))
             {
                 result = run_truncate(&arguments, variables);
             }
-            else if (strcmp(data->identifier->name, "and") == 0)
+            else if (is_keyword_match(data->identifier->name, "and"))
             {
                 result = run_and(&arguments, variables);
             }
-            else if (strcmp(data->identifier->name, "or") == 0)
+            else if (is_keyword_match(data->identifier->name, "or"))
             {
                 result = run_or(&arguments, variables);
             }
-            else if (strcmp(data->identifier->name, "not") == 0)
+            else if (is_keyword_match(data->identifier->name, "not"))
             {
                 result = run_not(&arguments, variables);
             }
-            else if (strcmp(data->identifier->name, "precedes") == 0)
+            else if (is_keyword_match(data->identifier->name, "precedes"))
             {
                 result = run_precedes(&arguments, variables);
             }
-            else if (strcmp(data->identifier->name, "succeeds") == 0)
+            else if (is_keyword_match(data->identifier->name, "succeeds"))
             {
                 result = run_succeeds(&arguments, variables);
             }
-            else if (strcmp(data->identifier->name, "equals") == 0)
+            else if (is_keyword_match(data->identifier->name, "equals"))
             {
                 result = run_equals(&arguments, variables);
             }
-            else if (strcmp(data->identifier->name, "write") == 0)
+            else if (is_keyword_match(data->identifier->name, "write"))
             {
                 result = run_write(&arguments, variables);
             }
-            else if (strcmp(data->identifier->name, "read") == 0)
+            else if (is_keyword_match(data->identifier->name, "read"))
             {
                 result = run_read(&arguments, variables);
             }
-            else if (strcmp(data->identifier->name, "delete") == 0)
+            else if (is_keyword_match(data->identifier->name, "delete"))
             {
                 result = run_delete(&arguments, variables);
             }
-            else if (strcmp(data->identifier->name, "query") == 0)
+            else if (is_keyword_match(data->identifier->name, "query"))
             {
                 result = run_query(&arguments, variables);
             }
-            else if (strcmp(data->identifier->name, "freeze") == 0)
+            else if (is_keyword_match(data->identifier->name, "freeze"))
             {
                 result = run_freeze(&arguments, variables);
             }
-            else if (strcmp(data->identifier->name, "type") == 0)
+            else if (is_keyword_match(data->identifier->name, "type"))
             {
                 result = run_type(&arguments, variables);
             }
-            else if (strcmp(data->identifier->name, "cast") == 0)
+            else if (is_keyword_match(data->identifier->name, "cast"))
             {
                 result = run_cast(&arguments, variables);
             }
-            else if (strcmp(data->identifier->name, "get") == 0)
+            else if (is_keyword_match(data->identifier->name, "get"))
             {
                 result = run_get(&arguments, variables);
             }
-            else if (strcmp(data->identifier->name, "set") == 0)
+            else if (is_keyword_match(data->identifier->name, "set"))
             {
                 result = run_set(&arguments, variables);
             }
-            else if (strcmp(data->identifier->name, "unset") == 0)
+            else if (is_keyword_match(data->identifier->name, "unset"))
             {
                 result = run_unset(&arguments, variables);
             }
-            else if (strcmp(data->identifier->name, "merge") == 0)
+            else if (is_keyword_match(data->identifier->name, "merge"))
             {
                 result = run_merge(&arguments, variables);
             }
-            else if (strcmp(data->identifier->name, "length") == 0)
+            else if (is_keyword_match(data->identifier->name, "length"))
             {
                 result = run_length(&arguments, variables);
             }
-            else if (strcmp(data->identifier->name, "keys") == 0)
+            else if (is_keyword_match(data->identifier->name, "keys"))
             {
                 result = run_keys(&arguments, variables);
             }
-            else if (strcmp(data->identifier->name, "sort") == 0)
+            else if (is_keyword_match(data->identifier->name, "sort"))
             {
                 result = run_sort(&arguments, variables);
             }
@@ -722,7 +722,7 @@ static value_t *run_write(argument_iterator_t *arguments, map_t *variables)
     value_t *message, *file;
     FILE *handle;
     int closable, flushable;
-    char *text;
+    string_t *string;
 
     if (!next_argument(arguments, variables, VALUE_TYPE_STRING, &message))
     {
@@ -734,7 +734,7 @@ static value_t *run_write(argument_iterator_t *arguments, map_t *variables)
         return file;
     }
 
-    text = view_string(message);
+    string = view_string(message);
     closable = 0;
     flushable = 0;
 
@@ -773,7 +773,11 @@ static value_t *run_write(argument_iterator_t *arguments, map_t *variables)
 
         case VALUE_TYPE_STRING:
         {
-            handle = fopen(view_string(file), "wb");
+            char *cstring;
+
+            cstring = string_to_cstring(view_string(file));
+            handle = fopen(cstring, "wb");
+            free(cstring);
             closable = 1;
 
             break;
@@ -789,7 +793,7 @@ static value_t *run_write(argument_iterator_t *arguments, map_t *variables)
         return throw_error("absent file");
     }
 
-    fwrite(text, sizeof(char), strlen(text), handle);
+    fwrite(string->bytes, sizeof(char), string->length, handle);
 
     if (ferror(handle))
     {
@@ -819,7 +823,8 @@ static value_t *run_read(argument_iterator_t *arguments, map_t *variables)
     value_t *file, *until;
     FILE *handle;
     int closable;
-    char *text, *terminator;
+    string_t *terminator;
+    char *bytes;
     size_t fill, length;
 
     if (!next_argument(arguments, variables, VALUE_TYPE_NUMBER | VALUE_TYPE_STRING, &file))
@@ -834,7 +839,7 @@ static value_t *run_read(argument_iterator_t *arguments, map_t *variables)
 
     terminator = until->type == VALUE_TYPE_STRING ? view_string(until) : NULL;
 
-    if (terminator && strlen(terminator) != 1)
+    if (terminator && terminator->length != 1)
     {
         return throw_error("invalid terminator");
     }
@@ -873,10 +878,16 @@ static value_t *run_read(argument_iterator_t *arguments, map_t *variables)
         }
 
         case VALUE_TYPE_STRING:
-            handle = fopen(view_string(file), "rb");
+        {
+            char *cstring;
+
+            cstring = string_to_cstring(view_string(file));
+            handle = fopen(cstring, "rb");
+            free(cstring);
             closable = 1;
 
             break;
+        }
 
         default:
             crash_with_message("unsupported branch invoked");
@@ -890,7 +901,7 @@ static value_t *run_read(argument_iterator_t *arguments, map_t *variables)
 
     fill = 0;
     length = 256;
-    text = allocate(sizeof(char) * (length + 1));
+    bytes = allocate(sizeof(char) * length);
 
     while (1)
     {
@@ -905,18 +916,17 @@ static value_t *run_read(argument_iterator_t *arguments, map_t *variables)
                 fclose(handle);
             }
 
-            free(text);
+            free(bytes);
 
             return throw_error("io error");
         }
 
-        if (symbol == EOF || (terminator && terminator[0] == symbol))
+        if (symbol == EOF || (terminator && terminator->bytes[0] == symbol))
         {
-            text[fill++] = '\0';
             break;
         }
 
-        text[fill++] = symbol;
+        bytes[fill++] = symbol;
 
         if (fill == length)
         {
@@ -924,9 +934,9 @@ static value_t *run_read(argument_iterator_t *arguments, map_t *variables)
 
             length *= 2;
             swap = allocate(sizeof(char) * (length + 1));
-            memcpy(swap, text, fill);
-            free(text);
-            text = swap;
+            memcpy(swap, bytes, fill);
+            free(bytes);
+            bytes = swap;
         }
     }
 
@@ -935,7 +945,7 @@ static value_t *run_read(argument_iterator_t *arguments, map_t *variables)
         fclose(handle);
     }
 
-    return steal_string(text);
+    return steal_string(create_string(bytes, fill));
 }
 
 static value_t *run_delete(argument_iterator_t *arguments, map_t *variables)
@@ -954,16 +964,14 @@ static value_t *run_delete(argument_iterator_t *arguments, map_t *variables)
 
         case VALUE_TYPE_STRING:
         {
-            char *fileName;
+            char *cstring;
+            int status;
 
-            fileName = view_string(file);
+            cstring = string_to_cstring(view_string(file));
+            status = remove(cstring);
+            free(cstring);
 
-            if (remove(fileName) == -1)
-            {
-                return throw_error("io error");
-            }
-
-            return new_null();
+            return status != -1 ? new_null() : throw_error("io error");
         }
 
         default:
@@ -975,15 +983,18 @@ static value_t *run_delete(argument_iterator_t *arguments, map_t *variables)
 static value_t *run_query(argument_iterator_t *arguments, map_t *variables)
 {
     value_t *key;
-    char *value;
+    char *value, *cstring;
 
     if (!next_argument(arguments, variables, VALUE_TYPE_STRING, &key))
     {
         return key;
     }
 
-    value = getenv(view_string(key));
-    return value ? new_string(value) : throw_error("absent environment variable");
+    cstring = string_to_cstring(view_string(key));
+    value = getenv(cstring);
+    free(cstring);
+
+    return value ? steal_string(cstring_to_string(value)) : throw_error("absent environment variable");
 }
 
 static value_t *run_freeze(argument_iterator_t *arguments, map_t *variables)
@@ -1010,22 +1021,22 @@ static value_t *run_type(argument_iterator_t *arguments, map_t *variables)
     switch (value->type)
     {
         case VALUE_TYPE_NULL:
-            return new_string("NULL");
+            return steal_string(cstring_to_string("NULL"));
 
         case VALUE_TYPE_BOOLEAN:
-            return new_string("BOOLEAN");
+            return steal_string(cstring_to_string("BOOLEAN"));
 
         case VALUE_TYPE_NUMBER:
-            return new_string("NUMBER");
+            return steal_string(cstring_to_string("NUMBER"));
 
         case VALUE_TYPE_STRING:
-            return new_string("STRING");
+            return steal_string(cstring_to_string("STRING"));
 
         case VALUE_TYPE_LIST:
-            return new_string("LIST");
+            return steal_string(cstring_to_string("LIST"));
 
         case VALUE_TYPE_MAP:
-            return new_string("MAP");
+            return steal_string(cstring_to_string("MAP"));
 
         default:
             crash_with_message("unsupported branch invoked");
@@ -1036,7 +1047,7 @@ static value_t *run_type(argument_iterator_t *arguments, map_t *variables)
 static value_t *run_cast(argument_iterator_t *arguments, map_t *variables)
 {
     value_t *value, *type;
-    char *pattern;
+    string_t *pattern;
 
     if (!next_argument(arguments, variables, VALUE_TYPE_NULL | VALUE_TYPE_BOOLEAN | VALUE_TYPE_NUMBER | VALUE_TYPE_STRING | VALUE_TYPE_LIST | VALUE_TYPE_MAP, &value))
     {
@@ -1050,7 +1061,7 @@ static value_t *run_cast(argument_iterator_t *arguments, map_t *variables)
 
     pattern = view_string(type);
 
-    if (strcmp(pattern, "NULL") == 0)
+    if (is_keyword_match(pattern, "NULL"))
     {
         if (value->type == VALUE_TYPE_NULL)
         {
@@ -1060,11 +1071,11 @@ static value_t *run_cast(argument_iterator_t *arguments, map_t *variables)
         }
         else if (value->type == VALUE_TYPE_STRING)
         {
-            char *string;
+            string_t *string;
 
             string = view_string(value);
 
-            if (strcmp(string, "null") == 0)
+            if (is_keyword_match(string, "null"))
             {
                 return new_null();
             }
@@ -1078,7 +1089,7 @@ static value_t *run_cast(argument_iterator_t *arguments, map_t *variables)
             return throw_error("invalid cast");
         }
     }
-    else if (strcmp(pattern, "BOOLEAN") == 0)
+    else if (is_keyword_match(pattern, "BOOLEAN"))
     {
         if (value->type == VALUE_TYPE_BOOLEAN)
         {
@@ -1088,15 +1099,15 @@ static value_t *run_cast(argument_iterator_t *arguments, map_t *variables)
         }
         else if (value->type == VALUE_TYPE_STRING)
         {
-            char *string;
+            string_t *string;
 
             string = view_string(value);
 
-            if (strcmp(string, "false") == 0)
+            if (is_keyword_match(string, "false"))
             {
                 return new_boolean(FALSE);
             }
-            else if (strcmp(string, "true") == 0)
+            else if (is_keyword_match(string, "true"))
             {
                 return new_boolean(TRUE);
             }
@@ -1110,7 +1121,7 @@ static value_t *run_cast(argument_iterator_t *arguments, map_t *variables)
             return throw_error("invalid cast");
         }
     }
-    else if (strcmp(pattern, "NUMBER") == 0)
+    else if (is_keyword_match(pattern, "NUMBER"))
     {
         if (value->type == VALUE_TYPE_NUMBER)
         {
@@ -1134,15 +1145,15 @@ static value_t *run_cast(argument_iterator_t *arguments, map_t *variables)
             return throw_error("invalid cast");
         }
     }
-    else if (strcmp(pattern, "STRING") == 0)
+    else if (is_keyword_match(pattern, "STRING"))
     {
         if (value->type == VALUE_TYPE_NULL)
         {
-            return new_string("null");
+            return steal_string(cstring_to_string("null"));
         }
         else if (value->type == VALUE_TYPE_BOOLEAN)
         {
-            return view_boolean(value) == TRUE ? new_string("true") : new_string("false");
+            return view_boolean(value) == TRUE ? steal_string(cstring_to_string("true")) : steal_string(cstring_to_string("false"));
         }
         else if (value->type == VALUE_TYPE_NUMBER)
         {
@@ -1159,11 +1170,11 @@ static value_t *run_cast(argument_iterator_t *arguments, map_t *variables)
             return throw_error("invalid cast");
         }
     }
-    else if (strcmp(pattern, "LIST") == 0)
+    else if (is_keyword_match(pattern, "LIST"))
     {
         return throw_error("invalid cast");
     }
-    else if (strcmp(pattern, "MAP") == 0)
+    else if (is_keyword_match(pattern, "MAP"))
     {
         return throw_error("invalid cast");
     }
@@ -1186,8 +1197,8 @@ static value_t *run_get(argument_iterator_t *arguments, map_t *variables)
     {
         case VALUE_TYPE_STRING:
         {
-            char item[2];
-            char *string;
+            char *bytes;
+            string_t *string;
             int number;
 
             if (!next_argument(arguments, variables, VALUE_TYPE_NUMBER, &key))
@@ -1202,15 +1213,15 @@ static value_t *run_get(argument_iterator_t *arguments, map_t *variables)
 
             string = view_string(collection);
 
-            if (number < 1 || (size_t) number > strlen(string))
+            if (number < 1 || (size_t) number > string->length)
             {
                 return throw_error("absent key");
             }
 
-            item[0] = string[number - 1];
-            item[1] = '\0';
+            bytes = allocate(sizeof(char));
+            bytes[0] = string->bytes[number - 1];
 
-            return new_string(item);
+            return steal_string(create_string(bytes, 1));
         }
 
         case VALUE_TYPE_LIST:
@@ -1298,9 +1309,10 @@ static value_t *run_set(argument_iterator_t *arguments, map_t *variables)
     {
         case VALUE_TYPE_STRING:
         {
-            char *source, *middle, *destination;
+            string_t *source, *middle;
+            char *destination;
             int index;
-            size_t sourceLength, beforeLength, middleLength, afterLength, destinationLength;
+            size_t beforeLength, afterLength, destinationLength;
 
             if (!next_argument(arguments, variables, VALUE_TYPE_NUMBER, &key))
             {
@@ -1320,25 +1332,21 @@ static value_t *run_set(argument_iterator_t *arguments, map_t *variables)
                 crash_with_message("unsupported branch invoked");
             }
 
-            sourceLength = strlen(source);
-
-            if (index < 1 || (size_t) index > sourceLength)
+            if (index < 1 || (size_t) index > source->length)
             {
                 return throw_error("absent key");
             }
 
             beforeLength = index - 1;
-            middleLength = strlen(middle);
-            afterLength = sourceLength - beforeLength - 1;
-            destinationLength = beforeLength + middleLength + afterLength;
+            afterLength = source->length - beforeLength - 1;
+            destinationLength = beforeLength + middle->length + afterLength;
 
-            destination = allocate(sizeof(char) * (destinationLength + 1));
-            memcpy(destination, source, beforeLength);
-            memcpy(destination + beforeLength, middle, middleLength);
-            memcpy(destination + beforeLength + middleLength, source + beforeLength + 1, afterLength);
-            destination[destinationLength] = '\0';
+            destination = allocate(sizeof(char) * destinationLength);
+            memcpy(destination, source->bytes, beforeLength);
+            memcpy(destination + beforeLength, middle->bytes, middle->length);
+            memcpy(destination + beforeLength + middle->length, source->bytes + beforeLength + 1, afterLength);
 
-            return steal_string(destination);
+            return steal_string(create_string(destination, destinationLength));
         }
 
         case VALUE_TYPE_LIST:
@@ -1438,9 +1446,8 @@ static value_t *run_unset(argument_iterator_t *arguments, map_t *variables)
     {
         case VALUE_TYPE_STRING:
         {
-            char *source, *destination;
+            string_t *source;
             int number;
-            size_t length;
 
             if (!next_argument(arguments, variables, VALUE_TYPE_NUMBER, &key))
             {
@@ -1453,19 +1460,26 @@ static value_t *run_unset(argument_iterator_t *arguments, map_t *variables)
             }
 
             source = view_string(collection);
-            length = strlen(source);
 
-            if (number < 1 || (size_t) number > length)
+            if (number < 1 || (size_t) number > source->length)
             {
                 return throw_error("absent key");
             }
 
-            destination = allocate(sizeof(char) * length);
-            memcpy(destination, source, number - 1);
-            memcpy(destination + number - 1, source + number, length - number);
-            destination[length - 1] = '\0';
+            if (source->length > 1)
+            {
+                char *bytes;
 
-            return steal_string(destination);
+                bytes = allocate(sizeof(char) * source->length);
+                memcpy(bytes, source->bytes, number - 1);
+                memcpy(bytes + number - 1, source->bytes + number, source->length - number);
+
+                return steal_string(create_string(bytes, source->length - 1));
+            }
+            else
+            {
+                return steal_string(empty_string());
+            }
         }
 
         case VALUE_TYPE_LIST:
@@ -1634,7 +1648,7 @@ static value_t *run_length(argument_iterator_t *arguments, map_t *variables)
     switch (collection->type)
     {
         case VALUE_TYPE_STRING:
-            length = strlen(view_string(collection));
+            length = view_string(collection)->length;
             break;
 
         case VALUE_TYPE_LIST:
@@ -1671,22 +1685,21 @@ static value_t *run_keys(argument_iterator_t *arguments, map_t *variables)
     {
         case VALUE_TYPE_STRING:
         {
-            char *string;
+            string_t *string;
             list_t *keys;
             number_t number;
-            size_t length, index;
+            size_t index;
 
             string = view_string(collection);
-            length = strlen(string);
 
-            if (length >= INT_MAX || integer_to_number(length, &number) != 0)
+            if (string->length >= INT_MAX || integer_to_number(string->length, &number) != 0)
             {
                 return throw_error("constraint error");
             }
 
             keys = empty_list(dereference_value_unsafe, 1);
 
-            for (index = 0; index < length; index++)
+            for (index = 0; index < string->length; index++)
             {
                 number_t key;
 
@@ -1740,7 +1753,7 @@ static value_t *run_keys(argument_iterator_t *arguments, map_t *variables)
         {
             map_t *map;
             list_t *keys;
-            char **rawKeys;
+            string_t **rawKeys;
             size_t index;
 
             map = view_map(collection);
@@ -1749,7 +1762,7 @@ static value_t *run_keys(argument_iterator_t *arguments, map_t *variables)
 
             for (index = 0; index < map->length; index++)
             {
-                add_list_item(keys, new_string(rawKeys[index]));
+                add_list_item(keys, steal_string(copy_string(rawKeys[index])));
             }
 
             free(rawKeys);
@@ -1780,11 +1793,16 @@ static value_t *run_sort(argument_iterator_t *arguments, map_t *variables)
         return direction;
     }
 
-    if (strcmp(view_string(direction), "+") == 0) {
+    if (is_keyword_match(view_string(direction), "+"))
+    {
         ascending = 1;
-    } else if (strcmp(view_string(direction), "-") == 0) {
+    }
+    else if (is_keyword_match(view_string(direction), "-"))
+    {
         ascending = 0;
-    } else {
+    }
+    else
+    {
         return throw_error("invalid direction");
     }
 

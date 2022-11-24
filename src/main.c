@@ -4,7 +4,7 @@
 #include "execute.h"
 #include "utility.h"
 
-static int run_text(char *text);
+static int run_text(string_t *text);
 static int run_file(char *file);
 static int run_help();
 static int run_version();
@@ -80,7 +80,21 @@ int main(int argumentsCount, char **arguments)
         {
             if (argumentsIndex < argumentsCount)
             {
-                return run_text(arguments[argumentsIndex++]);
+                string_t *string;
+                int status;
+                char *bytes;
+                size_t length;
+
+                bytes = arguments[argumentsIndex++];
+                length = strlen(bytes);
+                string = create_string(bytes, length);
+
+                status = run_text(string);
+
+                string->bytes = NULL;
+                destroy_string(string);
+
+                return status;
             }
             else
             {
@@ -115,7 +129,7 @@ int main(int argumentsCount, char **arguments)
     return PROGRAM_SUCCESS;
 }
 
-static int run_text(char *text)
+static int run_text(string_t *text)
 {
     outcome_t *outcome;
 
@@ -125,20 +139,22 @@ static int run_text(char *text)
 
     if (outcome->errorMessage)
     {
-        fprintf(stderr, "%s: ", PROGRAM_NAME);
+        string_t *string;
+        size_t limit;
 
-        if (outcome->errorMessage)
-        {
-            fprintf(stderr, "%.72s\n", outcome->errorMessage);
-        }
-        else
-        {
-            crash_with_message("unsupported branch invoked");
-        }
+        fprintf(stderr, "%s: ", PROGRAM_NAME);
+        string = outcome->errorMessage;
+        limit = string->length < 72 ? string->length : 72;
+        fwrite(string->bytes, sizeof(char), limit, stderr);
+        fprintf(stderr, "\n");
 
         if (outcome->hintMessage)
         {
-            fprintf(stderr, "    [hint] %.69s\n", outcome->hintMessage);
+            fprintf(stderr, "    [hint] ");
+            string = outcome->hintMessage;
+            limit = string->length < 69 ? string->length : 69;
+            fwrite(string->bytes, sizeof(char), limit, stderr);
+            fprintf(stderr, "\n");
         }
 
         destroy_outcome(outcome);
@@ -155,7 +171,7 @@ static int run_file(char *file)
 {
     FILE *handle;
     int status;
-    char *text;
+    char *bytes;
     size_t length;
 
     handle = fopen(file, "rb");
@@ -169,21 +185,20 @@ static int run_file(char *file)
     length = ftell(handle);
     fseek(handle, 0, SEEK_SET);
 
-    text = allocate(sizeof(char) * (length + 1));
-    fread(text, 1, length, handle);
-    text[length] = '\0';
+    bytes = allocate(sizeof(char) * length);
+    fread(bytes, 1, length, handle);
 
     if (ferror(handle))
     {
-        free(text);
+        free(bytes);
         fclose(handle);
 
         crash_with_message("script file read failed %s", file);
     }
 
     fclose(handle);
-    status = run_text(text);
-    free(text);
+    status = run_text(create_string(bytes, length));
+    free(bytes);
 
     return status;
 }

@@ -33,7 +33,7 @@ typedef enum
 typedef struct
 {
     identifier_type_t type;
-    char *name;
+    string_t *name;
 } identifier_t;
 
 typedef struct
@@ -84,11 +84,11 @@ typedef struct
 typedef struct
 {
     list_t *statements;
-    char *errorMessage;
-    char *hintMessage;
+    string_t *errorMessage;
+    string_t *hintMessage;
 } script_t;
 
-script_t *parse_script(char *code);
+script_t *parse_script(string_t *code);
 void destroy_script(script_t *script);
 void destroy_statement(statement_t *statement);
 void destroy_identifier(identifier_t *identifier);
