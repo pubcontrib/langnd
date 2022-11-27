@@ -63,6 +63,8 @@ verify '$"id"="found" @write($id, 1)' \
 
 verify '$a=' \
     'errors with parse message' '='
+verify '$"\?"=' \
+    'errors with parse message' '$"\?"='
 
 verify '$huh' \
     'errors with execute message' '"absent variable"'

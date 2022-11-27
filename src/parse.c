@@ -331,6 +331,12 @@ static statement_t *read_any_statement(capsule_t *capsule)
         token_t *optional;
 
         identifier = parse_identifier(capsule->scanner.code, token);
+
+        if (!identifier)
+        {
+            return create_unknown_statement();
+        }
+
         optional = peek_token(capsule);
 
         if (is_symbol_token('=', capsule->scanner.code, optional))
@@ -347,14 +353,7 @@ static statement_t *read_any_statement(capsule_t *capsule)
         }
         else
         {
-            if (identifier)
-            {
-                return create_reference_statement(identifier);
-            }
-            else
-            {
-                return create_unknown_statement();
-            }
+            return create_reference_statement(identifier);
         }
     }
     else if (token->type == TOKEN_TYPE_KEYWORD)
@@ -622,14 +621,7 @@ static statement_t *read_assignment_statement(capsule_t *capsule, identifier_t *
         return create_unknown_statement();
     }
 
-    if (identifier && value)
-    {
-        return create_assignment_statement(identifier, value);
-    }
-    else
-    {
-        return create_unknown_statement();
-    }
+    return create_assignment_statement(identifier, value);
 }
 
 static statement_t *read_invoke_statement(capsule_t *capsule, identifier_t *identifier)
@@ -697,17 +689,7 @@ static statement_t *read_invoke_statement(capsule_t *capsule, identifier_t *iden
         }
     }
 
-    if (identifier)
-    {
-        return create_invoke_statement(identifier, arguments);
-    }
-    else
-    {
-        destroy_identifier(identifier);
-        destroy_list(arguments);
-
-        return create_unknown_statement();
-    }
+    return create_invoke_statement(identifier, arguments);
 }
 
 static statement_t *read_branch_statement(capsule_t *capsule)
