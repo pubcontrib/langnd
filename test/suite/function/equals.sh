@@ -64,6 +64,10 @@ verify '@write(@freeze(@equals("text", "word")), 1)' \
     'prints to stdout' 'false'
 verify '@write(@freeze(@equals("text", "TEXT")), 1)' \
     'prints to stdout' 'false'
+verify '@write(@freeze(@equals("\a255", "\a000")), 1)' \
+    'prints to stdout' 'false'
+verify '@write(@freeze(@equals("\a000", "\a255")), 1)' \
+    'prints to stdout' 'false'
 verify '@write(@freeze(@equals("", "")), 1)' \
     'prints to stdout' 'true'
 verify '@write(@freeze(@equals("text", null)), 1)' \

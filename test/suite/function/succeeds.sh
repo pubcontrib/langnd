@@ -62,6 +62,10 @@ verify '@write(@freeze(@succeeds("text", "TEXT")), 1)' \
     'prints to stdout' 'true'
 verify '@write(@freeze(@succeeds("TEXT", "text")), 1)' \
     'prints to stdout' 'false'
+verify '@write(@freeze(@succeeds("\a255", "\a000")), 1)' \
+    'prints to stdout' 'true'
+verify '@write(@freeze(@succeeds("\a000", "\a255")), 1)' \
+    'prints to stdout' 'false'
 verify '@write(@freeze(@succeeds("text", null)), 1)' \
     'prints to stdout' 'true'
 verify '@write(@freeze(@succeeds("text", 100)), 1)' \
