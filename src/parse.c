@@ -1233,7 +1233,8 @@ static string_t *unescape_string(string_t *code, token_t *token)
                 }
 
                 default:
-                    break;
+                    free(bytes);
+                    return NULL;
             }
         }
     }

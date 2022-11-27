@@ -25,6 +25,8 @@ verify '"\a999"' \
     'errors with parse message' '"\a999"'
 verify '"\atxt"' \
     'errors with parse message' '"\atxt"'
+verify '"\?"' \
+    'errors with parse message' '"\?"'
 
 verify '"' \
     'errors with lex message' '"'
