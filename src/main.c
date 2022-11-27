@@ -80,21 +80,12 @@ int main(int argumentsCount, char **arguments)
         {
             if (argumentsIndex < argumentsCount)
             {
-                string_t *string;
-                int status;
-                char *bytes;
-                size_t length;
+                string_t string;
 
-                bytes = arguments[argumentsIndex++];
-                length = strlen(bytes);
-                string = create_string(bytes, length);
+                string.bytes = arguments[argumentsIndex++];
+                string.length = strlen(string.bytes);
 
-                status = run_text(string);
-
-                string->bytes = NULL;
-                destroy_string(string);
-
-                return status;
+                return run_text(&string);
             }
             else
             {
