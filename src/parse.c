@@ -319,11 +319,11 @@ static statement_t *read_any_statement(capsule_t *capsule)
     }
     else if (token->type == TOKEN_TYPE_STRING)
     {
-        string_t *value;
+        string_t *string;
 
-        value = unescape_string(capsule->scanner.code, token);
+        string = unescape_string(capsule->scanner.code, token);
 
-        return create_literal_statement(steal_string(value));
+        return string ? create_literal_statement(steal_string(string)) : create_unknown_statement();
     }
     else if (token->type == TOKEN_TYPE_IDENTIFIER)
     {
@@ -1108,6 +1108,11 @@ static identifier_t *parse_identifier(string_t *code, token_t *token)
     else
     {
         name = unescape_string(code, &offset);
+
+        if (!name)
+        {
+            return NULL;
+        }
     }
 
     identifier = allocate(sizeof(identifier_t));
@@ -1172,13 +1177,68 @@ static string_t *unescape_string(string_t *code, token_t *token)
                     bytes[placement++] = '\\';
                     break;
 
+                case 'a':
+                {
+                    if ((token->end - index - 1) >= 3)
+                    {
+                        string_t string;
+                        number_t number;
+                        int integer;
+                        char sequence[3];
+                        size_t peek;
+
+                        index += 1;
+
+                        for (peek = index; (peek - index) < 3; peek++)
+                        {
+                            unsigned char symbol;
+
+                            symbol = code->bytes[peek];
+
+                            if (symbol < 48 || symbol > 57)
+                            {
+                                free(bytes);
+
+                                return NULL;
+                            }
+                        }
+
+                        sequence[0] = code->bytes[index];
+                        sequence[1] = code->bytes[index + 1];
+                        sequence[2] = code->bytes[index + 2];
+                        string.bytes = sequence;
+                        string.length = 3;
+                        integer = 0;
+
+                        if (string_to_number(&string, &number) != 0
+                            || number_to_integer(number, &integer) != 0
+                            || integer < 0 || integer > 255)
+                        {
+                            free(bytes);
+
+                            return NULL;
+                        }
+
+                        bytes[placement++] = (unsigned char) integer;
+                        index += 2;
+                    }
+                    else
+                    {
+                        free(bytes);
+
+                        return NULL;
+                    }
+
+                    break;
+                }
+
                 default:
                     break;
             }
         }
     }
 
-    return create_string(bytes, length);
+    return create_string(bytes, placement);
 }
 
 static char is_symbol_token(char symbol, string_t *code, token_t *token)

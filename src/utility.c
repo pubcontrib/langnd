@@ -207,13 +207,17 @@ string_t *represent_value(value_t *value)
 
             for (index = 0; index < source->length; index++)
             {
-                char symbol;
+                unsigned char symbol;
 
                 symbol = source->bytes[index];
 
                 if (symbol == '\t' || symbol == '\n' || symbol == '\r' || symbol == '"'|| symbol == '\\')
                 {
                     escapeCount++;
+                }
+                else if (symbol < 32 || symbol > 126)
+                {
+                    escapeCount += 4;
                 }
             }
 
@@ -239,7 +243,7 @@ string_t *represent_value(value_t *value)
 
                 for (index = 0; index < source->length; index++)
                 {
-                    char symbol;
+                    unsigned char symbol;
 
                     symbol = source->bytes[index];
 
@@ -271,8 +275,53 @@ string_t *represent_value(value_t *value)
                             break;
 
                         default:
-                            destination[placement++] = symbol;
-                            break;
+                        {
+                            if (symbol >= 32 && symbol <= 126)
+                            {
+                                destination[placement++] = symbol;
+                                break;
+                            }
+                            else
+                            {
+                                number_t number;
+                                string_t *represent;
+
+                                if (integer_to_number(symbol, &number) != 0)
+                                {
+                                    crash_with_message("unsupported branch invoked");
+                                }
+
+                                represent = represent_number(number);
+
+                                destination[placement++] = '\\';
+                                destination[placement++] = 'a';
+
+                                if (represent->length == 1)
+                                {
+                                    destination[placement++] = '0';
+                                    destination[placement++] = '0';
+                                    destination[placement++] = represent->bytes[0];
+                                }
+                                else if (represent->length == 2)
+                                {
+                                    destination[placement++] = '0';
+                                    destination[placement++] = represent->bytes[0];
+                                    destination[placement++] = represent->bytes[1];
+                                }
+                                else if (represent->length == 3)
+                                {
+                                    destination[placement++] = represent->bytes[0];
+                                    destination[placement++] = represent->bytes[1];
+                                    destination[placement++] = represent->bytes[2];
+                                }
+                                else
+                                {
+                                    crash_with_message("unsupported branch invoked");
+                                }
+
+                                destroy_string(represent);
+                            }
+                        }
                     }
                 }
 
