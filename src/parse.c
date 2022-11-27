@@ -1117,6 +1117,12 @@ static string_t *unescape_string(string_t *code, token_t *token)
         {
             escapeCount++;
             index++;
+
+            if ((index + 4) < token->end && code->bytes[index] == 'a')
+            {
+                escapeCount += 3;
+                index += 2;
+            }
         }
     }
 
