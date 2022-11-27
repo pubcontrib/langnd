@@ -6,6 +6,8 @@ verify '@write(@freeze(@length("0")), 1)' \
     'prints to stdout' '1'
 verify '@write(@freeze(@length("0123456789")), 1)' \
     'prints to stdout' '10'
+verify '@write(@freeze(@length("\a000\a001\a002\a003\a004\a005\a006\a007\a008\a009")), 1)' \
+    'prints to stdout' '10'
 verify '@write(@freeze(@length([])), 1)' \
     'prints to stdout' '0'
 verify '@write(@freeze(@length([0])), 1)' \
