@@ -822,7 +822,7 @@ static value_t *run_read(argument_iterator_t *arguments, map_t *variables)
 {
     value_t *file, *until;
     FILE *handle;
-    int closable;
+    int closable, terminated;
     string_t *terminator;
     char *bytes;
     size_t fill, length;
@@ -837,9 +837,10 @@ static value_t *run_read(argument_iterator_t *arguments, map_t *variables)
         return until;
     }
 
-    terminator = until->type == VALUE_TYPE_STRING ? view_string(until) : NULL;
+    terminated = until->type == VALUE_TYPE_STRING;
+    terminator = terminated ? view_string(until) : NULL;
 
-    if (terminator && terminator->length != 1)
+    if (terminated && terminator->length != 1)
     {
         return throw_error("invalid terminator");
     }
@@ -921,7 +922,7 @@ static value_t *run_read(argument_iterator_t *arguments, map_t *variables)
             return throw_error("io error");
         }
 
-        if (symbol == EOF || (terminator && terminator->bytes[0] == symbol))
+        if (symbol == EOF || (terminated && terminator->bytes[0] == symbol))
         {
             break;
         }
