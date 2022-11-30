@@ -2,7 +2,6 @@
 #define EXECUTE_H
 
 #include "utility.h"
-#include <stddef.h>
 
 typedef struct
 {

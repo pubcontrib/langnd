@@ -1,8 +1,8 @@
 #ifndef LEX_H
 #define LEX_H
 
-#include "utility.h"
 #include <stddef.h>
+#include "utility.h"
 
 typedef enum
 {

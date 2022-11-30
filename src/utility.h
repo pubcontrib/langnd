@@ -1,6 +1,8 @@
 #ifndef UTILITY_H
 #define UTILITY_H
 
+#include <stddef.h>
+
 #define PROGRAM_VERSION "v0.27.1"
 #define PROGRAM_NAME "langnd"
 #define PROGRAM_SUCCESS 0

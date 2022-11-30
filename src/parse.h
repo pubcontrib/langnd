@@ -1,8 +1,6 @@
 #ifndef PARSE_H
 #define PARSE_H
 
-#include <stddef.h>
-#include "lex.h"
 #include "utility.h"
 
 typedef enum
