@@ -933,7 +933,7 @@ static value_t *run_read(argument_iterator_t *arguments, map_t *variables)
             char *swap;
 
             length *= 2;
-            swap = allocate(sizeof(char) * (length + 1));
+            swap = allocate(sizeof(char) * length);
             memcpy(swap, bytes, fill);
             free(bytes);
             bytes = swap;
