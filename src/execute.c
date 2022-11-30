@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <limits.h>
 #include "execute.h"
 #include "parse.h"
 #include "utility.h"
@@ -1665,7 +1664,7 @@ static value_t *run_length(argument_iterator_t *arguments, map_t *variables)
             return new_null();
     }
 
-    if (length >= INT_MAX || integer_to_number(length, &number) != 0)
+    if (length >= PORTABLE_INT_LIMIT || integer_to_number(length, &number) != 0)
     {
         return throw_error("constraint error");
     }
@@ -1693,7 +1692,7 @@ static value_t *run_keys(argument_iterator_t *arguments, map_t *variables)
 
             string = view_string(collection);
 
-            if (string->length >= INT_MAX || integer_to_number(string->length, &number) != 0)
+            if (string->length >= PORTABLE_INT_LIMIT || integer_to_number(string->length, &number) != 0)
             {
                 return throw_error("constraint error");
             }
@@ -1704,7 +1703,7 @@ static value_t *run_keys(argument_iterator_t *arguments, map_t *variables)
             {
                 number_t key;
 
-                if (index + 1 >= INT_MAX || integer_to_number(index + 1, &key) != 0)
+                if (index + 1 >= PORTABLE_INT_LIMIT || integer_to_number(index + 1, &key) != 0)
                 {
                     destroy_list(keys);
 
@@ -1726,7 +1725,7 @@ static value_t *run_keys(argument_iterator_t *arguments, map_t *variables)
             list = view_list(collection);
             length = list->length;
 
-            if (length >= INT_MAX || integer_to_number(length, &number) != 0)
+            if (length >= PORTABLE_INT_LIMIT || integer_to_number(length, &number) != 0)
             {
                 return throw_error("constraint error");
             }
@@ -1737,7 +1736,7 @@ static value_t *run_keys(argument_iterator_t *arguments, map_t *variables)
             {
                 number_t key;
 
-                if (index + 1 >= INT_MAX || integer_to_number(index + 1, &key) != 0)
+                if (index + 1 >= PORTABLE_INT_LIMIT || integer_to_number(index + 1, &key) != 0)
                 {
                     destroy_list(keys);
 
