@@ -11,29 +11,28 @@
 #define PORTABLE_INT_LIMIT 2147483647
 #define PORTABLE_LONG_LIMIT 9223372036854775807
 
-typedef enum
-{
-    VALUE_TYPE_NULL = 0x01,
-    VALUE_TYPE_BOOLEAN = 0x02,
-    VALUE_TYPE_NUMBER = 0x04,
-    VALUE_TYPE_STRING = 0x08,
-    VALUE_TYPE_LIST = 0x10,
-    VALUE_TYPE_MAP = 0x20
-} value_type_t;
+typedef char boolean_t;
+static const boolean_t TRUE = 1;
+static const boolean_t FALSE = 0;
 
-typedef struct
-{
-    value_type_t type;
-    void *data;
-    int thrown;
-    int owners;
-} value_t;
+/**
+ * 16.16 signed fixed point number.
+ */
+typedef int number_t;
 
 typedef struct
 {
     char *bytes;
     size_t length;
 } string_t;
+
+typedef struct
+{
+    void (*destroy)(void *);
+    size_t capacity;
+    size_t length;
+    void **items;
+} list_t;
 
 typedef struct map_chain_t
 {
@@ -51,22 +50,23 @@ typedef struct
     map_chain_t **chains;
 } map_t;
 
+typedef enum
+{
+    VALUE_TYPE_NULL = 0x01,
+    VALUE_TYPE_BOOLEAN = 0x02,
+    VALUE_TYPE_NUMBER = 0x04,
+    VALUE_TYPE_STRING = 0x08,
+    VALUE_TYPE_LIST = 0x10,
+    VALUE_TYPE_MAP = 0x20
+} value_type_t;
+
 typedef struct
 {
-    void (*destroy)(void *);
-    size_t capacity;
-    size_t length;
-    void **items;
-} list_t;
-
-/**
- * 16.16 signed fixed point number.
- */
-typedef int number_t;
-
-typedef char boolean_t;
-static const boolean_t TRUE = 1;
-static const boolean_t FALSE = 0;
+    value_type_t type;
+    void *data;
+    int thrown;
+    int owners;
+} value_t;
 
 void assure_portable_environment();
 int compare_values(value_t *left, value_t *right);
