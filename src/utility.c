@@ -857,6 +857,21 @@ char *string_to_cstring(const string_t *string)
     return cstring;
 }
 
+int hash_string(const string_t *string)
+{
+    int hash;
+    size_t index;
+
+    hash = 0;
+
+    for (index = 0; index < string->length; index++)
+    {
+        hash = add_with_overflow(hash, string->bytes[index]);
+    }
+
+    return hash;
+}
+
 string_t *copy_string(const string_t *string)
 {
     char *bytes;
@@ -1317,21 +1332,6 @@ string_t *represent_number(number_t number)
 number_t truncate_number(number_t number)
 {
     return (number / 65536) * 65536;
-}
-
-int hash_string(const string_t *string)
-{
-    int hash;
-    size_t index;
-
-    hash = 0;
-
-    for (index = 0; index < string->length; index++)
-    {
-        hash = add_with_overflow(hash, string->bytes[index]);
-    }
-
-    return hash;
 }
 
 int add_with_overflow(int left, int right)
