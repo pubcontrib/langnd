@@ -50,7 +50,14 @@ int compare_values(const value_t *left, const value_t *right)
             return 0;
 
         case VALUE_TYPE_BOOLEAN:
-            return view_boolean(left) - view_boolean(right);
+        {
+            boolean_t x, y;
+
+            x = view_boolean(left);
+            y = view_boolean(right);
+
+            return x == y ? 0 : (x < y ? -1 : 1);
+        }
 
         case VALUE_TYPE_NUMBER:
         {
@@ -955,18 +962,19 @@ int compare_strings(const string_t *left, const string_t *right)
 
     for (index = 0; index < left->length; index++)
     {
-        int different;
+        unsigned char x, y;
 
         if (index == right->length)
         {
             return 1;
         }
 
-        different = (unsigned char) left->bytes[index] - (unsigned char) right->bytes[index];
+        x = left->bytes[index];
+        y = right->bytes[index];
 
-        if (different)
+        if (x != y)
         {
-            return different;
+            return x == y ? 0 : (x < y ? -1 : 1);
         }
     }
 
