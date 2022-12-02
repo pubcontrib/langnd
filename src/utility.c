@@ -5,10 +5,10 @@
 #include <limits.h>
 #include "utility.h"
 
-static void destroy_chain(map_chain_t *chain, void (*destroy)(void *));
-static map_chain_t *create_map_chain(string_t *key, void *value, map_chain_t *next);
-static map_t *create_map(int (*hash)(const string_t *), void (*destroy)(void *), size_t length, size_t capacity, map_chain_t **chains);
 static void resize_map(map_t *map);
+static map_t *create_map(int (*hash)(const string_t *), void (*destroy)(void *), size_t length, size_t capacity, map_chain_t **chains);
+static map_chain_t *create_map_chain(string_t *key, void *value, map_chain_t *next);
+static void destroy_chain(map_chain_t *chain, void (*destroy)(void *));
 static list_t *create_list(void (*destroy)(void *), size_t capacity, size_t length, void **items);
 static int compare_strings_unsafe(const void *left, const void *right);
 static int integer_digits(int integer);
@@ -431,6 +431,71 @@ string_t *represent_value(const value_t *value)
     }
 }
 
+boolean_t view_boolean(const value_t *value)
+{
+    if (value->type == VALUE_TYPE_BOOLEAN)
+    {
+        return ((boolean_t *) value->data)[0];
+    }
+    else
+    {
+        crash_with_message("unsupported branch invoked");
+        return FALSE;
+    }
+}
+
+number_t view_number(const value_t *value)
+{
+    if (value->type == VALUE_TYPE_NUMBER)
+    {
+        return ((number_t *) value->data)[0];
+    }
+    else
+    {
+        crash_with_message("unsupported branch invoked");
+        return 0;
+    }
+}
+
+string_t *view_string(const value_t *value)
+{
+    if (value->type == VALUE_TYPE_STRING)
+    {
+        return (string_t *) value->data;
+    }
+    else
+    {
+        crash_with_message("unsupported branch invoked");
+        return NULL;
+    }
+}
+
+list_t *view_list(const value_t *value)
+{
+    if (value->type == VALUE_TYPE_LIST)
+    {
+        return (list_t *) value->data;
+    }
+    else
+    {
+        crash_with_message("unsupported branch invoked");
+        return NULL;
+    }
+}
+
+map_t *view_map(const value_t *value)
+{
+    if (value->type == VALUE_TYPE_MAP)
+    {
+        return (map_t *) value->data;
+    }
+    else
+    {
+        crash_with_message("unsupported branch invoked");
+        return NULL;
+    }
+}
+
 value_t *throw_error(const char *message)
 {
     value_t *value;
@@ -525,71 +590,6 @@ value_t *steal_map(map_t *map)
     return value;
 }
 
-boolean_t view_boolean(const value_t *value)
-{
-    if (value->type == VALUE_TYPE_BOOLEAN)
-    {
-        return ((boolean_t *) value->data)[0];
-    }
-    else
-    {
-        crash_with_message("unsupported branch invoked");
-        return FALSE;
-    }
-}
-
-number_t view_number(const value_t *value)
-{
-    if (value->type == VALUE_TYPE_NUMBER)
-    {
-        return ((number_t *) value->data)[0];
-    }
-    else
-    {
-        crash_with_message("unsupported branch invoked");
-        return 0;
-    }
-}
-
-string_t *view_string(const value_t *value)
-{
-    if (value->type == VALUE_TYPE_STRING)
-    {
-        return (string_t *) value->data;
-    }
-    else
-    {
-        crash_with_message("unsupported branch invoked");
-        return NULL;
-    }
-}
-
-list_t *view_list(const value_t *value)
-{
-    if (value->type == VALUE_TYPE_LIST)
-    {
-        return (list_t *) value->data;
-    }
-    else
-    {
-        crash_with_message("unsupported branch invoked");
-        return NULL;
-    }
-}
-
-map_t *view_map(const value_t *value)
-{
-    if (value->type == VALUE_TYPE_MAP)
-    {
-        return (map_t *) value->data;
-    }
-    else
-    {
-        crash_with_message("unsupported branch invoked");
-        return NULL;
-    }
-}
-
 void destroy_value(value_t *value)
 {
     if (value->data)
@@ -631,15 +631,6 @@ void dereference_value(value_t *value)
     {
         destroy_value(value);
     }
-}
-
-map_t *empty_map(int (*hash)(const string_t *), void (*destroy)(void *), size_t capacity)
-{
-    map_chain_t **chains;
-
-    chains = allocate_with_zeros(capacity, sizeof(map_t *));
-
-    return create_map(hash, destroy, 0, capacity, chains);
 }
 
 string_t **list_map_keys(const map_t *map)
@@ -768,6 +759,15 @@ void unset_map_item(map_t *map, const string_t *key)
     }
 }
 
+map_t *empty_map(int (*hash)(const string_t *), void (*destroy)(void *), size_t capacity)
+{
+    map_chain_t **chains;
+
+    chains = allocate_with_zeros(capacity, sizeof(map_t *));
+
+    return create_map(hash, destroy, 0, capacity, chains);
+}
+
 void destroy_map(map_t *map)
 {
     if (map->chains)
@@ -792,11 +792,6 @@ void destroy_map(map_t *map)
     free(map);
 }
 
-list_t *empty_list(void (*destroy)(void *), size_t capacity)
-{
-    return create_list(destroy, capacity, 0, allocate(sizeof(void *) * capacity));
-}
-
 void add_list_item(list_t *list, void *value)
 {
     if (list->length == list->capacity)
@@ -806,6 +801,11 @@ void add_list_item(list_t *list, void *value)
     }
 
     list->items[list->length++] = value;
+}
+
+list_t *empty_list(void (*destroy)(void *), size_t capacity)
+{
+    return create_list(destroy, capacity, 0, allocate(sizeof(void *) * capacity));
 }
 
 void destroy_list(list_t *list)
@@ -819,22 +819,6 @@ void destroy_list(list_t *list)
 
     free(list->items);
     free(list);
-}
-
-string_t *empty_string()
-{
-    return create_string(NULL, 0);
-}
-
-string_t *create_string(char *bytes, size_t length)
-{
-    string_t *string;
-
-    string = allocate(sizeof(string_t));
-    string->bytes = bytes;
-    string->length = length;
-
-    return string;
 }
 
 string_t *cstring_to_string(const char *cstring)
@@ -1008,6 +992,22 @@ int is_keyword_match(const string_t *left, const char *right)
     }
 
     return index == left->length;
+}
+
+string_t *empty_string()
+{
+    return create_string(NULL, 0);
+}
+
+string_t *create_string(char *bytes, size_t length)
+{
+    string_t *string;
+
+    string = allocate(sizeof(string_t));
+    string->bytes = bytes;
+    string->length = length;
+
+    return string;
 }
 
 void destroy_string(string_t *string)
@@ -1422,52 +1422,6 @@ void crash_with_message(const char *format, ...)
     crash();
 }
 
-static void destroy_chain(map_chain_t *chain, void (*destroy)(void *))
-{
-    if (chain->key)
-    {
-        destroy_string(chain->key);
-    }
-
-    if (chain->value)
-    {
-        destroy(chain->value);
-    }
-
-    if (chain->next)
-    {
-        destroy_chain(chain->next, destroy);
-    }
-
-    free(chain);
-}
-
-static map_chain_t *create_map_chain(string_t *key, void *value, map_chain_t *next)
-{
-    map_chain_t *chain;
-
-    chain = allocate(sizeof(map_chain_t));
-    chain->key = key;
-    chain->value = value;
-    chain->next = next;
-
-    return chain;
-}
-
-static map_t *create_map(int (*hash)(const string_t *), void (*destroy)(void *), size_t length, size_t capacity, map_chain_t **chains)
-{
-    map_t *map;
-
-    map = allocate(sizeof(map_t));
-    map->hash = hash;
-    map->destroy = destroy;
-    map->length = length;
-    map->capacity = capacity;
-    map->chains = chains;
-
-    return map;
-}
-
 static void resize_map(map_t *map)
 {
     map_chain_t **existing, **chains;
@@ -1506,6 +1460,52 @@ static void resize_map(map_t *map)
     }
 
     free(existing);
+}
+
+static map_t *create_map(int (*hash)(const string_t *), void (*destroy)(void *), size_t length, size_t capacity, map_chain_t **chains)
+{
+    map_t *map;
+
+    map = allocate(sizeof(map_t));
+    map->hash = hash;
+    map->destroy = destroy;
+    map->length = length;
+    map->capacity = capacity;
+    map->chains = chains;
+
+    return map;
+}
+
+static map_chain_t *create_map_chain(string_t *key, void *value, map_chain_t *next)
+{
+    map_chain_t *chain;
+
+    chain = allocate(sizeof(map_chain_t));
+    chain->key = key;
+    chain->value = value;
+    chain->next = next;
+
+    return chain;
+}
+
+static void destroy_chain(map_chain_t *chain, void (*destroy)(void *))
+{
+    if (chain->key)
+    {
+        destroy_string(chain->key);
+    }
+
+    if (chain->value)
+    {
+        destroy(chain->value);
+    }
+
+    if (chain->next)
+    {
+        destroy_chain(chain->next, destroy);
+    }
+
+    free(chain);
 }
 
 static list_t *create_list(void (*destroy)(void *), size_t capacity, size_t length, void **items)
