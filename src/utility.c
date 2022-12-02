@@ -8,7 +8,7 @@
 static void resize_map(map_t *map);
 static map_t *create_map(int (*hash)(const string_t *), void (*destroy)(void *), size_t length, size_t capacity, map_chain_t **chains);
 static map_chain_t *create_map_chain(string_t *key, void *value, map_chain_t *next);
-static void destroy_chain(map_chain_t *chain, void (*destroy)(void *));
+static void destroy_map_chain(map_chain_t *chain, void (*destroy)(void *));
 static list_t *create_list(void (*destroy)(void *), size_t capacity, size_t length, void **items);
 static int compare_strings_unsafe(const void *left, const void *right);
 static int integer_digits(int integer);
@@ -749,7 +749,7 @@ void unset_map_item(map_t *map, const string_t *key)
             }
 
             chain->next = NULL;
-            destroy_chain(chain, map->destroy);
+            destroy_map_chain(chain, map->destroy);
             map->length -= 1;
 
             return;
@@ -782,7 +782,7 @@ void destroy_map(map_t *map)
 
             if (chain)
             {
-                destroy_chain(chain, map->destroy);
+                destroy_map_chain(chain, map->destroy);
             }
         }
 
@@ -1455,7 +1455,7 @@ static void resize_map(map_t *map)
 
         if (chain)
         {
-            destroy_chain(chain, map->destroy);
+            destroy_map_chain(chain, map->destroy);
         }
     }
 
@@ -1488,7 +1488,7 @@ static map_chain_t *create_map_chain(string_t *key, void *value, map_chain_t *ne
     return chain;
 }
 
-static void destroy_chain(map_chain_t *chain, void (*destroy)(void *))
+static void destroy_map_chain(map_chain_t *chain, void (*destroy)(void *))
 {
     if (chain->key)
     {
@@ -1502,7 +1502,7 @@ static void destroy_chain(map_chain_t *chain, void (*destroy)(void *))
 
     if (chain->next)
     {
-        destroy_chain(chain->next, destroy);
+        destroy_map_chain(chain->next, destroy);
     }
 
     free(chain);
