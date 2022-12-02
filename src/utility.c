@@ -7,7 +7,7 @@
 
 static void destroy_chain(map_chain_t *chain, void (*destroy)(void *));
 static map_chain_t *create_map_chain(string_t *key, void *value, map_chain_t *next);
-static map_t *create_map(int (*hash)(string_t *), void (*destroy)(void *), size_t length, size_t capacity, map_chain_t **chains);
+static map_t *create_map(int (*hash)(const string_t *), void (*destroy)(void *), size_t length, size_t capacity, map_chain_t **chains);
 static void resize_map(map_t *map);
 static list_t *create_list(void (*destroy)(void *), size_t capacity, size_t length, void **items);
 static int compare_strings_unsafe(const void *left, const void *right);
@@ -33,7 +33,7 @@ void assure_portable_environment()
     }
 }
 
-int compare_values(value_t *left, value_t *right)
+int compare_values(const value_t *left, const value_t *right)
 {
     if (left->type < right->type)
     {
@@ -184,7 +184,7 @@ int compare_values(value_t *left, value_t *right)
     }
 }
 
-string_t *represent_value(value_t *value)
+string_t *represent_value(const value_t *value)
 {
     switch (value->type)
     {
@@ -424,7 +424,7 @@ string_t *represent_value(value_t *value)
     }
 }
 
-value_t *throw_error(char *message)
+value_t *throw_error(const char *message)
 {
     value_t *value;
 
@@ -518,7 +518,7 @@ value_t *steal_map(map_t *map)
     return value;
 }
 
-boolean_t view_boolean(value_t *value)
+boolean_t view_boolean(const value_t *value)
 {
     if (value->type == VALUE_TYPE_BOOLEAN)
     {
@@ -531,7 +531,7 @@ boolean_t view_boolean(value_t *value)
     }
 }
 
-number_t view_number(value_t *value)
+number_t view_number(const value_t *value)
 {
     if (value->type == VALUE_TYPE_NUMBER)
     {
@@ -544,7 +544,7 @@ number_t view_number(value_t *value)
     }
 }
 
-string_t *view_string(value_t *value)
+string_t *view_string(const value_t *value)
 {
     if (value->type == VALUE_TYPE_STRING)
     {
@@ -557,7 +557,7 @@ string_t *view_string(value_t *value)
     }
 }
 
-list_t *view_list(value_t *value)
+list_t *view_list(const value_t *value)
 {
     if (value->type == VALUE_TYPE_LIST)
     {
@@ -570,7 +570,7 @@ list_t *view_list(value_t *value)
     }
 }
 
-map_t *view_map(value_t *value)
+map_t *view_map(const value_t *value)
 {
     if (value->type == VALUE_TYPE_MAP)
     {
@@ -626,7 +626,7 @@ void dereference_value(value_t *value)
     }
 }
 
-map_t *empty_map(int (*hash)(string_t *), void (*destroy)(void *), size_t capacity)
+map_t *empty_map(int (*hash)(const string_t *), void (*destroy)(void *), size_t capacity)
 {
     map_chain_t **chains;
 
@@ -635,7 +635,7 @@ map_t *empty_map(int (*hash)(string_t *), void (*destroy)(void *), size_t capaci
     return create_map(hash, destroy, 0, capacity, chains);
 }
 
-string_t **list_map_keys(map_t *map)
+string_t **list_map_keys(const map_t *map)
 {
     string_t **keys;
     size_t index, placement;
@@ -665,12 +665,12 @@ string_t **list_map_keys(map_t *map)
     return keys;
 }
 
-int has_map_item(map_t *map, string_t *key)
+int has_map_item(const map_t *map, const string_t *key)
 {
     return get_map_item(map, key) != NULL;
 }
 
-void *get_map_item(map_t *map, string_t *key)
+void *get_map_item(const map_t *map, const string_t *key)
 {
     map_chain_t *chain;
     int hash, index;
@@ -729,7 +729,7 @@ void set_map_item(map_t *map, string_t *key, void *value)
     }
 }
 
-void unset_map_item(map_t *map, string_t *key)
+void unset_map_item(map_t *map, const string_t *key)
 {
     map_chain_t *chain, *previous;
     int hash, index;
@@ -830,7 +830,7 @@ string_t *create_string(char *bytes, size_t length)
     return string;
 }
 
-string_t *cstring_to_string(char *cstring)
+string_t *cstring_to_string(const char *cstring)
 {
     char *bytes;
     size_t length;
@@ -850,7 +850,7 @@ string_t *cstring_to_string(char *cstring)
     return create_string(bytes, length);
 }
 
-char *string_to_cstring(string_t *string)
+char *string_to_cstring(const string_t *string)
 {
     char *cstring;
 
@@ -866,7 +866,7 @@ char *string_to_cstring(string_t *string)
     return cstring;
 }
 
-string_t *copy_string(string_t *string)
+string_t *copy_string(const string_t *string)
 {
     char *bytes;
     size_t length;
@@ -886,7 +886,7 @@ string_t *copy_string(string_t *string)
     return create_string(bytes, length);
 }
 
-string_t *merge_strings(string_t *left, string_t *right)
+string_t *merge_strings(const string_t *left, const string_t *right)
 {
     char *sum;
     size_t length;
@@ -907,7 +907,7 @@ string_t *merge_strings(string_t *left, string_t *right)
     return create_string(sum, length);
 }
 
-void extend_string_by_cstring(string_t *origin, char *extension)
+void extend_string_by_cstring(string_t *origin, const char *extension)
 {
     char *bytes;
     size_t length;
@@ -928,7 +928,7 @@ void extend_string_by_cstring(string_t *origin, char *extension)
     origin->length = length;
 }
 
-void extend_string_by_string(string_t *origin, string_t *extension)
+void extend_string_by_string(string_t *origin, const string_t *extension)
 {
     char *bytes;
     size_t length;
@@ -949,7 +949,7 @@ void extend_string_by_string(string_t *origin, string_t *extension)
     origin->length = length;
 }
 
-int compare_strings(string_t *left, string_t *right)
+int compare_strings(const string_t *left, const string_t *right)
 {
     size_t index;
 
@@ -978,7 +978,7 @@ int compare_strings(string_t *left, string_t *right)
     return 0;
 }
 
-int is_keyword_match(string_t *left, char *right)
+int is_keyword_match(const string_t *left, const char *right)
 {
     size_t index;
 
@@ -1105,7 +1105,7 @@ int modulo_numbers(number_t left, number_t right, number_t *out)
     return 0;
 }
 
-int string_to_number(string_t *text, number_t *out)
+int string_to_number(const string_t *text, number_t *out)
 {
     int number, whole, fraction, wholeIndex, fractionIndex, negative, decimal, point;
     size_t index;
@@ -1311,7 +1311,7 @@ number_t truncate_number(number_t number)
     return (number / 65536) * 65536;
 }
 
-int hash_string(string_t *string)
+int hash_string(const string_t *string)
 {
     int hash;
     size_t index;
@@ -1401,7 +1401,7 @@ void *reallocate(void *memory, size_t size)
     return memory;
 }
 
-void crash_with_message(char *format, ...)
+void crash_with_message(const char *format, ...)
 {
     va_list arguments;
 
@@ -1446,7 +1446,7 @@ static map_chain_t *create_map_chain(string_t *key, void *value, map_chain_t *ne
     return chain;
 }
 
-static map_t *create_map(int (*hash)(string_t *), void (*destroy)(void *), size_t length, size_t capacity, map_chain_t **chains)
+static map_t *create_map(int (*hash)(const string_t *), void (*destroy)(void *), size_t length, size_t capacity, map_chain_t **chains)
 {
     map_t *map;
 
