@@ -60,6 +60,7 @@ introduce
 . suite/function/delete.sh
 . suite/function/query.sh
 . suite/function/freeze.sh
+. suite/function/thaw.sh
 . suite/function/type.sh
 . suite/function/cast.sh
 . suite/function/get.sh

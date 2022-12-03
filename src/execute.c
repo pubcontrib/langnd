@@ -30,6 +30,7 @@ static value_t *run_read(argument_iterator_t *arguments, map_t *variables);
 static value_t *run_delete(argument_iterator_t *arguments, map_t *variables);
 static value_t *run_query(argument_iterator_t *arguments, map_t *variables);
 static value_t *run_freeze(argument_iterator_t *arguments, map_t *variables);
+static value_t *run_thaw(argument_iterator_t *arguments, map_t *variables);
 static value_t *run_type(argument_iterator_t *arguments, map_t *variables);
 static value_t *run_cast(argument_iterator_t *arguments, map_t *variables);
 static value_t *run_get(argument_iterator_t *arguments, map_t *variables);
@@ -232,6 +233,10 @@ static value_t *apply_statement(statement_t *statement, map_t *variables)
             else if (is_keyword_match(data->identifier->name, "freeze"))
             {
                 result = run_freeze(&arguments, variables);
+            }
+            else if (is_keyword_match(data->identifier->name, "thaw"))
+            {
+                result = run_thaw(&arguments, variables);
             }
             else if (is_keyword_match(data->identifier->name, "type"))
             {
@@ -1007,6 +1012,44 @@ static value_t *run_freeze(argument_iterator_t *arguments, map_t *variables)
     }
 
     return steal_string(represent_value(value));
+}
+
+static value_t *run_thaw(argument_iterator_t *arguments, map_t *variables)
+{
+    value_t *code, *value;
+    script_t *script;
+    statement_t *statement;
+    literal_statement_data_t *data;
+
+    if (!next_argument(arguments, variables, VALUE_TYPE_STRING, &code))
+    {
+        return code;
+    }
+
+    script = parse_script(view_string(code));
+
+    if (script->errorMessage || script->statements->length != 1)
+    {
+        destroy_script(script);
+
+        return throw_error("melting error");
+    }
+
+    statement = script->statements->items[0];
+
+    if (statement->type != STATEMENT_TYPE_LITERAL)
+    {
+        destroy_script(script);
+
+        return throw_error("melting error");
+    }
+
+    data = statement->data;
+    value = data->value;
+    data->value = NULL;
+    destroy_script(script);
+
+    return value;
 }
 
 static value_t *run_type(argument_iterator_t *arguments, map_t *variables)
