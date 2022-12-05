@@ -21,5 +21,8 @@ verify '$error=catch { @divide(100, 0) } throw $error' \
 verify 'throw @merge($missing, "!")' \
     'errors with execute message' '"absent variable"'
 
+verify 'throw "0000000000111111111122222222223333333333444444444455555555556666666666777777777788888888889999999999"' \
+    'errors with execute message' '"0000000000111111111122222222223333333333444444444455555555556666666666777777777788888888889999999999"'
+
 verify 'throw' \
     'errors with parse message' 'throw'

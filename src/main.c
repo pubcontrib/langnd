@@ -131,20 +131,17 @@ static int run_text(string_t *text)
     if (outcome->errorMessage)
     {
         string_t *string;
-        size_t limit;
 
         fprintf(stderr, "%s: ", PROGRAM_NAME);
         string = outcome->errorMessage;
-        limit = string->length < 72 ? string->length : 72;
-        fwrite(string->bytes, sizeof(char), limit, stderr);
+        fwrite(string->bytes, sizeof(char), string->length, stderr);
         fprintf(stderr, "\n");
 
         if (outcome->hintMessage)
         {
             fprintf(stderr, "    [hint] ");
             string = outcome->hintMessage;
-            limit = string->length < 69 ? string->length : 69;
-            fwrite(string->bytes, sizeof(char), limit, stderr);
+            fwrite(string->bytes, sizeof(char), string->length, stderr);
             fprintf(stderr, "\n");
         }
 
