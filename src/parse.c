@@ -76,7 +76,7 @@ script_t *parse_script(string_t *code)
                 destroy_statement(statement);
                 statements = NULL;
                 errorMessage = cstring_to_string("failed to parse code");
-                hintMessage = substring_to_newline(capsule.scanner.code, capsule.present.start, 80);
+                hintMessage = substring_to_newline(capsule.scanner.code, capsule.present.start, 50);
                 break;
             }
 
@@ -87,7 +87,7 @@ script_t *parse_script(string_t *code)
     if (capsule.scanner.state == SCANNER_STATE_ERRORED)
     {
         errorMessage = cstring_to_string("failed to lex code");
-        hintMessage = substring_to_newline(capsule.scanner.code, capsule.scanner.token.start, 80);
+        hintMessage = substring_to_newline(capsule.scanner.code, capsule.scanner.token.start, 50);
     }
 
     script = allocate(sizeof(script_t));

@@ -5,6 +5,11 @@ verify 'unknown' \
 verify 'NULL' \
     'errors with lex message' 'NULL'
 
+verify 'aaaaaaaaaabbbbbbbbbbccccccccccddddddddddeeeeeeeeeeffffffffffgggggggggghhhhhhhhhhiiiiiiiiiijjjjjjjjjj' \
+    'errors with lex message' 'aaaaaaaaaabbbbbbbbbbccccccccccddddddddddeeeeeeeeee'
+verify '0000000000111111111122222222223333333333444444444455555555556666666666777777777788888888889999999999' \
+    'errors with parse message' '00000000001111111111222222222233333333334444444444'
+
 verify "`printf '\001'`" \
     'errors with lex message' "`printf '\001'`"
 verify "`printf '\002'`" \
