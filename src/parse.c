@@ -23,6 +23,7 @@ static statement_t *read_branch_statement(capsule_t *capsule);
 static statement_t *read_loop_statement(capsule_t *capsule);
 static statement_t *read_catch_statement(capsule_t *capsule);
 static statement_t *read_throw_statement(capsule_t *capsule);
+static list_t *read_body_expressions(capsule_t *capsule);
 static char is_value_statement(statement_t *statement);
 static token_t *peek_token(capsule_t *capsule);
 static token_t *next_token(capsule_t *capsule);
@@ -710,43 +711,14 @@ static statement_t *read_branch_statement(capsule_t *capsule)
         return create_unknown_statement();
     }
 
-    optional = peek_token(capsule);
+    pass = read_body_expressions(capsule);
+    fail = NULL;
 
-    if (!is_symbol_token('{', capsule->scanner.code, optional))
+    if (!pass)
     {
         destroy_statement(condition);
 
         return create_unknown_statement();
-    }
-
-    next_token(capsule);
-    pass = empty_list(destroy_statement_unsafe, 1);
-    fail = NULL;
-
-    while (1)
-    {
-        statement_t *part;
-
-        optional = peek_token(capsule);
-
-        if (is_symbol_token('}', capsule->scanner.code, optional))
-        {
-            next_token(capsule);
-
-            break;
-        }
-
-        part = read_any_statement(capsule);
-
-        if (!part || part->type == STATEMENT_TYPE_UNKNOWN)
-        {
-            destroy_statement(condition);
-            destroy_list(pass);
-
-            return create_unknown_statement();
-        }
-
-        add_list_item(pass, part);
     }
 
     optional = peek_token(capsule);
@@ -761,44 +733,15 @@ static statement_t *read_branch_statement(capsule_t *capsule)
         {
             destroy_string(keyword);
             next_token(capsule);
-            optional = peek_token(capsule);
 
-            if (!is_symbol_token('{', capsule->scanner.code, optional))
+            fail = read_body_expressions(capsule);
+
+            if (!fail)
             {
                 destroy_statement(condition);
                 destroy_list(pass);
 
                 return create_unknown_statement();
-            }
-
-            next_token(capsule);
-            fail = empty_list(destroy_statement_unsafe, 1);
-
-            while (1)
-            {
-                statement_t *part;
-
-                optional = peek_token(capsule);
-
-                if (is_symbol_token('}', capsule->scanner.code, optional))
-                {
-                    next_token(capsule);
-
-                    break;
-                }
-
-                part = read_any_statement(capsule);
-
-                if (!part || part->type == STATEMENT_TYPE_UNKNOWN)
-                {
-                    destroy_statement(condition);
-                    destroy_list(pass);
-                    destroy_list(fail);
-
-                    return create_unknown_statement();
-                }
-
-                add_list_item(fail, part);
             }
         }
         else
@@ -814,7 +757,6 @@ static statement_t *read_loop_statement(capsule_t *capsule)
 {
     statement_t *condition;
     list_t *body;
-    token_t *optional;
 
     condition = read_any_statement(capsule);
 
@@ -828,42 +770,13 @@ static statement_t *read_loop_statement(capsule_t *capsule)
         return create_unknown_statement();
     }
 
-    optional = peek_token(capsule);
+    body = read_body_expressions(capsule);
 
-    if (!is_symbol_token('{', capsule->scanner.code, optional))
+    if (!body)
     {
         destroy_statement(condition);
 
         return create_unknown_statement();
-    }
-
-    next_token(capsule);
-    body = empty_list(destroy_statement_unsafe, 1);
-
-    while (1)
-    {
-        statement_t *part;
-
-        optional = peek_token(capsule);
-
-        if (is_symbol_token('}', capsule->scanner.code, optional))
-        {
-            next_token(capsule);
-
-            break;
-        }
-
-        part = read_any_statement(capsule);
-
-        if (!part || part->type == STATEMENT_TYPE_UNKNOWN)
-        {
-            destroy_statement(condition);
-            destroy_list(body);
-
-            return create_unknown_statement();
-        }
-
-        add_list_item(body, part);
     }
 
     return create_loop_statement(condition, body);
@@ -872,41 +785,12 @@ static statement_t *read_loop_statement(capsule_t *capsule)
 static statement_t *read_catch_statement(capsule_t *capsule)
 {
     list_t *body;
-    token_t *optional;
 
-    optional = peek_token(capsule);
+    body = read_body_expressions(capsule);
 
-    if (!is_symbol_token('{', capsule->scanner.code, optional))
+    if (!body)
     {
         return create_unknown_statement();
-    }
-
-    next_token(capsule);
-    body = empty_list(destroy_statement_unsafe, 1);
-
-    while (1)
-    {
-        statement_t *part;
-
-        optional = peek_token(capsule);
-
-        if (is_symbol_token('}', capsule->scanner.code, optional))
-        {
-            next_token(capsule);
-
-            break;
-        }
-
-        part = read_any_statement(capsule);
-
-        if (!part || part->type == STATEMENT_TYPE_UNKNOWN)
-        {
-            destroy_list(body);
-
-            return create_unknown_statement();
-        }
-
-        add_list_item(body, part);
     }
 
     return create_catch_statement(body);
@@ -929,6 +813,49 @@ static statement_t *read_throw_statement(capsule_t *capsule)
     }
 
     return create_throw_statement(error);
+}
+
+static list_t *read_body_expressions(capsule_t *capsule)
+{
+    list_t *body;
+    token_t *optional;
+
+    optional = peek_token(capsule);
+
+    if (!is_symbol_token('{', capsule->scanner.code, optional))
+    {
+        return NULL;
+    }
+
+    next_token(capsule);
+    body = empty_list(destroy_statement_unsafe, 1);
+
+    while (1)
+    {
+        statement_t *part;
+
+        optional = peek_token(capsule);
+
+        if (is_symbol_token('}', capsule->scanner.code, optional))
+        {
+            next_token(capsule);
+
+            break;
+        }
+
+        part = read_any_statement(capsule);
+
+        if (!part || part->type == STATEMENT_TYPE_UNKNOWN)
+        {
+            destroy_list(body);
+
+            return NULL;
+        }
+
+        add_list_item(body, part);
+    }
+
+    return body;
 }
 
 static char is_value_statement(statement_t *statement)
