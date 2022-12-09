@@ -298,33 +298,55 @@ static value_t *apply_statement(statement_t *statement, map_t *variables)
         case STATEMENT_TYPE_BRANCH:
         {
             branch_statement_data_t *data;
-            value_t *test;
+            list_t *conditionals;
+            value_t *last;
+            size_t index;
 
             data = statement->data;
-            test = apply_statement(data->condition, variables);
+            conditionals = data->conditionals;
+            last = NULL;
 
-            if (test->thrown)
+            for (index = 0; index < conditionals->length; index++)
             {
-                return test;
+                conditional_branch_t *conditional;
+                value_t *test;
+
+                conditional = conditionals->items[index];
+                test = apply_statement(conditional->condition, variables);
+
+                if (test->thrown)
+                {
+                    return test;
+                }
+
+                if (test->type == VALUE_TYPE_BOOLEAN)
+                {
+                    boolean_t pass;
+
+                    pass = view_boolean(test);
+                    dereference_value(test);
+
+                    if (pass == TRUE)
+                    {
+                        last = apply_body_statements(conditional->body, variables);
+
+                        break;
+                    }
+                }
+                else
+                {
+                    dereference_value(test);
+
+                    return throw_error("branch with non-boolean condition");
+                }
             }
 
-            if (test->type == VALUE_TYPE_BOOLEAN)
+            if (!last)
             {
-                value_t *last;
-                list_t *body;
-
-                body = view_boolean(test) ? data->pass : data->fail;
-                dereference_value(test);
-                last = body ? apply_body_statements(body, variables) : new_null();
-
-                return last;
+                last = data->fallback ? apply_body_statements(data->fallback, variables) : new_null();
             }
-            else
-            {
-                dereference_value(test);
 
-                return throw_error("branch with non-boolean condition");
-            }
+            return last;
         }
 
         case STATEMENT_TYPE_LOOP:

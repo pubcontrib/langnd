@@ -54,8 +54,13 @@ typedef struct
 typedef struct
 {
     statement_t *condition;
-    list_t *pass;
-    list_t *fail;
+    list_t *body;
+} conditional_branch_t;
+
+typedef struct
+{
+    list_t *conditionals;
+    list_t *fallback;
 } branch_statement_data_t;
 
 typedef struct

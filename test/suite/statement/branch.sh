@@ -36,6 +36,20 @@ verify '$msg=if true { "first" } else { "second" } @write(@freeze($msg), 1)' \
     'prints to stdout' '"first"'
 verify '$msg=if false { "first" } else { "second" } @write(@freeze($msg), 1)' \
     'prints to stdout' '"second"'
+verify '$b=1 if @equals($b, 1) { @write("first", 1) } else if @equals($b, 2) { @write("second", 1) }' \
+    'prints to stdout' 'first'
+verify '$b=2 if @equals($b, 1) { @write("first", 1) } else if @equals($b, 2) { @write("second", 1) }' \
+    'prints to stdout' 'second'
+verify '$b=3 if @equals($b, 1) { @write("first", 1) } else if @equals($b, 2) { @write("second", 1) }' \
+    'prints to stdout' ''
+verify '$b=1 if @equals($b, 1) { @write("first", 1) } else if @equals($b, 2) { @write("second", 1) } else { @write("third", 1) }' \
+    'prints to stdout' 'first'
+verify '$b=2 if @equals($b, 1) { @write("first", 1) } else if @equals($b, 2) { @write("second", 1) } else { @write("third", 1) }' \
+    'prints to stdout' 'second'
+verify '$b=3 if @equals($b, 1) { @write("first", 1) } else if @equals($b, 2) { @write("second", 1) } else { @write("third", 1) }' \
+    'prints to stdout' 'third'
+verify 'if true { @write("first ", 1) } if true { @write("second ", 1) } if true { @write("third", 1) }' \
+    'prints to stdout' 'first second third'
 
 verify 'if' \
     'errors with parse message' 'if'
@@ -55,8 +69,26 @@ verify 'if true { 100 } else' \
     'errors with parse message' 'else'
 verify 'if true { 100 } else {' \
     'errors with parse message' '{'
+verify 'if true { 100 } else }' \
+    'errors with parse message' 'else }'
 verify 'if true { 100 } else { 200' \
     'errors with parse message' '200'
+verify 'if true { 100 } else if' \
+    'errors with parse message' 'if'
+verify 'if true { 100 } else if { }' \
+    'errors with parse message' '}'
+verify 'if true { 100 } else if true' \
+    'errors with parse message' 'true'
+verify 'if true { 100 } else if true {' \
+    'errors with parse message' '{'
+verify 'if true { 100 } else if true }' \
+    'errors with parse message' 'true }'
+verify 'if true { 100 } else if true 200' \
+    'errors with parse message' 'true 200'
+verify 'if true { 100 } else if true { 200' \
+    'errors with parse message' '200'
+verify 'if true { 100 } else catch { }' \
+    'errors with parse message' 'else catch { }'
 verify '$a=true if $a=false { }' \
     'errors with parse message' 'false { }'
 
@@ -70,8 +102,22 @@ verify 'if [1, 2, 3] { }' \
     'errors with execute message' '"branch with non-boolean condition"'
 verify 'if {"a": 1, "b": 2, "c": 3} { }' \
     'errors with execute message' '"branch with non-boolean condition"'
+verify 'if false { } else if null { }' \
+    'errors with execute message' '"branch with non-boolean condition"'
+verify 'if false { } else if 100 { }' \
+    'errors with execute message' '"branch with non-boolean condition"'
+verify 'if false { } else if "text" { }' \
+    'errors with execute message' '"branch with non-boolean condition"'
+verify 'if false { } else if [1, 2, 3] { }' \
+    'errors with execute message' '"branch with non-boolean condition"'
+verify 'if false { } else if {"a": 1, "b": 2, "c": 3} { }' \
+    'errors with execute message' '"branch with non-boolean condition"'
 
 verify 'if true { "before" @divide(100, 0) "after" }' \
     'errors with execute message' '"arithmetic error"'
 verify 'if @divide(100, 0) { $missing }' \
+    'errors with execute message' '"arithmetic error"'
+verify 'if false { } else if true { "before" @divide(100, 0) "after" }' \
+    'errors with execute message' '"arithmetic error"'
+verify 'if false { } else if @divide(100, 0) { $missing }' \
     'errors with execute message' '"arithmetic error"'

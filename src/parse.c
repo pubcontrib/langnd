@@ -23,6 +23,7 @@ static statement_t *read_branch_statement(capsule_t *capsule);
 static statement_t *read_loop_statement(capsule_t *capsule);
 static statement_t *read_catch_statement(capsule_t *capsule);
 static statement_t *read_throw_statement(capsule_t *capsule);
+static conditional_branch_t *read_conditional_branch(capsule_t *capsule);
 static list_t *read_body_expressions(capsule_t *capsule);
 static char is_value_statement(statement_t *statement);
 static token_t *peek_token(capsule_t *capsule);
@@ -37,7 +38,7 @@ static statement_t *create_unknown_statement();
 static statement_t *create_literal_statement(value_t *value);
 static statement_t *create_assignment_statement(identifier_t *identifier, statement_t *value);
 static statement_t *create_invoke_statement(identifier_t *identifier, list_t *arguments);
-static statement_t *create_branch_statement(statement_t *condition, list_t *pass, list_t *fail);
+static statement_t *create_branch_statement(list_t *conditionals, list_t *fallback);
 static statement_t *create_loop_statement(statement_t *condition, list_t *body);
 static statement_t *create_catch_statement(list_t *body);
 static statement_t *create_throw_statement(statement_t *error);
@@ -45,6 +46,8 @@ static statement_t *create_reference_statement(identifier_t *identifier);
 static statement_t *create_statement(statement_type_t type, void *data);
 static void destroy_statement_unsafe(void *statement);
 static void dereference_value_unsafe(void *value);
+static void destroy_conditional_branch(conditional_branch_t *conditional);
+static void destroy_conditional_branch_unsafe(void *conditional);
 
 script_t *parse_script(string_t *code)
 {
@@ -186,19 +189,14 @@ void destroy_statement(statement_t *statement)
 
                 data = statement->data;
 
-                if (data->condition)
+                if (data->conditionals)
                 {
-                    destroy_statement(data->condition);
+                    destroy_list(data->conditionals);
                 }
 
-                if (data->pass)
+                if (data->fallback)
                 {
-                    destroy_list(data->pass);
-                }
-
-                if (data->fail)
-                {
-                    destroy_list(data->fail);
+                    destroy_list(data->fallback);
                 }
 
                 free(data);
@@ -695,62 +693,93 @@ static statement_t *read_invoke_statement(capsule_t *capsule, identifier_t *iden
 
 static statement_t *read_branch_statement(capsule_t *capsule)
 {
-    statement_t *condition;
-    list_t *pass, *fail;
+    list_t *conditionals, *fallback;
+    conditional_branch_t *conditional;
     token_t *optional;
 
-    condition = read_any_statement(capsule);
+    conditional = read_conditional_branch(capsule);
 
-    if (!condition || !is_value_statement(condition))
+    if (!conditional)
     {
-        if (condition)
-        {
-            destroy_statement(condition);
-        }
-
         return create_unknown_statement();
     }
 
-    pass = read_body_expressions(capsule);
-    fail = NULL;
+    conditionals = empty_list(destroy_conditional_branch_unsafe, 1);
+    add_list_item(conditionals, conditional);
+    fallback = NULL;
 
-    if (!pass)
+    while (1)
     {
-        destroy_statement(condition);
+        optional = peek_token(capsule);
 
-        return create_unknown_statement();
-    }
-
-    optional = peek_token(capsule);
-
-    if (optional && optional->type == TOKEN_TYPE_KEYWORD)
-    {
-        string_t *keyword;
-
-        keyword = substring_using_token(capsule->scanner.code, optional);
-
-        if (is_keyword_match(keyword, "else"))
+        if (optional && optional->type == TOKEN_TYPE_KEYWORD)
         {
-            destroy_string(keyword);
-            next_token(capsule);
+            string_t *keyword;
 
-            fail = read_body_expressions(capsule);
+            keyword = substring_using_token(capsule->scanner.code, optional);
 
-            if (!fail)
+            if (is_keyword_match(keyword, "else"))
             {
-                destroy_statement(condition);
-                destroy_list(pass);
+                destroy_string(keyword);
+                next_token(capsule);
 
-                return create_unknown_statement();
+                optional = peek_token(capsule);
+
+                if (optional && optional->type == TOKEN_TYPE_KEYWORD)
+                {
+                    keyword = substring_using_token(capsule->scanner.code, optional);
+
+                    if (is_keyword_match(keyword, "if"))
+                    {
+                        destroy_string(keyword);
+                        next_token(capsule);
+                        conditional = read_conditional_branch(capsule);
+
+                        if (!conditional)
+                        {
+                            destroy_list(conditionals);
+
+                            return create_unknown_statement();
+                        }
+
+                        add_list_item(conditionals, conditional);
+                    }
+                    else
+                    {
+                        destroy_string(keyword);
+                        destroy_list(conditionals);
+
+                        return create_unknown_statement();
+                    }
+                }
+                else
+                {
+                    fallback = read_body_expressions(capsule);
+
+                    if (!fallback)
+                    {
+                        destroy_list(conditionals);
+
+                        return create_unknown_statement();
+                    }
+
+                    break;
+                }
+            }
+            else
+            {
+                destroy_string(keyword);
+
+                break;
             }
         }
         else
         {
-            destroy_string(keyword);
+            break;
         }
     }
 
-    return create_branch_statement(condition, pass, fail);
+    return create_branch_statement(conditionals, fallback);
 }
 
 static statement_t *read_loop_statement(capsule_t *capsule)
@@ -813,6 +842,40 @@ static statement_t *read_throw_statement(capsule_t *capsule)
     }
 
     return create_throw_statement(error);
+}
+
+static conditional_branch_t *read_conditional_branch(capsule_t *capsule)
+{
+    conditional_branch_t *conditional;
+    statement_t *condition;
+    list_t *body;
+
+    condition = read_any_statement(capsule);
+
+    if (!condition || !is_value_statement(condition))
+    {
+        if (condition)
+        {
+            destroy_statement(condition);
+        }
+
+        return NULL;
+    }
+
+    body = read_body_expressions(capsule);
+
+    if (!body)
+    {
+        destroy_statement(condition);
+
+        return NULL;
+    }
+
+    conditional = malloc(sizeof(conditional_branch_t));
+    conditional->condition = condition;
+    conditional->body = body;
+
+    return conditional;
 }
 
 static list_t *read_body_expressions(capsule_t *capsule)
@@ -1199,14 +1262,13 @@ static statement_t *create_invoke_statement(identifier_t *identifier, list_t *ar
     return create_statement(STATEMENT_TYPE_INVOKE, data);
 }
 
-static statement_t *create_branch_statement(statement_t *condition, list_t *pass, list_t *fail)
+static statement_t *create_branch_statement(list_t *conditionals, list_t *fallback)
 {
     branch_statement_data_t *data;
 
     data = allocate(sizeof(branch_statement_data_t));
-    data->condition = condition;
-    data->pass = pass;
-    data->fail = fail;
+    data->conditionals = conditionals;
+    data->fallback = fallback;
 
     return create_statement(STATEMENT_TYPE_BRANCH, data);
 }
@@ -1271,4 +1333,24 @@ static void destroy_statement_unsafe(void *statement)
 static void dereference_value_unsafe(void *value)
 {
     dereference_value((value_t *) value);
+}
+
+static void destroy_conditional_branch(conditional_branch_t *conditional)
+{
+    if (conditional->condition)
+    {
+        destroy_statement(conditional->condition);
+    }
+
+    if (conditional->body)
+    {
+        destroy_list(conditional->body);
+    }
+
+    free(conditional);
+}
+
+static void destroy_conditional_branch_unsafe(void *conditional)
+{
+    destroy_conditional_branch((conditional_branch_t *) conditional);
 }
