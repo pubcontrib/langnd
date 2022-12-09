@@ -1118,9 +1118,7 @@ static string_t *unescape_string(string_t *code, token_t *token)
                             }
                         }
 
-                        sequence[0] = code->bytes[index];
-                        sequence[1] = code->bytes[index + 1];
-                        sequence[2] = code->bytes[index + 2];
+                        memcpy(sequence, code->bytes + index, 3);
                         string.bytes = sequence;
                         string.length = 3;
                         integer = 0;
