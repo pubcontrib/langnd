@@ -13,6 +13,7 @@ typedef struct
 } argument_iterator_t;
 
 static value_t *apply_statement(statement_t *statement, map_t *variables);
+static value_t *apply_body_statements(list_t *body, map_t *variables);
 static value_t *run_add(argument_iterator_t *arguments, map_t *variables);
 static value_t *run_subtract(argument_iterator_t *arguments, map_t *variables);
 static value_t *run_multiply(argument_iterator_t *arguments, map_t *variables);
@@ -311,34 +312,10 @@ static value_t *apply_statement(statement_t *statement, map_t *variables)
             {
                 value_t *last;
                 list_t *body;
-                size_t index;
 
                 body = view_boolean(test) ? data->pass : data->fail;
                 dereference_value(test);
-                last = NULL;
-
-                if (body)
-                {
-                    for (index = 0; index < body->length; index++)
-                    {
-                        if (last)
-                        {
-                            dereference_value(last);
-                        }
-
-                        last = apply_statement(body->items[index], variables);
-
-                        if (last->thrown)
-                        {
-                            break;
-                        }
-                    }
-                }
-
-                if (!last)
-                {
-                    last = new_null();
-                }
+                last = body ? apply_body_statements(body, variables) : new_null();
 
                 return last;
             }
@@ -371,9 +348,6 @@ static value_t *apply_statement(statement_t *statement, map_t *variables)
 
                 if (test->type == VALUE_TYPE_BOOLEAN)
                 {
-                    list_t *body;
-                    size_t index;
-
                     if (!view_boolean(test))
                     {
                         dereference_value(test);
@@ -381,21 +355,17 @@ static value_t *apply_statement(statement_t *statement, map_t *variables)
                     }
 
                     dereference_value(test);
-                    body = data->body;
 
-                    for (index = 0; index < body->length; index++)
+                    if (last)
                     {
-                        if (last)
-                        {
-                            dereference_value(last);
-                        }
+                        dereference_value(last);
+                    }
 
-                        last = apply_statement(body->items[index], variables);
+                    last = apply_body_statements(data->body, variables);
 
-                        if (last->thrown)
-                        {
-                            return last;
-                        }
+                    if (last->thrown)
+                    {
+                        break;
                     }
                 }
                 else
@@ -417,27 +387,20 @@ static value_t *apply_statement(statement_t *statement, map_t *variables)
         case STATEMENT_TYPE_CATCH:
         {
             catch_statement_data_t *data;
-            list_t *body;
-            size_t index;
+            value_t *last;
 
             data = statement->data;
-            body = data->body;
+            last = apply_body_statements(data->body, variables);
 
-            for (index = 0; index < body->length; index++)
+            if (last->thrown)
             {
-                value_t *last;
+                last->thrown = 0;
 
-                last = apply_statement(body->items[index], variables);
-
-                if (last->thrown)
-                {
-                    last->thrown = 0;
-                    return last;
-                }
-                else
-                {
-                    dereference_value(last);
-                }
+                return last;
+            }
+            else
+            {
+                dereference_value(last);
             }
 
             return new_null();
@@ -495,6 +458,36 @@ static value_t *apply_statement(statement_t *statement, map_t *variables)
     }
 
     return new_null();
+}
+
+static value_t *apply_body_statements(list_t *body, map_t *variables)
+{
+    value_t *last;
+    size_t index;
+
+    last = NULL;
+
+    for (index = 0; index < body->length; index++)
+    {
+        if (last)
+        {
+            dereference_value(last);
+        }
+
+        last = apply_statement(body->items[index], variables);
+
+        if (last->thrown)
+        {
+            break;
+        }
+    }
+
+    if (!last)
+    {
+        last = new_null();
+    }
+
+    return last;
 }
 
 static value_t *run_add(argument_iterator_t *arguments, map_t *variables)
