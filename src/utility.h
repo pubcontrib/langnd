@@ -3,7 +3,7 @@
 
 #include <stddef.h>
 
-#define PROGRAM_VERSION "v0.28.0"
+#define PROGRAM_VERSION "v0.29.0"
 #define PROGRAM_NAME "langnd"
 #define PROGRAM_SUCCESS 0
 #define PROGRAM_FAILURE 1
