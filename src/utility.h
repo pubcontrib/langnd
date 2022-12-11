@@ -68,7 +68,7 @@ typedef struct
     int owners;
 } value_t;
 
-void assure_portable_environment();
+void ensure_portable_environment();
 int compare_values(const value_t *left, const value_t *right);
 string_t *represent_value(const value_t *value);
 boolean_t view_boolean(const value_t *value);

@@ -15,7 +15,7 @@ static int integer_digits(int integer);
 static int integer_power(int a, int b);
 static void crash(void);
 
-void assure_portable_environment()
+void ensure_portable_environment()
 {
     if (INT_MIN > -PORTABLE_INT_LIMIT || INT_MAX < PORTABLE_INT_LIMIT)
     {

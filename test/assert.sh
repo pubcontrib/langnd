@@ -161,7 +161,7 @@ verify()
         esac
     done
 
-    # Assure no test setup failed part way through
+    # Ensure no test setup failed part way through
     if [ "${flaw+x}" = 'x' ]
     then
         writeoutcome 'FLAW' "`printf 'test %d is flawed\n' $count`" 31
@@ -219,7 +219,7 @@ verify()
 
     actual_code=$?
 
-    # Assure the run had the expected exit code
+    # Ensure the run had the expected exit code
     if [ $actual_code != $expected_code ]
     then
         writeoutcome 'FAIL' "`printf 'test %d failed\n' $count`" 31
@@ -231,7 +231,7 @@ verify()
         exit 1
     fi
 
-    # Assure the run had the expected output
+    # Ensure the run had the expected output
     if [ "$actual_output" != "$expected_output" ]
     then
         writeoutcome 'FAIL' "`printf 'test %d failed\n' $count`" 31

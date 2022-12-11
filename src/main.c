@@ -124,7 +124,7 @@ static int run_text(string_t *text)
 {
     outcome_t *outcome;
 
-    assure_portable_environment();
+    ensure_portable_environment();
 
     outcome = execute(text);
 
