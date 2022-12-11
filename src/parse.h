@@ -59,8 +59,7 @@ typedef struct
 
 typedef struct
 {
-    list_t *conditionals;
-    list_t *fallback;
+    list_t *branches;
 } branch_statement_data_t;
 
 typedef struct

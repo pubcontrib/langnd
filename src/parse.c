@@ -38,7 +38,7 @@ static statement_t *create_unknown_statement();
 static statement_t *create_literal_statement(value_t *value);
 static statement_t *create_assignment_statement(identifier_t *identifier, statement_t *value);
 static statement_t *create_invoke_statement(identifier_t *identifier, list_t *arguments);
-static statement_t *create_branch_statement(list_t *conditionals, list_t *fallback);
+static statement_t *create_branch_statement(list_t *branches);
 static statement_t *create_loop_statement(statement_t *condition, list_t *body);
 static statement_t *create_catch_statement(list_t *body);
 static statement_t *create_throw_statement(statement_t *error);
@@ -46,8 +46,8 @@ static statement_t *create_reference_statement(identifier_t *identifier);
 static statement_t *create_statement(statement_type_t type, void *data);
 static void destroy_statement_unsafe(void *statement);
 static void dereference_value_unsafe(void *value);
-static void destroy_conditional_branch(conditional_branch_t *conditional);
-static void destroy_conditional_branch_unsafe(void *conditional);
+static void destroy_conditional_branch(conditional_branch_t *branch);
+static void destroy_conditional_branch_unsafe(void *branch);
 
 script_t *parse_script(string_t *code)
 {
@@ -189,14 +189,9 @@ void destroy_statement(statement_t *statement)
 
                 data = statement->data;
 
-                if (data->conditionals)
+                if (data->branches)
                 {
-                    destroy_list(data->conditionals);
-                }
-
-                if (data->fallback)
-                {
-                    destroy_list(data->fallback);
+                    destroy_list(data->branches);
                 }
 
                 free(data);
@@ -693,20 +688,19 @@ static statement_t *read_invoke_statement(capsule_t *capsule, identifier_t *iden
 
 static statement_t *read_branch_statement(capsule_t *capsule)
 {
-    list_t *conditionals, *fallback;
-    conditional_branch_t *conditional;
+    list_t *branches;
+    conditional_branch_t *branch;
     token_t *optional;
 
-    conditional = read_conditional_branch(capsule);
+    branch = read_conditional_branch(capsule);
 
-    if (!conditional)
+    if (!branch)
     {
         return create_unknown_statement();
     }
 
-    conditionals = empty_list(destroy_conditional_branch_unsafe, 1);
-    add_list_item(conditionals, conditional);
-    fallback = NULL;
+    branches = empty_list(destroy_conditional_branch_unsafe, 1);
+    add_list_item(branches, branch);
 
     while (1)
     {
@@ -733,35 +727,42 @@ static statement_t *read_branch_statement(capsule_t *capsule)
                     {
                         destroy_string(keyword);
                         next_token(capsule);
-                        conditional = read_conditional_branch(capsule);
+                        branch = read_conditional_branch(capsule);
 
-                        if (!conditional)
+                        if (!branch)
                         {
-                            destroy_list(conditionals);
+                            destroy_list(branches);
 
                             return create_unknown_statement();
                         }
 
-                        add_list_item(conditionals, conditional);
+                        add_list_item(branches, branch);
                     }
                     else
                     {
                         destroy_string(keyword);
-                        destroy_list(conditionals);
+                        destroy_list(branches);
 
                         return create_unknown_statement();
                     }
                 }
                 else
                 {
-                    fallback = read_body_expressions(capsule);
+                    list_t *body;
 
-                    if (!fallback)
+                    body = read_body_expressions(capsule);
+
+                    if (!body)
                     {
-                        destroy_list(conditionals);
+                        destroy_list(branches);
 
                         return create_unknown_statement();
                     }
+
+                    branch = allocate(sizeof(conditional_branch_t));
+                    branch->condition = create_literal_statement(new_boolean(TRUE));
+                    branch->body = body;
+                    add_list_item(branches, branch);
 
                     break;
                 }
@@ -779,7 +780,7 @@ static statement_t *read_branch_statement(capsule_t *capsule)
         }
     }
 
-    return create_branch_statement(conditionals, fallback);
+    return create_branch_statement(branches);
 }
 
 static statement_t *read_loop_statement(capsule_t *capsule)
@@ -846,7 +847,7 @@ static statement_t *read_throw_statement(capsule_t *capsule)
 
 static conditional_branch_t *read_conditional_branch(capsule_t *capsule)
 {
-    conditional_branch_t *conditional;
+    conditional_branch_t *branch;
     statement_t *condition;
     list_t *body;
 
@@ -871,11 +872,11 @@ static conditional_branch_t *read_conditional_branch(capsule_t *capsule)
         return NULL;
     }
 
-    conditional = malloc(sizeof(conditional_branch_t));
-    conditional->condition = condition;
-    conditional->body = body;
+    branch = allocate(sizeof(conditional_branch_t));
+    branch->condition = condition;
+    branch->body = body;
 
-    return conditional;
+    return branch;
 }
 
 static list_t *read_body_expressions(capsule_t *capsule)
@@ -1262,13 +1263,12 @@ static statement_t *create_invoke_statement(identifier_t *identifier, list_t *ar
     return create_statement(STATEMENT_TYPE_INVOKE, data);
 }
 
-static statement_t *create_branch_statement(list_t *conditionals, list_t *fallback)
+static statement_t *create_branch_statement(list_t *branches)
 {
     branch_statement_data_t *data;
 
     data = allocate(sizeof(branch_statement_data_t));
-    data->conditionals = conditionals;
-    data->fallback = fallback;
+    data->branches = branches;
 
     return create_statement(STATEMENT_TYPE_BRANCH, data);
 }
@@ -1335,22 +1335,22 @@ static void dereference_value_unsafe(void *value)
     dereference_value((value_t *) value);
 }
 
-static void destroy_conditional_branch(conditional_branch_t *conditional)
+static void destroy_conditional_branch(conditional_branch_t *branch)
 {
-    if (conditional->condition)
+    if (branch->condition)
     {
-        destroy_statement(conditional->condition);
+        destroy_statement(branch->condition);
     }
 
-    if (conditional->body)
+    if (branch->body)
     {
-        destroy_list(conditional->body);
+        destroy_list(branch->body);
     }
 
-    free(conditional);
+    free(branch);
 }
 
-static void destroy_conditional_branch_unsafe(void *conditional)
+static void destroy_conditional_branch_unsafe(void *branch)
 {
-    destroy_conditional_branch((conditional_branch_t *) conditional);
+    destroy_conditional_branch((conditional_branch_t *) branch);
 }

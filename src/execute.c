@@ -298,21 +298,21 @@ static value_t *apply_statement(statement_t *statement, map_t *variables)
         case STATEMENT_TYPE_BRANCH:
         {
             branch_statement_data_t *data;
-            list_t *conditionals;
+            list_t *branches;
             value_t *last;
             size_t index;
 
             data = statement->data;
-            conditionals = data->conditionals;
+            branches = data->branches;
             last = NULL;
 
-            for (index = 0; index < conditionals->length; index++)
+            for (index = 0; index < branches->length; index++)
             {
-                conditional_branch_t *conditional;
+                conditional_branch_t *branch;
                 value_t *test;
 
-                conditional = conditionals->items[index];
-                test = apply_statement(conditional->condition, variables);
+                branch = branches->items[index];
+                test = apply_statement(branch->condition, variables);
 
                 if (test->thrown)
                 {
@@ -328,7 +328,7 @@ static value_t *apply_statement(statement_t *statement, map_t *variables)
 
                     if (pass == TRUE)
                     {
-                        last = apply_body_statements(conditional->body, variables);
+                        last = apply_body_statements(branch->body, variables);
 
                         break;
                     }
@@ -343,7 +343,7 @@ static value_t *apply_statement(statement_t *statement, map_t *variables)
 
             if (!last)
             {
-                last = data->fallback ? apply_body_statements(data->fallback, variables) : new_null();
+                last = new_null();
             }
 
             return last;
