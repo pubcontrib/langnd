@@ -36,3 +36,16 @@ Perform a fresh build of the program, check build passes tests, then install it
 to the system:
 
     make clean check install
+
+## Running
+
+Once you've built and installed the program you'll have the interpreter at your
+system's disposal. Try the program option `-h` for usage notes.
+
+Run code from a file:
+
+    langnd -f hello.txt
+
+Run code from text:
+
+    langnd -t '@write("hello world\n", 1)'
