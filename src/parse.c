@@ -886,7 +886,7 @@ static list_t *read_body_expressions(capsule_t *capsule)
 
     optional = peek_token(capsule);
 
-    if (!is_symbol_token('{', capsule->scanner.code, optional))
+    if (!is_symbol_token('<', capsule->scanner.code, optional))
     {
         return NULL;
     }
@@ -900,7 +900,7 @@ static list_t *read_body_expressions(capsule_t *capsule)
 
         optional = peek_token(capsule);
 
-        if (is_symbol_token('}', capsule->scanner.code, optional))
+        if (is_symbol_token('>', capsule->scanner.code, optional))
         {
             next_token(capsule);
 

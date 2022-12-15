@@ -36,11 +36,11 @@ verify '@write(@freeze(@thaw("$value=100")), 1)' \
     'errors with execute message' '"melting error"'
 verify '@write(@freeze(@thaw("@add(1, 2)")), 1)' \
     'errors with execute message' '"melting error"'
-verify '@write(@freeze(@thaw("if true { }")), 1)' \
+verify '@write(@freeze(@thaw("if true < >")), 1)' \
     'errors with execute message' '"melting error"'
-verify '@write(@freeze(@thaw("while true { }")), 1)' \
+verify '@write(@freeze(@thaw("while true < >")), 1)' \
     'errors with execute message' '"melting error"'
-verify '@write(@freeze(@thaw("catch { }")), 1)' \
+verify '@write(@freeze(@thaw("catch < >")), 1)' \
     'errors with execute message' '"melting error"'
 verify '@write(@freeze(@thaw("throw \"error\"")), 1)' \
     'errors with execute message' '"melting error"'

@@ -16,7 +16,7 @@ verify '$var="PANIC!" throw $var' \
     'errors with execute message' '"PANIC!"'
 verify 'throw @merge("PANIC", "!")' \
     'errors with execute message' '"PANIC!"'
-verify '$error=catch { @divide(100, 0) } throw $error' \
+verify '$error=catch < @divide(100, 0) > throw $error' \
     'errors with execute message' '"arithmetic error"'
 verify 'throw @merge($missing, "!")' \
     'errors with execute message' '"absent variable"'
