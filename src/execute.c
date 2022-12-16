@@ -370,7 +370,7 @@ static value_t *apply_statement(statement_t *statement, map_t *variables)
 
                 if (test->type == VALUE_TYPE_BOOLEAN)
                 {
-                    if (!view_boolean(test))
+                    if (view_boolean(test) == FALSE)
                     {
                         dereference_value(test);
                         break;
@@ -653,7 +653,7 @@ static value_t *run_and(argument_iterator_t *arguments, map_t *variables)
         return right;
     }
 
-    return new_boolean(view_boolean(left) && view_boolean(right));
+    return new_boolean(view_boolean(left) && view_boolean(right) ? TRUE : FALSE);
 }
 
 static value_t *run_or(argument_iterator_t *arguments, map_t *variables)
@@ -670,7 +670,7 @@ static value_t *run_or(argument_iterator_t *arguments, map_t *variables)
         return right;
     }
 
-    return new_boolean(view_boolean(left) || view_boolean(right));
+    return new_boolean(view_boolean(left) || view_boolean(right) ? TRUE : FALSE);
 }
 
 static value_t *run_not(argument_iterator_t *arguments, map_t *variables)
@@ -682,7 +682,7 @@ static value_t *run_not(argument_iterator_t *arguments, map_t *variables)
         return value;
     }
 
-    return new_boolean(!view_boolean(value));
+    return new_boolean(!view_boolean(value) ? TRUE : FALSE);
 }
 
 static value_t *run_precedes(argument_iterator_t *arguments, map_t *variables)
