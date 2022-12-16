@@ -24,8 +24,8 @@ ANSI-compliant compiler is required to build the program from source. Consider
 the following minimums of the target data model additional requirements:
 
 - `int` must be able to hold all values between `[-2147483647, 2147483647]`
-- `long` must be able to hold all values between `[-9223372036854775807,
-9223372036854775807]`
+- `long` must be able to hold all values between
+`[-9223372036854775807, 9223372036854775807]`
 - `size_t` must be able to hold all values between `[0, 2147483647]`
 
 Builds are optionally automated using Make. Only POSIX features are used in
