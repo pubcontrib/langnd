@@ -1,7 +1,7 @@
 # langnd
 
 > langnd is one programmer's dream programming language that focuses on
-minimalism, consistency, and portability.
+> minimalism, consistency, and portability.
 
 This project is the home of the langnd programming language. Both the design
 and the implementation of the language are a work in progress.
