@@ -326,7 +326,7 @@ static value_t *apply_statement(statement_t *statement, map_t *variables)
                     pass = view_boolean(test);
                     dereference_value(test);
 
-                    if (pass == TRUE)
+                    if (pass == BOOLEAN_TRUE)
                     {
                         last = apply_body_statements(branch->body, variables);
 
@@ -370,7 +370,7 @@ static value_t *apply_statement(statement_t *statement, map_t *variables)
 
                 if (test->type == VALUE_TYPE_BOOLEAN)
                 {
-                    if (view_boolean(test) == FALSE)
+                    if (view_boolean(test) == BOOLEAN_FALSE)
                     {
                         dereference_value(test);
                         break;
@@ -653,7 +653,7 @@ static value_t *run_and(argument_iterator_t *arguments, map_t *variables)
         return right;
     }
 
-    return new_boolean(view_boolean(left) && view_boolean(right) ? TRUE : FALSE);
+    return new_boolean(view_boolean(left) && view_boolean(right) ? BOOLEAN_TRUE : BOOLEAN_FALSE);
 }
 
 static value_t *run_or(argument_iterator_t *arguments, map_t *variables)
@@ -670,7 +670,7 @@ static value_t *run_or(argument_iterator_t *arguments, map_t *variables)
         return right;
     }
 
-    return new_boolean(view_boolean(left) || view_boolean(right) ? TRUE : FALSE);
+    return new_boolean(view_boolean(left) || view_boolean(right) ? BOOLEAN_TRUE : BOOLEAN_FALSE);
 }
 
 static value_t *run_not(argument_iterator_t *arguments, map_t *variables)
@@ -682,7 +682,7 @@ static value_t *run_not(argument_iterator_t *arguments, map_t *variables)
         return value;
     }
 
-    return new_boolean(!view_boolean(value) ? TRUE : FALSE);
+    return new_boolean(!view_boolean(value) ? BOOLEAN_TRUE : BOOLEAN_FALSE);
 }
 
 static value_t *run_precedes(argument_iterator_t *arguments, map_t *variables)
@@ -699,7 +699,7 @@ static value_t *run_precedes(argument_iterator_t *arguments, map_t *variables)
         return right;
     }
 
-    return new_boolean(compare_values(left, right) < 0 ? TRUE : FALSE);
+    return new_boolean(compare_values(left, right) < 0 ? BOOLEAN_TRUE : BOOLEAN_FALSE);
 }
 
 static value_t *run_succeeds(argument_iterator_t *arguments, map_t *variables)
@@ -716,7 +716,7 @@ static value_t *run_succeeds(argument_iterator_t *arguments, map_t *variables)
         return right;
     }
 
-    return new_boolean(compare_values(left, right) > 0 ? TRUE : FALSE);
+    return new_boolean(compare_values(left, right) > 0 ? BOOLEAN_TRUE : BOOLEAN_FALSE);
 }
 
 static value_t *run_equals(argument_iterator_t *arguments, map_t *variables)
@@ -733,7 +733,7 @@ static value_t *run_equals(argument_iterator_t *arguments, map_t *variables)
         return right;
     }
 
-    return new_boolean(compare_values(left, right) == 0 ? TRUE : FALSE);
+    return new_boolean(compare_values(left, right) == 0 ? BOOLEAN_TRUE : BOOLEAN_FALSE);
 }
 
 static value_t *run_write(argument_iterator_t *arguments, map_t *variables)
@@ -1163,11 +1163,11 @@ static value_t *run_cast(argument_iterator_t *arguments, map_t *variables)
 
             if (is_keyword_match(string, "false"))
             {
-                return new_boolean(FALSE);
+                return new_boolean(BOOLEAN_FALSE);
             }
             else if (is_keyword_match(string, "true"))
             {
-                return new_boolean(TRUE);
+                return new_boolean(BOOLEAN_TRUE);
             }
             else
             {
@@ -1211,7 +1211,7 @@ static value_t *run_cast(argument_iterator_t *arguments, map_t *variables)
         }
         else if (value->type == VALUE_TYPE_BOOLEAN)
         {
-            return view_boolean(value) == TRUE ? steal_string(cstring_to_string("true")) : steal_string(cstring_to_string("false"));
+            return view_boolean(value) == BOOLEAN_TRUE ? steal_string(cstring_to_string("true")) : steal_string(cstring_to_string("false"));
         }
         else if (value->type == VALUE_TYPE_NUMBER)
         {

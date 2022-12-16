@@ -363,11 +363,11 @@ static statement_t *read_any_statement(capsule_t *capsule)
         }
         else if (is_keyword_match(keyword, "false"))
         {
-            statement = create_literal_statement(new_boolean(FALSE));
+            statement = create_literal_statement(new_boolean(BOOLEAN_FALSE));
         }
         else if (is_keyword_match(keyword, "true"))
         {
-            statement = create_literal_statement(new_boolean(TRUE));
+            statement = create_literal_statement(new_boolean(BOOLEAN_TRUE));
         }
         else if (is_keyword_match(keyword, "if"))
         {
@@ -760,7 +760,7 @@ static statement_t *read_branch_statement(capsule_t *capsule)
                     }
 
                     branch = allocate(sizeof(conditional_branch_t));
-                    branch->condition = create_literal_statement(new_boolean(TRUE));
+                    branch->condition = create_literal_statement(new_boolean(BOOLEAN_TRUE));
                     branch->body = body;
                     add_list_item(branches, branch);
 

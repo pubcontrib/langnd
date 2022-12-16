@@ -199,7 +199,7 @@ string_t *represent_value(const value_t *value)
             return cstring_to_string("null");
 
         case VALUE_TYPE_BOOLEAN:
-            return view_boolean(value) == TRUE ? cstring_to_string("true") : cstring_to_string("false");
+            return view_boolean(value) == BOOLEAN_TRUE ? cstring_to_string("true") : cstring_to_string("false");
 
         case VALUE_TYPE_NUMBER:
             return represent_number(view_number(value));
@@ -440,7 +440,7 @@ boolean_t view_boolean(const value_t *value)
     else
     {
         crash_with_message("unsupported branch invoked");
-        return FALSE;
+        return BOOLEAN_FALSE;
     }
 }
 

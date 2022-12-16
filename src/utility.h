@@ -11,9 +11,11 @@
 #define PORTABLE_INT_LIMIT 2147483647
 #define PORTABLE_LONG_LIMIT 9223372036854775807
 
-typedef char boolean_t;
-static const boolean_t TRUE = 1;
-static const boolean_t FALSE = 0;
+typedef enum
+{
+    BOOLEAN_FALSE = 0,
+    BOOLEAN_TRUE = 1
+} boolean_t;
 
 /**
  * 16.16 signed fixed point number.
