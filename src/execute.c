@@ -12,40 +12,47 @@ typedef struct
     size_t index;
 } argument_iterator_t;
 
-static value_t *apply_statement(statement_t *statement, map_t *variables);
-static value_t *apply_body_statements(list_t *body, map_t *variables);
-static value_t *run_add(argument_iterator_t *arguments, map_t *variables);
-static value_t *run_subtract(argument_iterator_t *arguments, map_t *variables);
-static value_t *run_multiply(argument_iterator_t *arguments, map_t *variables);
-static value_t *run_divide(argument_iterator_t *arguments, map_t *variables);
-static value_t *run_modulo(argument_iterator_t *arguments, map_t *variables);
-static value_t *run_truncate(argument_iterator_t *arguments, map_t *variables);
-static value_t *run_and(argument_iterator_t *arguments, map_t *variables);
-static value_t *run_or(argument_iterator_t *arguments, map_t *variables);
-static value_t *run_not(argument_iterator_t *arguments, map_t *variables);
-static value_t *run_precedes(argument_iterator_t *arguments, map_t *variables);
-static value_t *run_succeeds(argument_iterator_t *arguments, map_t *variables);
-static value_t *run_equals(argument_iterator_t *arguments, map_t *variables);
-static value_t *run_write(argument_iterator_t *arguments, map_t *variables);
-static value_t *run_read(argument_iterator_t *arguments, map_t *variables);
-static value_t *run_delete(argument_iterator_t *arguments, map_t *variables);
-static value_t *run_query(argument_iterator_t *arguments, map_t *variables);
-static value_t *run_freeze(argument_iterator_t *arguments, map_t *variables);
-static value_t *run_thaw(argument_iterator_t *arguments, map_t *variables);
-static value_t *run_type(argument_iterator_t *arguments, map_t *variables);
-static value_t *run_cast(argument_iterator_t *arguments, map_t *variables);
-static value_t *run_get(argument_iterator_t *arguments, map_t *variables);
-static value_t *run_set(argument_iterator_t *arguments, map_t *variables);
-static value_t *run_unset(argument_iterator_t *arguments, map_t *variables);
-static value_t *run_merge(argument_iterator_t *arguments, map_t *variables);
-static value_t *run_length(argument_iterator_t *arguments, map_t *variables);
-static value_t *run_keys(argument_iterator_t *arguments, map_t *variables);
-static value_t *run_sort(argument_iterator_t *arguments, map_t *variables);
-static int next_argument(argument_iterator_t *arguments, map_t *variables, int types, value_t **out);
+typedef enum
+{
+    VALUE_EFFECT_RETURN,
+    VALUE_EFFECT_THROW
+} value_effect_t;
+
+static value_t *apply_statement(statement_t *statement, map_t *variables, value_effect_t *effect);
+static value_t *apply_body_statements(list_t *body, map_t *variables, value_effect_t *effect);
+static value_t *run_add(argument_iterator_t *arguments, map_t *variables, value_effect_t *effect);
+static value_t *run_subtract(argument_iterator_t *arguments, map_t *variables, value_effect_t *effect);
+static value_t *run_multiply(argument_iterator_t *arguments, map_t *variables, value_effect_t *effect);
+static value_t *run_divide(argument_iterator_t *arguments, map_t *variables, value_effect_t *effect);
+static value_t *run_modulo(argument_iterator_t *arguments, map_t *variables, value_effect_t *effect);
+static value_t *run_truncate(argument_iterator_t *arguments, map_t *variables, value_effect_t *effect);
+static value_t *run_and(argument_iterator_t *arguments, map_t *variables, value_effect_t *effect);
+static value_t *run_or(argument_iterator_t *arguments, map_t *variables, value_effect_t *effect);
+static value_t *run_not(argument_iterator_t *arguments, map_t *variables, value_effect_t *effect);
+static value_t *run_precedes(argument_iterator_t *arguments, map_t *variables, value_effect_t *effect);
+static value_t *run_succeeds(argument_iterator_t *arguments, map_t *variables, value_effect_t *effect);
+static value_t *run_equals(argument_iterator_t *arguments, map_t *variables, value_effect_t *effect);
+static value_t *run_write(argument_iterator_t *arguments, map_t *variables, value_effect_t *effect);
+static value_t *run_read(argument_iterator_t *arguments, map_t *variables, value_effect_t *effect);
+static value_t *run_delete(argument_iterator_t *arguments, map_t *variables, value_effect_t *effect);
+static value_t *run_query(argument_iterator_t *arguments, map_t *variables, value_effect_t *effect);
+static value_t *run_freeze(argument_iterator_t *arguments, map_t *variables, value_effect_t *effect);
+static value_t *run_thaw(argument_iterator_t *arguments, map_t *variables, value_effect_t *effect);
+static value_t *run_type(argument_iterator_t *arguments, map_t *variables, value_effect_t *effect);
+static value_t *run_cast(argument_iterator_t *arguments, map_t *variables, value_effect_t *effect);
+static value_t *run_get(argument_iterator_t *arguments, map_t *variables, value_effect_t *effect);
+static value_t *run_set(argument_iterator_t *arguments, map_t *variables, value_effect_t *effect);
+static value_t *run_unset(argument_iterator_t *arguments, map_t *variables, value_effect_t *effect);
+static value_t *run_merge(argument_iterator_t *arguments, map_t *variables, value_effect_t *effect);
+static value_t *run_length(argument_iterator_t *arguments, map_t *variables, value_effect_t *effect);
+static value_t *run_keys(argument_iterator_t *arguments, map_t *variables, value_effect_t *effect);
+static value_t *run_sort(argument_iterator_t *arguments, map_t *variables, value_effect_t *effect);
+static int next_argument(argument_iterator_t *arguments, map_t *variables, int types, value_t **out, value_effect_t *effect);
 static int has_next_argument(argument_iterator_t *arguments);
 static void copy_map_items(map_t *source, map_t *destination);
 static int compare_values_ascending(const void *left, const void *right);
 static int compare_values_descending(const void *left, const void *right);
+static value_t *throw_error(const char *message, value_effect_t *effect);
 static void dereference_value_unsafe(void *value);
 
 outcome_t *execute(string_t *code)
@@ -77,10 +84,12 @@ outcome_t *execute(string_t *code)
     for (index = 0; index < statements->length; index++)
     {
         value_t *result;
+        value_effect_t effect;
 
-        result = apply_statement(statements->items[index], variables);
+        effect = VALUE_EFFECT_RETURN;
+        result = apply_statement(statements->items[index], variables, &effect);
 
-        if (result->thrown)
+        if (effect == VALUE_EFFECT_THROW)
         {
             outcome->errorMessage = cstring_to_string("failed to execute code");
             outcome->hintMessage = represent_value(result);
@@ -113,7 +122,7 @@ void destroy_outcome(outcome_t *outcome)
     free(outcome);
 }
 
-static value_t *apply_statement(statement_t *statement, map_t *variables)
+static value_t *apply_statement(statement_t *statement, map_t *variables, value_effect_t *effect)
 {
     switch (statement->type)
     {
@@ -135,9 +144,9 @@ static value_t *apply_statement(statement_t *statement, map_t *variables)
             value_t *value;
 
             data = statement->data;
-            value = apply_statement(data->value, variables);
+            value = apply_statement(data->value, variables, effect);
 
-            if (value->thrown)
+            if ((*effect) == VALUE_EFFECT_THROW)
             {
                 return value;
             }
@@ -169,115 +178,115 @@ static value_t *apply_statement(statement_t *statement, map_t *variables)
 
             if (is_keyword_match(data->identifier->name, "add"))
             {
-                result = run_add(&arguments, variables);
+                result = run_add(&arguments, variables, effect);
             }
             else if (is_keyword_match(data->identifier->name, "subtract"))
             {
-                result = run_subtract(&arguments, variables);
+                result = run_subtract(&arguments, variables, effect);
             }
             else if (is_keyword_match(data->identifier->name, "multiply"))
             {
-                result = run_multiply(&arguments, variables);
+                result = run_multiply(&arguments, variables, effect);
             }
             else if (is_keyword_match(data->identifier->name, "divide"))
             {
-                result = run_divide(&arguments, variables);
+                result = run_divide(&arguments, variables, effect);
             }
             else if (is_keyword_match(data->identifier->name, "modulo"))
             {
-                result = run_modulo(&arguments, variables);
+                result = run_modulo(&arguments, variables, effect);
             }
             else if (is_keyword_match(data->identifier->name, "truncate"))
             {
-                result = run_truncate(&arguments, variables);
+                result = run_truncate(&arguments, variables, effect);
             }
             else if (is_keyword_match(data->identifier->name, "and"))
             {
-                result = run_and(&arguments, variables);
+                result = run_and(&arguments, variables, effect);
             }
             else if (is_keyword_match(data->identifier->name, "or"))
             {
-                result = run_or(&arguments, variables);
+                result = run_or(&arguments, variables, effect);
             }
             else if (is_keyword_match(data->identifier->name, "not"))
             {
-                result = run_not(&arguments, variables);
+                result = run_not(&arguments, variables, effect);
             }
             else if (is_keyword_match(data->identifier->name, "precedes"))
             {
-                result = run_precedes(&arguments, variables);
+                result = run_precedes(&arguments, variables, effect);
             }
             else if (is_keyword_match(data->identifier->name, "succeeds"))
             {
-                result = run_succeeds(&arguments, variables);
+                result = run_succeeds(&arguments, variables, effect);
             }
             else if (is_keyword_match(data->identifier->name, "equals"))
             {
-                result = run_equals(&arguments, variables);
+                result = run_equals(&arguments, variables, effect);
             }
             else if (is_keyword_match(data->identifier->name, "write"))
             {
-                result = run_write(&arguments, variables);
+                result = run_write(&arguments, variables, effect);
             }
             else if (is_keyword_match(data->identifier->name, "read"))
             {
-                result = run_read(&arguments, variables);
+                result = run_read(&arguments, variables, effect);
             }
             else if (is_keyword_match(data->identifier->name, "delete"))
             {
-                result = run_delete(&arguments, variables);
+                result = run_delete(&arguments, variables, effect);
             }
             else if (is_keyword_match(data->identifier->name, "query"))
             {
-                result = run_query(&arguments, variables);
+                result = run_query(&arguments, variables, effect);
             }
             else if (is_keyword_match(data->identifier->name, "freeze"))
             {
-                result = run_freeze(&arguments, variables);
+                result = run_freeze(&arguments, variables, effect);
             }
             else if (is_keyword_match(data->identifier->name, "thaw"))
             {
-                result = run_thaw(&arguments, variables);
+                result = run_thaw(&arguments, variables, effect);
             }
             else if (is_keyword_match(data->identifier->name, "type"))
             {
-                result = run_type(&arguments, variables);
+                result = run_type(&arguments, variables, effect);
             }
             else if (is_keyword_match(data->identifier->name, "cast"))
             {
-                result = run_cast(&arguments, variables);
+                result = run_cast(&arguments, variables, effect);
             }
             else if (is_keyword_match(data->identifier->name, "get"))
             {
-                result = run_get(&arguments, variables);
+                result = run_get(&arguments, variables, effect);
             }
             else if (is_keyword_match(data->identifier->name, "set"))
             {
-                result = run_set(&arguments, variables);
+                result = run_set(&arguments, variables, effect);
             }
             else if (is_keyword_match(data->identifier->name, "unset"))
             {
-                result = run_unset(&arguments, variables);
+                result = run_unset(&arguments, variables, effect);
             }
             else if (is_keyword_match(data->identifier->name, "merge"))
             {
-                result = run_merge(&arguments, variables);
+                result = run_merge(&arguments, variables, effect);
             }
             else if (is_keyword_match(data->identifier->name, "length"))
             {
-                result = run_length(&arguments, variables);
+                result = run_length(&arguments, variables, effect);
             }
             else if (is_keyword_match(data->identifier->name, "keys"))
             {
-                result = run_keys(&arguments, variables);
+                result = run_keys(&arguments, variables, effect);
             }
             else if (is_keyword_match(data->identifier->name, "sort"))
             {
-                result = run_sort(&arguments, variables);
+                result = run_sort(&arguments, variables, effect);
             }
             else
             {
-                result = throw_error("absent function");
+                result = throw_error("absent function", effect);
             }
 
             if (arguments.evaluated)
@@ -312,9 +321,9 @@ static value_t *apply_statement(statement_t *statement, map_t *variables)
                 value_t *test;
 
                 branch = branches->items[index];
-                test = apply_statement(branch->condition, variables);
+                test = apply_statement(branch->condition, variables, effect);
 
-                if (test->thrown)
+                if ((*effect) == VALUE_EFFECT_THROW)
                 {
                     return test;
                 }
@@ -328,7 +337,7 @@ static value_t *apply_statement(statement_t *statement, map_t *variables)
 
                     if (pass == BOOLEAN_TRUE)
                     {
-                        last = apply_body_statements(branch->body, variables);
+                        last = apply_body_statements(branch->body, variables, effect);
 
                         break;
                     }
@@ -337,7 +346,7 @@ static value_t *apply_statement(statement_t *statement, map_t *variables)
                 {
                     dereference_value(test);
 
-                    return throw_error("branch with non-boolean condition");
+                    return throw_error("branch with non-boolean condition", effect);
                 }
             }
 
@@ -361,9 +370,9 @@ static value_t *apply_statement(statement_t *statement, map_t *variables)
             {
                 value_t *test;
 
-                test = apply_statement(data->condition, variables);
+                test = apply_statement(data->condition, variables, effect);
 
-                if (test->thrown)
+                if ((*effect) == VALUE_EFFECT_THROW)
                 {
                     return test;
                 }
@@ -383,9 +392,9 @@ static value_t *apply_statement(statement_t *statement, map_t *variables)
                         dereference_value(last);
                     }
 
-                    last = apply_body_statements(data->body, variables);
+                    last = apply_body_statements(data->body, variables, effect);
 
-                    if (last->thrown)
+                    if ((*effect) == VALUE_EFFECT_THROW)
                     {
                         break;
                     }
@@ -394,7 +403,7 @@ static value_t *apply_statement(statement_t *statement, map_t *variables)
                 {
                     dereference_value(test);
 
-                    return throw_error("loop with non-boolean condition");
+                    return throw_error("loop with non-boolean condition", effect);
                 }
             }
 
@@ -412,11 +421,11 @@ static value_t *apply_statement(statement_t *statement, map_t *variables)
             value_t *last;
 
             data = statement->data;
-            last = apply_body_statements(data->body, variables);
+            last = apply_body_statements(data->body, variables, effect);
 
-            if (last->thrown)
+            if ((*effect) == VALUE_EFFECT_THROW)
             {
-                last->thrown = 0;
+                (*effect) = VALUE_EFFECT_RETURN;
 
                 return last;
             }
@@ -434,17 +443,10 @@ static value_t *apply_statement(statement_t *statement, map_t *variables)
             value_t *test;
 
             data = statement->data;
-            test = apply_statement(data->error, variables);
+            test = apply_statement(data->error, variables, effect);
+            (*effect) = VALUE_EFFECT_THROW;
 
-            if (test->thrown)
-            {
-                return test;
-            }
-            else
-            {
-                test->thrown = 1;
-                return test;
-            }
+            return test;
         }
 
         case STATEMENT_TYPE_REFERENCE:
@@ -466,12 +468,12 @@ static value_t *apply_statement(statement_t *statement, map_t *variables)
                 }
                 else
                 {
-                    return throw_error("absent variable");
+                    return throw_error("absent variable", effect);
                 }
             }
             else if (data->identifier->type == IDENTIFIER_TYPE_FUNCTION)
             {
-                return throw_error("unexpected reference type");
+                return throw_error("unexpected reference type", effect);
             }
         }
 
@@ -482,7 +484,7 @@ static value_t *apply_statement(statement_t *statement, map_t *variables)
     return new_null();
 }
 
-static value_t *apply_body_statements(list_t *body, map_t *variables)
+static value_t *apply_body_statements(list_t *body, map_t *variables, value_effect_t *effect)
 {
     value_t *last;
     size_t index;
@@ -496,9 +498,9 @@ static value_t *apply_body_statements(list_t *body, map_t *variables)
             dereference_value(last);
         }
 
-        last = apply_statement(body->items[index], variables);
+        last = apply_statement(body->items[index], variables, effect);
 
-        if (last->thrown)
+        if ((*effect) == VALUE_EFFECT_THROW)
         {
             break;
         }
@@ -512,126 +514,126 @@ static value_t *apply_body_statements(list_t *body, map_t *variables)
     return last;
 }
 
-static value_t *run_add(argument_iterator_t *arguments, map_t *variables)
+static value_t *run_add(argument_iterator_t *arguments, map_t *variables, value_effect_t *effect)
 {
     value_t *left, *right;
     number_t sum;
 
-    if (!next_argument(arguments, variables, VALUE_TYPE_NUMBER, &left))
+    if (!next_argument(arguments, variables, VALUE_TYPE_NUMBER, &left, effect))
     {
         return left;
     }
 
-    if (!next_argument(arguments, variables, VALUE_TYPE_NUMBER, &right))
+    if (!next_argument(arguments, variables, VALUE_TYPE_NUMBER, &right, effect))
     {
         return right;
     }
 
     if (add_numbers(view_number(left), view_number(right), &sum) != 0)
     {
-        return throw_error("arithmetic error");
+        return throw_error("arithmetic error", effect);
     }
 
     return new_number(sum);
 }
 
-static value_t *run_subtract(argument_iterator_t *arguments, map_t *variables)
+static value_t *run_subtract(argument_iterator_t *arguments, map_t *variables, value_effect_t *effect)
 {
     value_t *left, *right;
     number_t difference;
 
-    if (!next_argument(arguments, variables, VALUE_TYPE_NUMBER, &left))
+    if (!next_argument(arguments, variables, VALUE_TYPE_NUMBER, &left, effect))
     {
         return left;
     }
 
-    if (!next_argument(arguments, variables, VALUE_TYPE_NUMBER, &right))
+    if (!next_argument(arguments, variables, VALUE_TYPE_NUMBER, &right, effect))
     {
         return right;
     }
 
     if (subtract_numbers(view_number(left), view_number(right), &difference) != 0)
     {
-        return throw_error("arithmetic error");
+        return throw_error("arithmetic error", effect);
     }
 
     return new_number(difference);
 }
 
-static value_t *run_multiply(argument_iterator_t *arguments, map_t *variables)
+static value_t *run_multiply(argument_iterator_t *arguments, map_t *variables, value_effect_t *effect)
 {
     value_t *left, *right;
     number_t product;
 
-    if (!next_argument(arguments, variables, VALUE_TYPE_NUMBER, &left))
+    if (!next_argument(arguments, variables, VALUE_TYPE_NUMBER, &left, effect))
     {
         return left;
     }
 
-    if (!next_argument(arguments, variables, VALUE_TYPE_NUMBER, &right))
+    if (!next_argument(arguments, variables, VALUE_TYPE_NUMBER, &right, effect))
     {
         return right;
     }
 
     if (multiply_numbers(view_number(left), view_number(right), &product) != 0)
     {
-        return throw_error("arithmetic error");
+        return throw_error("arithmetic error", effect);
     }
 
     return new_number(product);
 }
 
-static value_t *run_divide(argument_iterator_t *arguments, map_t *variables)
+static value_t *run_divide(argument_iterator_t *arguments, map_t *variables, value_effect_t *effect)
 {
     value_t *left, *right;
     number_t quotient;
 
-    if (!next_argument(arguments, variables, VALUE_TYPE_NUMBER, &left))
+    if (!next_argument(arguments, variables, VALUE_TYPE_NUMBER, &left, effect))
     {
         return left;
     }
 
-    if (!next_argument(arguments, variables, VALUE_TYPE_NUMBER, &right))
+    if (!next_argument(arguments, variables, VALUE_TYPE_NUMBER, &right, effect))
     {
         return right;
     }
 
     if (divide_numbers(view_number(left), view_number(right), &quotient) != 0)
     {
-        return throw_error("arithmetic error");
+        return throw_error("arithmetic error", effect);
     }
 
     return new_number(quotient);
 }
 
-static value_t *run_modulo(argument_iterator_t *arguments, map_t *variables)
+static value_t *run_modulo(argument_iterator_t *arguments, map_t *variables, value_effect_t *effect)
 {
     value_t *left, *right;
     number_t remainder;
 
-    if (!next_argument(arguments, variables, VALUE_TYPE_NUMBER, &left))
+    if (!next_argument(arguments, variables, VALUE_TYPE_NUMBER, &left, effect))
     {
         return left;
     }
 
-    if (!next_argument(arguments, variables, VALUE_TYPE_NUMBER, &right))
+    if (!next_argument(arguments, variables, VALUE_TYPE_NUMBER, &right, effect))
     {
         return right;
     }
 
     if (modulo_numbers(view_number(left), view_number(right), &remainder) != 0)
     {
-        return throw_error("arithmetic error");
+        return throw_error("arithmetic error", effect);
     }
 
     return new_number(remainder);
 }
 
-static value_t *run_truncate(argument_iterator_t *arguments, map_t *variables)
+static value_t *run_truncate(argument_iterator_t *arguments, map_t *variables, value_effect_t *effect)
 {
     value_t *value;
 
-    if (!next_argument(arguments, variables, VALUE_TYPE_NUMBER, &value))
+    if (!next_argument(arguments, variables, VALUE_TYPE_NUMBER, &value, effect))
     {
         return value;
     }
@@ -639,16 +641,16 @@ static value_t *run_truncate(argument_iterator_t *arguments, map_t *variables)
     return new_number(truncate_number(view_number(value)));
 }
 
-static value_t *run_and(argument_iterator_t *arguments, map_t *variables)
+static value_t *run_and(argument_iterator_t *arguments, map_t *variables, value_effect_t *effect)
 {
     value_t *left, *right;
 
-    if (!next_argument(arguments, variables, VALUE_TYPE_BOOLEAN, &left))
+    if (!next_argument(arguments, variables, VALUE_TYPE_BOOLEAN, &left, effect))
     {
         return left;
     }
 
-    if (!next_argument(arguments, variables, VALUE_TYPE_BOOLEAN, &right))
+    if (!next_argument(arguments, variables, VALUE_TYPE_BOOLEAN, &right, effect))
     {
         return right;
     }
@@ -656,16 +658,16 @@ static value_t *run_and(argument_iterator_t *arguments, map_t *variables)
     return new_boolean(view_boolean(left) && view_boolean(right) ? BOOLEAN_TRUE : BOOLEAN_FALSE);
 }
 
-static value_t *run_or(argument_iterator_t *arguments, map_t *variables)
+static value_t *run_or(argument_iterator_t *arguments, map_t *variables, value_effect_t *effect)
 {
     value_t *left, *right;
 
-    if (!next_argument(arguments, variables, VALUE_TYPE_BOOLEAN, &left))
+    if (!next_argument(arguments, variables, VALUE_TYPE_BOOLEAN, &left, effect))
     {
         return left;
     }
 
-    if (!next_argument(arguments, variables, VALUE_TYPE_BOOLEAN, &right))
+    if (!next_argument(arguments, variables, VALUE_TYPE_BOOLEAN, &right, effect))
     {
         return right;
     }
@@ -673,11 +675,11 @@ static value_t *run_or(argument_iterator_t *arguments, map_t *variables)
     return new_boolean(view_boolean(left) || view_boolean(right) ? BOOLEAN_TRUE : BOOLEAN_FALSE);
 }
 
-static value_t *run_not(argument_iterator_t *arguments, map_t *variables)
+static value_t *run_not(argument_iterator_t *arguments, map_t *variables, value_effect_t *effect)
 {
     value_t *value;
 
-    if (!next_argument(arguments, variables, VALUE_TYPE_BOOLEAN, &value))
+    if (!next_argument(arguments, variables, VALUE_TYPE_BOOLEAN, &value, effect))
     {
         return value;
     }
@@ -685,16 +687,16 @@ static value_t *run_not(argument_iterator_t *arguments, map_t *variables)
     return new_boolean(!view_boolean(value) ? BOOLEAN_TRUE : BOOLEAN_FALSE);
 }
 
-static value_t *run_precedes(argument_iterator_t *arguments, map_t *variables)
+static value_t *run_precedes(argument_iterator_t *arguments, map_t *variables, value_effect_t *effect)
 {
     value_t *left, *right;
 
-    if (!next_argument(arguments, variables, VALUE_TYPE_NULL | VALUE_TYPE_BOOLEAN | VALUE_TYPE_NUMBER | VALUE_TYPE_STRING | VALUE_TYPE_LIST | VALUE_TYPE_MAP, &left))
+    if (!next_argument(arguments, variables, VALUE_TYPE_NULL | VALUE_TYPE_BOOLEAN | VALUE_TYPE_NUMBER | VALUE_TYPE_STRING | VALUE_TYPE_LIST | VALUE_TYPE_MAP, &left, effect))
     {
         return left;
     }
 
-    if (!next_argument(arguments, variables, VALUE_TYPE_NULL | VALUE_TYPE_BOOLEAN | VALUE_TYPE_NUMBER | VALUE_TYPE_STRING | VALUE_TYPE_LIST | VALUE_TYPE_MAP, &right))
+    if (!next_argument(arguments, variables, VALUE_TYPE_NULL | VALUE_TYPE_BOOLEAN | VALUE_TYPE_NUMBER | VALUE_TYPE_STRING | VALUE_TYPE_LIST | VALUE_TYPE_MAP, &right, effect))
     {
         return right;
     }
@@ -702,16 +704,16 @@ static value_t *run_precedes(argument_iterator_t *arguments, map_t *variables)
     return new_boolean(compare_values(left, right) < 0 ? BOOLEAN_TRUE : BOOLEAN_FALSE);
 }
 
-static value_t *run_succeeds(argument_iterator_t *arguments, map_t *variables)
+static value_t *run_succeeds(argument_iterator_t *arguments, map_t *variables, value_effect_t *effect)
 {
     value_t *left, *right;
 
-    if (!next_argument(arguments, variables, VALUE_TYPE_NULL | VALUE_TYPE_BOOLEAN | VALUE_TYPE_NUMBER | VALUE_TYPE_STRING | VALUE_TYPE_LIST | VALUE_TYPE_MAP, &left))
+    if (!next_argument(arguments, variables, VALUE_TYPE_NULL | VALUE_TYPE_BOOLEAN | VALUE_TYPE_NUMBER | VALUE_TYPE_STRING | VALUE_TYPE_LIST | VALUE_TYPE_MAP, &left, effect))
     {
         return left;
     }
 
-    if (!next_argument(arguments, variables, VALUE_TYPE_NULL | VALUE_TYPE_BOOLEAN | VALUE_TYPE_NUMBER | VALUE_TYPE_STRING | VALUE_TYPE_LIST | VALUE_TYPE_MAP, &right))
+    if (!next_argument(arguments, variables, VALUE_TYPE_NULL | VALUE_TYPE_BOOLEAN | VALUE_TYPE_NUMBER | VALUE_TYPE_STRING | VALUE_TYPE_LIST | VALUE_TYPE_MAP, &right, effect))
     {
         return right;
     }
@@ -719,16 +721,16 @@ static value_t *run_succeeds(argument_iterator_t *arguments, map_t *variables)
     return new_boolean(compare_values(left, right) > 0 ? BOOLEAN_TRUE : BOOLEAN_FALSE);
 }
 
-static value_t *run_equals(argument_iterator_t *arguments, map_t *variables)
+static value_t *run_equals(argument_iterator_t *arguments, map_t *variables, value_effect_t *effect)
 {
     value_t *left, *right;
 
-    if (!next_argument(arguments, variables, VALUE_TYPE_NULL | VALUE_TYPE_BOOLEAN | VALUE_TYPE_NUMBER | VALUE_TYPE_STRING | VALUE_TYPE_LIST | VALUE_TYPE_MAP, &left))
+    if (!next_argument(arguments, variables, VALUE_TYPE_NULL | VALUE_TYPE_BOOLEAN | VALUE_TYPE_NUMBER | VALUE_TYPE_STRING | VALUE_TYPE_LIST | VALUE_TYPE_MAP, &left, effect))
     {
         return left;
     }
 
-    if (!next_argument(arguments, variables, VALUE_TYPE_NULL | VALUE_TYPE_BOOLEAN | VALUE_TYPE_NUMBER | VALUE_TYPE_STRING | VALUE_TYPE_LIST | VALUE_TYPE_MAP, &right))
+    if (!next_argument(arguments, variables, VALUE_TYPE_NULL | VALUE_TYPE_BOOLEAN | VALUE_TYPE_NUMBER | VALUE_TYPE_STRING | VALUE_TYPE_LIST | VALUE_TYPE_MAP, &right, effect))
     {
         return right;
     }
@@ -736,19 +738,19 @@ static value_t *run_equals(argument_iterator_t *arguments, map_t *variables)
     return new_boolean(compare_values(left, right) == 0 ? BOOLEAN_TRUE : BOOLEAN_FALSE);
 }
 
-static value_t *run_write(argument_iterator_t *arguments, map_t *variables)
+static value_t *run_write(argument_iterator_t *arguments, map_t *variables, value_effect_t *effect)
 {
     value_t *message, *file;
     FILE *handle;
     int closable, flushable;
     string_t *string;
 
-    if (!next_argument(arguments, variables, VALUE_TYPE_STRING, &message))
+    if (!next_argument(arguments, variables, VALUE_TYPE_STRING, &message, effect))
     {
         return message;
     }
 
-    if (!next_argument(arguments, variables, VALUE_TYPE_NUMBER | VALUE_TYPE_STRING, &file))
+    if (!next_argument(arguments, variables, VALUE_TYPE_NUMBER | VALUE_TYPE_STRING, &file, effect))
     {
         return file;
     }
@@ -809,7 +811,7 @@ static value_t *run_write(argument_iterator_t *arguments, map_t *variables)
 
     if (!handle)
     {
-        return throw_error("absent file");
+        return throw_error("absent file", effect);
     }
 
     fwrite(string->bytes, sizeof(char), string->length, handle);
@@ -821,7 +823,7 @@ static value_t *run_write(argument_iterator_t *arguments, map_t *variables)
             fclose(handle);
         }
 
-        return throw_error("io error");
+        return throw_error("io error", effect);
     }
 
     if (flushable)
@@ -837,7 +839,7 @@ static value_t *run_write(argument_iterator_t *arguments, map_t *variables)
     return new_null();
 }
 
-static value_t *run_read(argument_iterator_t *arguments, map_t *variables)
+static value_t *run_read(argument_iterator_t *arguments, map_t *variables, value_effect_t *effect)
 {
     value_t *file, *until;
     FILE *handle;
@@ -846,12 +848,12 @@ static value_t *run_read(argument_iterator_t *arguments, map_t *variables)
     char *bytes;
     size_t fill, length;
 
-    if (!next_argument(arguments, variables, VALUE_TYPE_NUMBER | VALUE_TYPE_STRING, &file))
+    if (!next_argument(arguments, variables, VALUE_TYPE_NUMBER | VALUE_TYPE_STRING, &file, effect))
     {
         return file;
     }
 
-    if (!next_argument(arguments, variables, VALUE_TYPE_NULL | VALUE_TYPE_STRING, &until))
+    if (!next_argument(arguments, variables, VALUE_TYPE_NULL | VALUE_TYPE_STRING, &until, effect))
     {
         return until;
     }
@@ -861,7 +863,7 @@ static value_t *run_read(argument_iterator_t *arguments, map_t *variables)
 
     if (terminated && terminator->length != 1)
     {
-        return throw_error("invalid terminator");
+        return throw_error("invalid terminator", effect);
     }
 
     closable = 0;
@@ -916,7 +918,7 @@ static value_t *run_read(argument_iterator_t *arguments, map_t *variables)
 
     if (!handle)
     {
-        return throw_error("absent file");
+        return throw_error("absent file", effect);
     }
 
     fill = 0;
@@ -938,7 +940,7 @@ static value_t *run_read(argument_iterator_t *arguments, map_t *variables)
 
             free(bytes);
 
-            return throw_error("io error");
+            return throw_error("io error", effect);
         }
 
         if (symbol == EOF || (terminated && terminator->bytes[0] == symbol))
@@ -968,11 +970,11 @@ static value_t *run_read(argument_iterator_t *arguments, map_t *variables)
     return steal_string(create_string(bytes, fill));
 }
 
-static value_t *run_delete(argument_iterator_t *arguments, map_t *variables)
+static value_t *run_delete(argument_iterator_t *arguments, map_t *variables, value_effect_t *effect)
 {
     value_t *file;
 
-    if (!next_argument(arguments, variables, VALUE_TYPE_NUMBER | VALUE_TYPE_STRING, &file))
+    if (!next_argument(arguments, variables, VALUE_TYPE_NUMBER | VALUE_TYPE_STRING, &file, effect))
     {
         return file;
     }
@@ -980,7 +982,9 @@ static value_t *run_delete(argument_iterator_t *arguments, map_t *variables)
     switch (file->type)
     {
         case VALUE_TYPE_NUMBER:
-            return throw_error("io error");
+        {
+            return throw_error("io error", effect);
+        }
 
         case VALUE_TYPE_STRING:
         {
@@ -991,7 +995,14 @@ static value_t *run_delete(argument_iterator_t *arguments, map_t *variables)
             status = remove(cstring);
             free(cstring);
 
-            return status != -1 ? new_null() : throw_error("io error");
+            if (status != -1)
+            {
+                return new_null();
+            }
+            else
+            {
+                return throw_error("io error", effect);
+            }
         }
 
         default:
@@ -1000,12 +1011,12 @@ static value_t *run_delete(argument_iterator_t *arguments, map_t *variables)
     }
 }
 
-static value_t *run_query(argument_iterator_t *arguments, map_t *variables)
+static value_t *run_query(argument_iterator_t *arguments, map_t *variables, value_effect_t *effect)
 {
     value_t *key;
     char *value, *cstring;
 
-    if (!next_argument(arguments, variables, VALUE_TYPE_STRING, &key))
+    if (!next_argument(arguments, variables, VALUE_TYPE_STRING, &key, effect))
     {
         return key;
     }
@@ -1014,14 +1025,21 @@ static value_t *run_query(argument_iterator_t *arguments, map_t *variables)
     value = getenv(cstring);
     free(cstring);
 
-    return value ? steal_string(cstring_to_string(value)) : throw_error("absent environment variable");
+    if (value)
+    {
+        return steal_string(cstring_to_string(value));
+    }
+    else
+    {
+        return throw_error("absent environment variable", effect);
+    }
 }
 
-static value_t *run_freeze(argument_iterator_t *arguments, map_t *variables)
+static value_t *run_freeze(argument_iterator_t *arguments, map_t *variables, value_effect_t *effect)
 {
     value_t *value;
 
-    if (!next_argument(arguments, variables, VALUE_TYPE_NULL | VALUE_TYPE_BOOLEAN | VALUE_TYPE_NUMBER | VALUE_TYPE_STRING | VALUE_TYPE_LIST | VALUE_TYPE_MAP, &value))
+    if (!next_argument(arguments, variables, VALUE_TYPE_NULL | VALUE_TYPE_BOOLEAN | VALUE_TYPE_NUMBER | VALUE_TYPE_STRING | VALUE_TYPE_LIST | VALUE_TYPE_MAP, &value, effect))
     {
         return value;
     }
@@ -1029,14 +1047,14 @@ static value_t *run_freeze(argument_iterator_t *arguments, map_t *variables)
     return steal_string(represent_value(value));
 }
 
-static value_t *run_thaw(argument_iterator_t *arguments, map_t *variables)
+static value_t *run_thaw(argument_iterator_t *arguments, map_t *variables, value_effect_t *effect)
 {
     value_t *code, *value;
     script_t *script;
     statement_t *statement;
     literal_statement_data_t *data;
 
-    if (!next_argument(arguments, variables, VALUE_TYPE_STRING, &code))
+    if (!next_argument(arguments, variables, VALUE_TYPE_STRING, &code, effect))
     {
         return code;
     }
@@ -1047,7 +1065,7 @@ static value_t *run_thaw(argument_iterator_t *arguments, map_t *variables)
     {
         destroy_script(script);
 
-        return throw_error("melting error");
+        return throw_error("melting error", effect);
     }
 
     statement = script->statements->items[0];
@@ -1056,7 +1074,7 @@ static value_t *run_thaw(argument_iterator_t *arguments, map_t *variables)
     {
         destroy_script(script);
 
-        return throw_error("melting error");
+        return throw_error("melting error", effect);
     }
 
     data = statement->data;
@@ -1067,11 +1085,11 @@ static value_t *run_thaw(argument_iterator_t *arguments, map_t *variables)
     return value;
 }
 
-static value_t *run_type(argument_iterator_t *arguments, map_t *variables)
+static value_t *run_type(argument_iterator_t *arguments, map_t *variables, value_effect_t *effect)
 {
     value_t *value;
 
-    if (!next_argument(arguments, variables, VALUE_TYPE_NULL | VALUE_TYPE_BOOLEAN | VALUE_TYPE_NUMBER | VALUE_TYPE_STRING | VALUE_TYPE_LIST | VALUE_TYPE_MAP, &value))
+    if (!next_argument(arguments, variables, VALUE_TYPE_NULL | VALUE_TYPE_BOOLEAN | VALUE_TYPE_NUMBER | VALUE_TYPE_STRING | VALUE_TYPE_LIST | VALUE_TYPE_MAP, &value, effect))
     {
         return value;
     }
@@ -1102,17 +1120,17 @@ static value_t *run_type(argument_iterator_t *arguments, map_t *variables)
     }
 }
 
-static value_t *run_cast(argument_iterator_t *arguments, map_t *variables)
+static value_t *run_cast(argument_iterator_t *arguments, map_t *variables, value_effect_t *effect)
 {
     value_t *value, *type;
     string_t *pattern;
 
-    if (!next_argument(arguments, variables, VALUE_TYPE_NULL | VALUE_TYPE_BOOLEAN | VALUE_TYPE_NUMBER | VALUE_TYPE_STRING | VALUE_TYPE_LIST | VALUE_TYPE_MAP, &value))
+    if (!next_argument(arguments, variables, VALUE_TYPE_NULL | VALUE_TYPE_BOOLEAN | VALUE_TYPE_NUMBER | VALUE_TYPE_STRING | VALUE_TYPE_LIST | VALUE_TYPE_MAP, &value, effect))
     {
         return value;
     }
 
-    if (!next_argument(arguments, variables, VALUE_TYPE_STRING, &type))
+    if (!next_argument(arguments, variables, VALUE_TYPE_STRING, &type, effect))
     {
         return type;
     }
@@ -1139,12 +1157,12 @@ static value_t *run_cast(argument_iterator_t *arguments, map_t *variables)
             }
             else
             {
-                return throw_error("invalid cast");
+                return throw_error("invalid cast", effect);
             }
         }
         else
         {
-            return throw_error("invalid cast");
+            return throw_error("invalid cast", effect);
         }
     }
     else if (is_keyword_match(pattern, "BOOLEAN"))
@@ -1171,12 +1189,12 @@ static value_t *run_cast(argument_iterator_t *arguments, map_t *variables)
             }
             else
             {
-                return throw_error("invalid cast");
+                return throw_error("invalid cast", effect);
             }
         }
         else
         {
-            return throw_error("invalid cast");
+            return throw_error("invalid cast", effect);
         }
     }
     else if (is_keyword_match(pattern, "NUMBER"))
@@ -1193,14 +1211,14 @@ static value_t *run_cast(argument_iterator_t *arguments, map_t *variables)
 
             if (string_to_number(value->data, &number) != 0)
             {
-                return throw_error("invalid cast");
+                return throw_error("invalid cast", effect);
             }
 
             return new_number(number);
         }
         else
         {
-            return throw_error("invalid cast");
+            return throw_error("invalid cast", effect);
         }
     }
     else if (is_keyword_match(pattern, "STRING"))
@@ -1225,28 +1243,28 @@ static value_t *run_cast(argument_iterator_t *arguments, map_t *variables)
         }
         else
         {
-            return throw_error("invalid cast");
+            return throw_error("invalid cast", effect);
         }
     }
     else if (is_keyword_match(pattern, "LIST"))
     {
-        return throw_error("invalid cast");
+        return throw_error("invalid cast", effect);
     }
     else if (is_keyword_match(pattern, "MAP"))
     {
-        return throw_error("invalid cast");
+        return throw_error("invalid cast", effect);
     }
     else
     {
-        return throw_error("unknown type");
+        return throw_error("unknown type", effect);
     }
 }
 
-static value_t *run_get(argument_iterator_t *arguments, map_t *variables)
+static value_t *run_get(argument_iterator_t *arguments, map_t *variables, value_effect_t *effect)
 {
     value_t *collection, *key;
 
-    if (!next_argument(arguments, variables, VALUE_TYPE_STRING | VALUE_TYPE_LIST | VALUE_TYPE_MAP, &collection))
+    if (!next_argument(arguments, variables, VALUE_TYPE_STRING | VALUE_TYPE_LIST | VALUE_TYPE_MAP, &collection, effect))
     {
         return collection;
     }
@@ -1259,7 +1277,7 @@ static value_t *run_get(argument_iterator_t *arguments, map_t *variables)
             string_t *string;
             int number;
 
-            if (!next_argument(arguments, variables, VALUE_TYPE_NUMBER, &key))
+            if (!next_argument(arguments, variables, VALUE_TYPE_NUMBER, &key, effect))
             {
                 return key;
             }
@@ -1273,7 +1291,7 @@ static value_t *run_get(argument_iterator_t *arguments, map_t *variables)
 
             if (number < 1 || (size_t) number > string->length)
             {
-                return throw_error("absent key");
+                return throw_error("absent key", effect);
             }
 
             bytes = allocate(sizeof(char));
@@ -1288,7 +1306,7 @@ static value_t *run_get(argument_iterator_t *arguments, map_t *variables)
             size_t index, cursor;
             int number;
 
-            if (!next_argument(arguments, variables, VALUE_TYPE_NUMBER, &key))
+            if (!next_argument(arguments, variables, VALUE_TYPE_NUMBER, &key, effect))
             {
                 return key;
             }
@@ -1302,7 +1320,7 @@ static value_t *run_get(argument_iterator_t *arguments, map_t *variables)
 
             if (number < 1 || (size_t) number > list->length)
             {
-                return throw_error("absent key");
+                return throw_error("absent key", effect);
             }
 
             index = number - 1;
@@ -1329,7 +1347,7 @@ static value_t *run_get(argument_iterator_t *arguments, map_t *variables)
             value_t *value;
             map_t *map;
 
-            if (!next_argument(arguments, variables, VALUE_TYPE_STRING, &key))
+            if (!next_argument(arguments, variables, VALUE_TYPE_STRING, &key, effect))
             {
                 return key;
             }
@@ -1344,7 +1362,7 @@ static value_t *run_get(argument_iterator_t *arguments, map_t *variables)
             }
             else
             {
-                return throw_error("absent key");
+                return throw_error("absent key", effect);
             }
         }
 
@@ -1354,11 +1372,11 @@ static value_t *run_get(argument_iterator_t *arguments, map_t *variables)
     }
 }
 
-static value_t *run_set(argument_iterator_t *arguments, map_t *variables)
+static value_t *run_set(argument_iterator_t *arguments, map_t *variables, value_effect_t *effect)
 {
     value_t *collection, *key, *item;
 
-    if (!next_argument(arguments, variables, VALUE_TYPE_STRING | VALUE_TYPE_LIST | VALUE_TYPE_MAP, &collection))
+    if (!next_argument(arguments, variables, VALUE_TYPE_STRING | VALUE_TYPE_LIST | VALUE_TYPE_MAP, &collection, effect))
     {
         return collection;
     }
@@ -1372,12 +1390,12 @@ static value_t *run_set(argument_iterator_t *arguments, map_t *variables)
             int index;
             size_t beforeLength, afterLength, destinationLength;
 
-            if (!next_argument(arguments, variables, VALUE_TYPE_NUMBER, &key))
+            if (!next_argument(arguments, variables, VALUE_TYPE_NUMBER, &key, effect))
             {
                 return key;
             }
 
-            if (!next_argument(arguments, variables, VALUE_TYPE_STRING, &item))
+            if (!next_argument(arguments, variables, VALUE_TYPE_STRING, &item, effect))
             {
                 return item;
             }
@@ -1392,7 +1410,7 @@ static value_t *run_set(argument_iterator_t *arguments, map_t *variables)
 
             if (index < 1 || (size_t) index > source->length)
             {
-                return throw_error("absent key");
+                return throw_error("absent key", effect);
             }
 
             beforeLength = index - 1;
@@ -1413,12 +1431,12 @@ static value_t *run_set(argument_iterator_t *arguments, map_t *variables)
             size_t index, cursor;
             int number;
 
-            if (!next_argument(arguments, variables, VALUE_TYPE_NUMBER, &key))
+            if (!next_argument(arguments, variables, VALUE_TYPE_NUMBER, &key, effect))
             {
                 return key;
             }
 
-            if (!next_argument(arguments, variables, VALUE_TYPE_NULL | VALUE_TYPE_BOOLEAN | VALUE_TYPE_NUMBER | VALUE_TYPE_STRING | VALUE_TYPE_LIST | VALUE_TYPE_MAP, &item))
+            if (!next_argument(arguments, variables, VALUE_TYPE_NULL | VALUE_TYPE_BOOLEAN | VALUE_TYPE_NUMBER | VALUE_TYPE_STRING | VALUE_TYPE_LIST | VALUE_TYPE_MAP, &item, effect))
             {
                 return item;
             }
@@ -1432,7 +1450,7 @@ static value_t *run_set(argument_iterator_t *arguments, map_t *variables)
 
             if (number < 1 || (size_t) number > source->length)
             {
-                return throw_error("absent key");
+                return throw_error("absent key", effect);
             }
 
             index = number - 1;
@@ -1464,12 +1482,12 @@ static value_t *run_set(argument_iterator_t *arguments, map_t *variables)
         {
             map_t *source, *destination;
 
-            if (!next_argument(arguments, variables, VALUE_TYPE_STRING, &key))
+            if (!next_argument(arguments, variables, VALUE_TYPE_STRING, &key, effect))
             {
                 return key;
             }
 
-            if (!next_argument(arguments, variables, VALUE_TYPE_NULL | VALUE_TYPE_BOOLEAN | VALUE_TYPE_NUMBER | VALUE_TYPE_STRING | VALUE_TYPE_LIST | VALUE_TYPE_MAP, &item))
+            if (!next_argument(arguments, variables, VALUE_TYPE_NULL | VALUE_TYPE_BOOLEAN | VALUE_TYPE_NUMBER | VALUE_TYPE_STRING | VALUE_TYPE_LIST | VALUE_TYPE_MAP, &item, effect))
             {
                 return item;
             }
@@ -1491,11 +1509,11 @@ static value_t *run_set(argument_iterator_t *arguments, map_t *variables)
     }
 }
 
-static value_t *run_unset(argument_iterator_t *arguments, map_t *variables)
+static value_t *run_unset(argument_iterator_t *arguments, map_t *variables, value_effect_t *effect)
 {
     value_t *collection, *key;
 
-    if (!next_argument(arguments, variables, VALUE_TYPE_STRING | VALUE_TYPE_LIST | VALUE_TYPE_MAP, &collection))
+    if (!next_argument(arguments, variables, VALUE_TYPE_STRING | VALUE_TYPE_LIST | VALUE_TYPE_MAP, &collection, effect))
     {
         return collection;
     }
@@ -1507,7 +1525,7 @@ static value_t *run_unset(argument_iterator_t *arguments, map_t *variables)
             string_t *source;
             int number;
 
-            if (!next_argument(arguments, variables, VALUE_TYPE_NUMBER, &key))
+            if (!next_argument(arguments, variables, VALUE_TYPE_NUMBER, &key, effect))
             {
                 return key;
             }
@@ -1521,7 +1539,7 @@ static value_t *run_unset(argument_iterator_t *arguments, map_t *variables)
 
             if (number < 1 || (size_t) number > source->length)
             {
-                return throw_error("absent key");
+                return throw_error("absent key", effect);
             }
 
             if (source->length > 1)
@@ -1546,7 +1564,7 @@ static value_t *run_unset(argument_iterator_t *arguments, map_t *variables)
             int number;
             size_t index, cursor;
 
-            if (!next_argument(arguments, variables, VALUE_TYPE_NUMBER, &key))
+            if (!next_argument(arguments, variables, VALUE_TYPE_NUMBER, &key, effect))
             {
                 return key;
             }
@@ -1560,7 +1578,7 @@ static value_t *run_unset(argument_iterator_t *arguments, map_t *variables)
 
             if (number < 1 || (size_t) number > source->length)
             {
-                return throw_error("absent key");
+                return throw_error("absent key", effect);
             }
 
             index = number - 1;
@@ -1586,7 +1604,7 @@ static value_t *run_unset(argument_iterator_t *arguments, map_t *variables)
         {
             map_t *source, *destination;
 
-            if (!next_argument(arguments, variables, VALUE_TYPE_STRING, &key))
+            if (!next_argument(arguments, variables, VALUE_TYPE_STRING, &key, effect))
             {
                 return key;
             }
@@ -1606,11 +1624,11 @@ static value_t *run_unset(argument_iterator_t *arguments, map_t *variables)
     }
 }
 
-static value_t *run_merge(argument_iterator_t *arguments, map_t *variables)
+static value_t *run_merge(argument_iterator_t *arguments, map_t *variables, value_effect_t *effect)
 {
     value_t *left, *right;
 
-    if (!next_argument(arguments, variables, VALUE_TYPE_STRING | VALUE_TYPE_LIST | VALUE_TYPE_MAP, &left))
+    if (!next_argument(arguments, variables, VALUE_TYPE_STRING | VALUE_TYPE_LIST | VALUE_TYPE_MAP, &left, effect))
     {
         return left;
     }
@@ -1619,7 +1637,7 @@ static value_t *run_merge(argument_iterator_t *arguments, map_t *variables)
     {
         case VALUE_TYPE_STRING:
         {
-            if (!next_argument(arguments, variables, VALUE_TYPE_STRING, &right))
+            if (!next_argument(arguments, variables, VALUE_TYPE_STRING, &right, effect))
             {
                 return right;
             }
@@ -1632,7 +1650,7 @@ static value_t *run_merge(argument_iterator_t *arguments, map_t *variables)
             list_t *source, *destination;
             size_t index;
 
-            if (!next_argument(arguments, variables, VALUE_TYPE_LIST, &right))
+            if (!next_argument(arguments, variables, VALUE_TYPE_LIST, &right, effect))
             {
                 return right;
             }
@@ -1669,7 +1687,7 @@ static value_t *run_merge(argument_iterator_t *arguments, map_t *variables)
         {
             map_t *source, *destination;
 
-            if (!next_argument(arguments, variables, VALUE_TYPE_MAP, &right))
+            if (!next_argument(arguments, variables, VALUE_TYPE_MAP, &right, effect))
             {
                 return right;
             }
@@ -1692,13 +1710,13 @@ static value_t *run_merge(argument_iterator_t *arguments, map_t *variables)
     }
 }
 
-static value_t *run_length(argument_iterator_t *arguments, map_t *variables)
+static value_t *run_length(argument_iterator_t *arguments, map_t *variables, value_effect_t *effect)
 {
     value_t *collection;
     size_t length;
     number_t number;
 
-    if (!next_argument(arguments, variables, VALUE_TYPE_STRING | VALUE_TYPE_LIST | VALUE_TYPE_MAP, &collection))
+    if (!next_argument(arguments, variables, VALUE_TYPE_STRING | VALUE_TYPE_LIST | VALUE_TYPE_MAP, &collection, effect))
     {
         return collection;
     }
@@ -1724,17 +1742,17 @@ static value_t *run_length(argument_iterator_t *arguments, map_t *variables)
 
     if (length >= PORTABLE_INT_LIMIT || integer_to_number(length, &number) != 0)
     {
-        return throw_error("constraint error");
+        return throw_error("constraint error", effect);
     }
 
     return new_number(number);
 }
 
-static value_t *run_keys(argument_iterator_t *arguments, map_t *variables)
+static value_t *run_keys(argument_iterator_t *arguments, map_t *variables, value_effect_t *effect)
 {
     value_t *collection;
 
-    if (!next_argument(arguments, variables, VALUE_TYPE_STRING | VALUE_TYPE_LIST | VALUE_TYPE_MAP, &collection))
+    if (!next_argument(arguments, variables, VALUE_TYPE_STRING | VALUE_TYPE_LIST | VALUE_TYPE_MAP, &collection, effect))
     {
         return collection;
     }
@@ -1752,7 +1770,7 @@ static value_t *run_keys(argument_iterator_t *arguments, map_t *variables)
 
             if (string->length >= PORTABLE_INT_LIMIT || integer_to_number(string->length, &number) != 0)
             {
-                return throw_error("constraint error");
+                return throw_error("constraint error", effect);
             }
 
             keys = empty_list(dereference_value_unsafe, 1);
@@ -1765,7 +1783,7 @@ static value_t *run_keys(argument_iterator_t *arguments, map_t *variables)
                 {
                     destroy_list(keys);
 
-                    return throw_error("constraint error");
+                    return throw_error("constraint error", effect);
                 }
 
                 add_list_item(keys, new_number(key));
@@ -1785,7 +1803,7 @@ static value_t *run_keys(argument_iterator_t *arguments, map_t *variables)
 
             if (length >= PORTABLE_INT_LIMIT || integer_to_number(length, &number) != 0)
             {
-                return throw_error("constraint error");
+                return throw_error("constraint error", effect);
             }
 
             keys = empty_list(dereference_value_unsafe, 1);
@@ -1798,7 +1816,7 @@ static value_t *run_keys(argument_iterator_t *arguments, map_t *variables)
                 {
                     destroy_list(keys);
 
-                    return throw_error("constraint error");
+                    return throw_error("constraint error", effect);
                 }
 
                 add_list_item(keys, new_number(key));
@@ -1834,19 +1852,19 @@ static value_t *run_keys(argument_iterator_t *arguments, map_t *variables)
     }
 }
 
-static value_t *run_sort(argument_iterator_t *arguments, map_t *variables)
+static value_t *run_sort(argument_iterator_t *arguments, map_t *variables, value_effect_t *effect)
 {
     value_t *collection, *direction;
     list_t *source, *destination;
     int ascending;
     size_t index;
 
-    if (!next_argument(arguments, variables, VALUE_TYPE_LIST, &collection))
+    if (!next_argument(arguments, variables, VALUE_TYPE_LIST, &collection, effect))
     {
         return collection;
     }
 
-    if (!next_argument(arguments, variables, VALUE_TYPE_STRING, &direction))
+    if (!next_argument(arguments, variables, VALUE_TYPE_STRING, &direction, effect))
     {
         return direction;
     }
@@ -1861,7 +1879,7 @@ static value_t *run_sort(argument_iterator_t *arguments, map_t *variables)
     }
     else
     {
-        return throw_error("invalid direction");
+        return throw_error("invalid direction", effect);
     }
 
     source = view_list(collection);
@@ -1882,21 +1900,21 @@ static value_t *run_sort(argument_iterator_t *arguments, map_t *variables)
     return steal_list(destination);
 }
 
-static int next_argument(argument_iterator_t *arguments, map_t *variables, int types, value_t **out)
+static int next_argument(argument_iterator_t *arguments, map_t *variables, int types, value_t **out, value_effect_t *effect)
 {
     value_t *result;
 
     if (!has_next_argument(arguments))
     {
-        (*out) = throw_error("absent argument");
+        (*out) = throw_error("absent argument", effect);
         return 0;
     }
 
-    result = apply_statement(arguments->statements->items[arguments->index], variables);
+    result = apply_statement(arguments->statements->items[arguments->index], variables, effect);
     arguments->evaluated[arguments->index] = result;
     arguments->index += 1;
 
-    if (result->thrown)
+    if ((*effect) == VALUE_EFFECT_THROW)
     {
         result->owners += 1;
         (*out) = result;
@@ -1905,7 +1923,7 @@ static int next_argument(argument_iterator_t *arguments, map_t *variables, int t
 
     if (!(types & result->type))
     {
-        (*out) = throw_error("wrong argument type");
+        (*out) = throw_error("wrong argument type", effect);
         return 0;
     }
 
@@ -1949,6 +1967,12 @@ static int compare_values_ascending(const void *left, const void *right)
 static int compare_values_descending(const void *left, const void *right)
 {
     return compare_values(*(value_t **) left, *(value_t **) right) * -1;
+}
+
+static value_t *throw_error(const char *message, value_effect_t *effect)
+{
+    (*effect) = VALUE_EFFECT_THROW;
+    return steal_string(cstring_to_string(message));
 }
 
 static void dereference_value_unsafe(void *value)

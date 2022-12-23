@@ -496,16 +496,6 @@ map_t *view_map(const value_t *value)
     }
 }
 
-value_t *throw_error(const char *message)
-{
-    value_t *value;
-
-    value = steal_string(cstring_to_string(message));
-    value->thrown = 1;
-
-    return value;
-}
-
 value_t *new_null()
 {
     value_t *value;
@@ -513,7 +503,6 @@ value_t *new_null()
     value = allocate(sizeof(value_t));
     value->type = VALUE_TYPE_NULL;
     value->data = NULL;
-    value->thrown = 0;
     value->owners = 1;
 
     return value;
@@ -529,7 +518,6 @@ value_t *new_boolean(boolean_t boolean)
     value = allocate(sizeof(value_t));
     value->type = VALUE_TYPE_BOOLEAN;
     value->data = data;
-    value->thrown = 0;
     value->owners = 1;
 
     return value;
@@ -545,7 +533,6 @@ value_t *new_number(number_t number)
     value = allocate(sizeof(value_t));
     value->type = VALUE_TYPE_NUMBER;
     value->data = data;
-    value->thrown = 0;
     value->owners = 1;
 
     return value;
@@ -558,7 +545,6 @@ value_t *steal_string(string_t *string)
     value = allocate(sizeof(value_t));
     value->type = VALUE_TYPE_STRING;
     value->data = string;
-    value->thrown = 0;
     value->owners = 1;
 
     return value;
@@ -571,7 +557,6 @@ value_t *steal_list(list_t *list)
     value = allocate(sizeof(value_t));
     value->type = VALUE_TYPE_LIST;
     value->data = list;
-    value->thrown = 0;
     value->owners = 1;
 
     return value;
@@ -584,7 +569,6 @@ value_t *steal_map(map_t *map)
     value = allocate(sizeof(value_t));
     value->type = VALUE_TYPE_MAP;
     value->data = map;
-    value->thrown = 0;
     value->owners = 1;
 
     return value;
