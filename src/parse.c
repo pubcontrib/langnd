@@ -930,6 +930,7 @@ static char is_value_statement(const statement_t *statement)
         case STATEMENT_TYPE_REFERENCE:
         case STATEMENT_TYPE_INVOKE:
         case STATEMENT_TYPE_BRANCH:
+        case STATEMENT_TYPE_LOOP:
         case STATEMENT_TYPE_CATCH:
             return 1;
 

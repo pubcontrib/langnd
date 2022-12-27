@@ -6,6 +6,10 @@ verify '$i=1 while @precedes($i, 4) < @write(@freeze($i), 1) $i=@add($i, 1) >' \
     'prints to stdout' '123'
 verify '$i=1 while @precedes($i, 4) < $j=1 while @precedes($j, 4) < @write(@freeze(@multiply($i, $j)), 1) $j=@add($j, 1) > $i=@add($i, 1) >' \
     'prints to stdout' '123246369'
+verify '$loop=true $result=while $loop < "first" $loop=false "last" > @write(@freeze($result), 1)' \
+    'prints to stdout' '"last"'
+verify '$result=while false < "first" "..." "last" > @write(@freeze($result), 1)' \
+    'prints to stdout' 'null'
 
 verify 'while' \
     'errors with parse message' 'while'
