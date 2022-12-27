@@ -273,8 +273,8 @@ static void read_identifier_token(scanner_t *scanner)
 
 static void read_keyword_token(scanner_t *scanner)
 {
-    static const char *keywords[] = { "null", "false", "true", "if", "else", "while", "catch", "throw" };
-    static const size_t keywordsLength = 8;
+    static const char *keywords[] = { "null", "false", "true", "if", "else", "while", "catch", "throw", "break" };
+    static const size_t keywordsLength = 9;
     size_t keywordsIndex;
 
     scanner->token.type = TOKEN_TYPE_KEYWORD;
