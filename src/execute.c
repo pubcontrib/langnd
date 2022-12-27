@@ -48,8 +48,8 @@ static value_t *run_length(argument_iterator_t *arguments, map_t *variables, val
 static value_t *run_keys(argument_iterator_t *arguments, map_t *variables, value_effect_t *effect);
 static value_t *run_sort(argument_iterator_t *arguments, map_t *variables, value_effect_t *effect);
 static int next_argument(argument_iterator_t *arguments, map_t *variables, int types, value_t **out, value_effect_t *effect);
-static int has_next_argument(argument_iterator_t *arguments);
-static void copy_map_items(map_t *source, map_t *destination);
+static int has_next_argument(const argument_iterator_t *arguments);
+static void copy_map_items(const map_t *source, map_t *destination);
 static int compare_values_ascending(const void *left, const void *right);
 static int compare_values_descending(const void *left, const void *right);
 static value_t *throw_error(const char *message, value_effect_t *effect);
@@ -1931,12 +1931,12 @@ static int next_argument(argument_iterator_t *arguments, map_t *variables, int t
     return 1;
 }
 
-static int has_next_argument(argument_iterator_t *arguments)
+static int has_next_argument(const argument_iterator_t *arguments)
 {
     return arguments->index < arguments->statements->length;
 }
 
-static void copy_map_items(map_t *source, map_t *destination)
+static void copy_map_items(const map_t *source, map_t *destination)
 {
     size_t index;
 

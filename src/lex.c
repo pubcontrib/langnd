@@ -8,7 +8,7 @@ static void read_number_token(scanner_t *scanner);
 static void read_string_token(scanner_t *scanner);
 static void read_identifier_token(scanner_t *scanner);
 static void read_keyword_token(scanner_t *scanner);
-static int has_another_symbol(scanner_t *scanner);
+static int has_another_symbol(const scanner_t *scanner);
 static char read_next_symbol(scanner_t *scanner);
 static char peek_next_symbol(scanner_t *scanner);
 static int is_whitespace_symbol(char symbol);
@@ -318,7 +318,7 @@ static void read_keyword_token(scanner_t *scanner)
     scanner->state = SCANNER_STATE_ERRORED;
 }
 
-static int has_another_symbol(scanner_t *scanner)
+static int has_another_symbol(const scanner_t *scanner)
 {
     return scanner->token.end < scanner->code->length;
 }

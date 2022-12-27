@@ -25,15 +25,15 @@ static statement_t *read_catch_statement(capsule_t *capsule);
 static statement_t *read_throw_statement(capsule_t *capsule);
 static conditional_branch_t *read_conditional_branch(capsule_t *capsule);
 static list_t *read_body_expressions(capsule_t *capsule);
-static char is_value_statement(statement_t *statement);
+static char is_value_statement(const statement_t *statement);
 static token_t *peek_token(capsule_t *capsule);
 static token_t *next_token(capsule_t *capsule);
 static token_t *scan_token(scanner_t *scanner);
-static string_t *substring_using_token(string_t *code, token_t *token);
-static string_t *substring_to_newline(string_t *code, size_t start, size_t limit);
-static identifier_t *parse_identifier(string_t *code, token_t *token);
-static string_t *unescape_string(string_t *code, token_t *token);
-static char is_symbol_token(char symbol, string_t *code, token_t *token);
+static string_t *substring_using_token(const string_t *code, const token_t *token);
+static string_t *substring_to_newline(const string_t *code, size_t start, size_t limit);
+static identifier_t *parse_identifier(const string_t *code, const token_t *token);
+static string_t *unescape_string(const string_t *code, const token_t *token);
+static char is_symbol_token(char symbol, const string_t *code, const token_t *token);
 static statement_t *create_unknown_statement();
 static statement_t *create_literal_statement(value_t *value);
 static statement_t *create_assignment_statement(identifier_t *identifier, statement_t *value);
@@ -922,7 +922,7 @@ static list_t *read_body_expressions(capsule_t *capsule)
     return body;
 }
 
-static char is_value_statement(statement_t *statement)
+static char is_value_statement(const statement_t *statement)
 {
     switch (statement->type)
     {
@@ -1015,7 +1015,7 @@ static token_t *scan_token(scanner_t *scanner)
     return NULL;
 }
 
-static string_t *substring_using_token(string_t *code, token_t *token)
+static string_t *substring_using_token(const string_t *code, const token_t *token)
 {
     char *bytes;
     size_t length;
@@ -1027,7 +1027,7 @@ static string_t *substring_using_token(string_t *code, token_t *token)
     return create_string(bytes, length);
 }
 
-static string_t *substring_to_newline(string_t *code, size_t start, size_t limit)
+static string_t *substring_to_newline(const string_t *code, size_t start, size_t limit)
 {
     char *bytes;
     size_t length;
@@ -1050,7 +1050,7 @@ static string_t *substring_to_newline(string_t *code, size_t start, size_t limit
     return create_string(bytes, length);
 }
 
-static identifier_t *parse_identifier(string_t *code, token_t *token)
+static identifier_t *parse_identifier(const string_t *code, const token_t *token)
 {
     identifier_t *identifier;
     identifier_type_t type;
@@ -1095,7 +1095,7 @@ static identifier_t *parse_identifier(string_t *code, token_t *token)
     return identifier;
 }
 
-static string_t *unescape_string(string_t *code, token_t *token)
+static string_t *unescape_string(const string_t *code, const token_t *token)
 {
     char *bytes;
     size_t length, escapeCount, index, placement;
@@ -1219,7 +1219,7 @@ static string_t *unescape_string(string_t *code, token_t *token)
     return create_string(bytes, placement);
 }
 
-static char is_symbol_token(char symbol, string_t *code, token_t *token)
+static char is_symbol_token(char symbol, const string_t *code, const token_t *token)
 {
     return token
         && token->type == TOKEN_TYPE_SYMBOL
