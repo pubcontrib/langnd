@@ -24,6 +24,7 @@ static statement_t *read_loop_statement(capsule_t *capsule);
 static statement_t *read_catch_statement(capsule_t *capsule);
 static statement_t *read_throw_statement(capsule_t *capsule);
 static statement_t *read_break_statement(capsule_t *capsule);
+static statement_t *read_continue_statement(capsule_t *capsule);
 static conditional_branch_t *read_conditional_branch(capsule_t *capsule);
 static list_t *read_body_expressions(capsule_t *capsule);
 static char is_value_statement(const statement_t *statement);
@@ -44,6 +45,7 @@ static statement_t *create_loop_statement(statement_t *condition, list_t *body);
 static statement_t *create_catch_statement(list_t *body);
 static statement_t *create_throw_statement(statement_t *error);
 static statement_t *create_break_statement(statement_t *pick);
+static statement_t *create_continue_statement(statement_t *pick);
 static statement_t *create_reference_statement(identifier_t *identifier);
 static statement_t *create_statement(statement_type_t type, void *data);
 static void destroy_statement_unsafe(void *statement);
@@ -265,6 +267,21 @@ void destroy_statement(statement_t *statement)
                 break;
             }
 
+            case STATEMENT_TYPE_CONTINUE:
+            {
+                continue_statement_data_t *data;
+
+                data = statement->data;
+
+                if (data->pick)
+                {
+                    destroy_statement(data->pick);
+                }
+
+                free(data);
+                break;
+            }
+
             case STATEMENT_TYPE_REFERENCE:
             {
                 reference_statement_data_t *data;
@@ -405,6 +422,10 @@ static statement_t *read_any_statement(capsule_t *capsule)
         else if (is_keyword_match(keyword, "break"))
         {
             statement = read_break_statement(capsule);
+        }
+        else if (is_keyword_match(keyword, "continue"))
+        {
+            statement = read_continue_statement(capsule);
         }
         else
         {
@@ -885,6 +906,25 @@ static statement_t *read_break_statement(capsule_t *capsule)
     return create_break_statement(pick);
 }
 
+static statement_t *read_continue_statement(capsule_t *capsule)
+{
+    statement_t *pick;
+
+    pick = read_any_statement(capsule);
+
+    if (!pick || !is_value_statement(pick))
+    {
+        if (pick)
+        {
+            destroy_statement(pick);
+        }
+
+        return create_unknown_statement();
+    }
+
+    return create_continue_statement(pick);
+}
+
 static conditional_branch_t *read_conditional_branch(capsule_t *capsule)
 {
     conditional_branch_t *branch;
@@ -1353,6 +1393,16 @@ static statement_t *create_break_statement(statement_t *pick)
     data->pick = pick;
 
     return create_statement(STATEMENT_TYPE_BREAK, data);
+}
+
+static statement_t *create_continue_statement(statement_t *pick)
+{
+    continue_statement_data_t *data;
+
+    data = allocate(sizeof(continue_statement_data_t));
+    data->pick = pick;
+
+    return create_statement(STATEMENT_TYPE_CONTINUE, data);
 }
 
 static statement_t *create_reference_statement(identifier_t *identifier)

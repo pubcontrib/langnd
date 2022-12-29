@@ -14,6 +14,7 @@ typedef enum
     STATEMENT_TYPE_CATCH,
     STATEMENT_TYPE_THROW,
     STATEMENT_TYPE_BREAK,
+    STATEMENT_TYPE_CONTINUE,
     STATEMENT_TYPE_REFERENCE
 } statement_type_t;
 
@@ -83,6 +84,11 @@ typedef struct
 {
     statement_t *pick;
 } break_statement_data_t;
+
+typedef struct
+{
+    statement_t *pick;
+} continue_statement_data_t;
 
 typedef struct
 {

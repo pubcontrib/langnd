@@ -43,6 +43,7 @@ introduce
 . suite/statement/catch.sh
 . suite/statement/throw.sh
 . suite/statement/break.sh
+. suite/statement/continue.sh
 
 . suite/function/add.sh
 . suite/function/subtract.sh
