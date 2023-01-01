@@ -22,9 +22,9 @@ static statement_t *read_invoke_statement(capsule_t *capsule, identifier_t *iden
 static statement_t *read_branch_statement(capsule_t *capsule);
 static statement_t *read_loop_statement(capsule_t *capsule);
 static statement_t *read_catch_statement(capsule_t *capsule);
-static statement_t *read_throw_statement(capsule_t *capsule);
 static statement_t *read_break_statement(capsule_t *capsule);
 static statement_t *read_continue_statement(capsule_t *capsule);
+static statement_t *read_throw_statement(capsule_t *capsule);
 static conditional_branch_t *read_conditional_branch(capsule_t *capsule);
 static list_t *read_body_expressions(capsule_t *capsule);
 static char is_value_statement(const statement_t *statement);
@@ -38,15 +38,15 @@ static string_t *unescape_string(const string_t *code, const token_t *token);
 static char is_symbol_token(char symbol, const string_t *code, const token_t *token);
 static statement_t *create_unknown_statement();
 static statement_t *create_literal_statement(value_t *value);
+static statement_t *create_reference_statement(identifier_t *identifier);
 static statement_t *create_assignment_statement(identifier_t *identifier, statement_t *value);
 static statement_t *create_invoke_statement(identifier_t *identifier, list_t *arguments);
 static statement_t *create_branch_statement(list_t *branches);
 static statement_t *create_loop_statement(statement_t *condition, list_t *body);
 static statement_t *create_catch_statement(list_t *body);
-static statement_t *create_throw_statement(statement_t *error);
 static statement_t *create_break_statement(statement_t *pick);
 static statement_t *create_continue_statement(statement_t *pick);
-static statement_t *create_reference_statement(identifier_t *identifier);
+static statement_t *create_throw_statement(statement_t *error);
 static statement_t *create_statement(statement_type_t type, void *data);
 static void destroy_statement_unsafe(void *statement);
 static void dereference_value_unsafe(void *value);
@@ -415,10 +415,6 @@ static statement_t *read_any_statement(capsule_t *capsule)
         {
             statement = read_catch_statement(capsule);
         }
-        else if (is_keyword_match(keyword, "throw"))
-        {
-            statement = read_throw_statement(capsule);
-        }
         else if (is_keyword_match(keyword, "break"))
         {
             statement = read_break_statement(capsule);
@@ -426,6 +422,10 @@ static statement_t *read_any_statement(capsule_t *capsule)
         else if (is_keyword_match(keyword, "continue"))
         {
             statement = read_continue_statement(capsule);
+        }
+        else if (is_keyword_match(keyword, "throw"))
+        {
+            statement = read_throw_statement(capsule);
         }
         else
         {
@@ -868,25 +868,6 @@ static statement_t *read_catch_statement(capsule_t *capsule)
     return create_catch_statement(body);
 }
 
-static statement_t *read_throw_statement(capsule_t *capsule)
-{
-    statement_t *error;
-
-    error = read_any_statement(capsule);
-
-    if (!error || !is_value_statement(error))
-    {
-        if (error)
-        {
-            destroy_statement(error);
-        }
-
-        return create_unknown_statement();
-    }
-
-    return create_throw_statement(error);
-}
-
 static statement_t *read_break_statement(capsule_t *capsule)
 {
     statement_t *pick;
@@ -923,6 +904,25 @@ static statement_t *read_continue_statement(capsule_t *capsule)
     }
 
     return create_continue_statement(pick);
+}
+
+static statement_t *read_throw_statement(capsule_t *capsule)
+{
+    statement_t *error;
+
+    error = read_any_statement(capsule);
+
+    if (!error || !is_value_statement(error))
+    {
+        if (error)
+        {
+            destroy_statement(error);
+        }
+
+        return create_unknown_statement();
+    }
+
+    return create_throw_statement(error);
 }
 
 static conditional_branch_t *read_conditional_branch(capsule_t *capsule)
@@ -1322,6 +1322,16 @@ static statement_t *create_literal_statement(value_t *value)
     return create_statement(STATEMENT_TYPE_LITERAL, data);
 }
 
+static statement_t *create_reference_statement(identifier_t *identifier)
+{
+    reference_statement_data_t *data;
+
+    data = allocate(sizeof(reference_statement_data_t));
+    data->identifier = identifier;
+
+    return create_statement(STATEMENT_TYPE_REFERENCE, data);
+}
+
 static statement_t *create_assignment_statement(identifier_t *identifier, statement_t *value)
 {
     assignment_statement_data_t *data;
@@ -1375,16 +1385,6 @@ static statement_t *create_catch_statement(list_t *body)
     return create_statement(STATEMENT_TYPE_CATCH, data);
 }
 
-static statement_t *create_throw_statement(statement_t *error)
-{
-    throw_statement_data_t *data;
-
-    data = allocate(sizeof(throw_statement_data_t));
-    data->error = error;
-
-    return create_statement(STATEMENT_TYPE_THROW, data);
-}
-
 static statement_t *create_break_statement(statement_t *pick)
 {
     break_statement_data_t *data;
@@ -1405,14 +1405,14 @@ static statement_t *create_continue_statement(statement_t *pick)
     return create_statement(STATEMENT_TYPE_CONTINUE, data);
 }
 
-static statement_t *create_reference_statement(identifier_t *identifier)
+static statement_t *create_throw_statement(statement_t *error)
 {
-    reference_statement_data_t *data;
+    throw_statement_data_t *data;
 
-    data = allocate(sizeof(reference_statement_data_t));
-    data->identifier = identifier;
+    data = allocate(sizeof(throw_statement_data_t));
+    data->error = error;
 
-    return create_statement(STATEMENT_TYPE_REFERENCE, data);
+    return create_statement(STATEMENT_TYPE_THROW, data);
 }
 
 static statement_t *create_statement(statement_type_t type, void *data)

@@ -7,15 +7,15 @@ typedef enum
 {
     STATEMENT_TYPE_UNKNOWN,
     STATEMENT_TYPE_LITERAL,
+    STATEMENT_TYPE_REFERENCE,
     STATEMENT_TYPE_ASSIGNMENT,
     STATEMENT_TYPE_INVOKE,
     STATEMENT_TYPE_BRANCH,
     STATEMENT_TYPE_LOOP,
     STATEMENT_TYPE_CATCH,
-    STATEMENT_TYPE_THROW,
     STATEMENT_TYPE_BREAK,
     STATEMENT_TYPE_CONTINUE,
-    STATEMENT_TYPE_REFERENCE
+    STATEMENT_TYPE_THROW
 } statement_type_t;
 
 typedef struct
@@ -40,6 +40,11 @@ typedef struct
 {
     value_t *value;
 } literal_statement_data_t;
+
+typedef struct
+{
+    identifier_t *identifier;
+} reference_statement_data_t;
 
 typedef struct
 {
@@ -77,11 +82,6 @@ typedef struct
 
 typedef struct
 {
-    statement_t *error;
-} throw_statement_data_t;
-
-typedef struct
-{
     statement_t *pick;
 } break_statement_data_t;
 
@@ -92,8 +92,8 @@ typedef struct
 
 typedef struct
 {
-    identifier_t *identifier;
-} reference_statement_data_t;
+    statement_t *error;
+} throw_statement_data_t;
 
 typedef struct
 {

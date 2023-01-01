@@ -162,6 +162,34 @@ static value_t *apply_statement(statement_t *statement, map_t *variables, value_
             return value;
         }
 
+        case STATEMENT_TYPE_REFERENCE:
+        {
+            reference_statement_data_t *data;
+
+            data = statement->data;
+
+            if (data->identifier->type == IDENTIFIER_TYPE_VARIABLE)
+            {
+                value_t *value;
+
+                value = get_map_item(variables, data->identifier->name);
+
+                if (value)
+                {
+                    value->owners += 1;
+                    return value;
+                }
+                else
+                {
+                    return throw_error("absent variable", effect);
+                }
+            }
+            else if (data->identifier->type == IDENTIFIER_TYPE_FUNCTION)
+            {
+                return throw_error("unexpected reference type", effect);
+            }
+        }
+
         case STATEMENT_TYPE_ASSIGNMENT:
         {
             assignment_statement_data_t *data;
@@ -475,18 +503,6 @@ static value_t *apply_statement(statement_t *statement, map_t *variables, value_
             return new_null();
         }
 
-        case STATEMENT_TYPE_THROW:
-        {
-            throw_statement_data_t *data;
-            value_t *test;
-
-            data = statement->data;
-            test = apply_statement(data->error, variables, effect);
-            (*effect) = VALUE_EFFECT_THROW;
-
-            return test;
-        }
-
         case STATEMENT_TYPE_BREAK:
         {
             break_statement_data_t *data;
@@ -511,32 +527,16 @@ static value_t *apply_statement(statement_t *statement, map_t *variables, value_
             return test;
         }
 
-        case STATEMENT_TYPE_REFERENCE:
+        case STATEMENT_TYPE_THROW:
         {
-            reference_statement_data_t *data;
+            throw_statement_data_t *data;
+            value_t *test;
 
             data = statement->data;
+            test = apply_statement(data->error, variables, effect);
+            (*effect) = VALUE_EFFECT_THROW;
 
-            if (data->identifier->type == IDENTIFIER_TYPE_VARIABLE)
-            {
-                value_t *value;
-
-                value = get_map_item(variables, data->identifier->name);
-
-                if (value)
-                {
-                    value->owners += 1;
-                    return value;
-                }
-                else
-                {
-                    return throw_error("absent variable", effect);
-                }
-            }
-            else if (data->identifier->type == IDENTIFIER_TYPE_FUNCTION)
-            {
-                return throw_error("unexpected reference type", effect);
-            }
+            return test;
         }
 
         default:
