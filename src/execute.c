@@ -15,9 +15,9 @@ typedef struct
 typedef enum
 {
     VALUE_EFFECT_RETURN,
-    VALUE_EFFECT_THROW,
     VALUE_EFFECT_BREAK,
-    VALUE_EFFECT_CONTINUE
+    VALUE_EFFECT_CONTINUE,
+    VALUE_EFFECT_THROW
 } value_effect_t;
 
 static value_t *apply_statement(statement_t *statement, map_t *variables, value_effect_t *effect);
@@ -95,14 +95,6 @@ outcome_t *execute(string_t *code)
         {
             dereference_value(result);
         }
-        else if (effect == VALUE_EFFECT_THROW)
-        {
-            outcome->errorMessage = cstring_to_string("failed to execute code");
-            outcome->hintMessage = represent_value(result);
-            dereference_value(result);
-
-            break;
-        }
         else if (effect == VALUE_EFFECT_BREAK)
         {
             dereference_value(result);
@@ -117,6 +109,14 @@ outcome_t *execute(string_t *code)
         {
             dereference_value(result);
             result = steal_string(cstring_to_string("lost continue"));
+            outcome->errorMessage = cstring_to_string("failed to execute code");
+            outcome->hintMessage = represent_value(result);
+            dereference_value(result);
+
+            break;
+        }
+        else if (effect == VALUE_EFFECT_THROW)
+        {
             outcome->errorMessage = cstring_to_string("failed to execute code");
             outcome->hintMessage = represent_value(result);
             dereference_value(result);
@@ -198,7 +198,7 @@ static value_t *apply_statement(statement_t *statement, map_t *variables, value_
             data = statement->data;
             value = apply_statement(data->value, variables, effect);
 
-            if ((*effect) == VALUE_EFFECT_THROW || (*effect) == VALUE_EFFECT_BREAK || (*effect) == VALUE_EFFECT_CONTINUE)
+            if ((*effect) == VALUE_EFFECT_BREAK || (*effect) == VALUE_EFFECT_CONTINUE || (*effect) == VALUE_EFFECT_THROW)
             {
                 return value;
             }
@@ -375,7 +375,7 @@ static value_t *apply_statement(statement_t *statement, map_t *variables, value_
                 branch = branches->items[index];
                 test = apply_statement(branch->condition, variables, effect);
 
-                if ((*effect) == VALUE_EFFECT_THROW || (*effect) == VALUE_EFFECT_BREAK || (*effect) == VALUE_EFFECT_CONTINUE)
+                if ((*effect) == VALUE_EFFECT_BREAK || (*effect) == VALUE_EFFECT_CONTINUE || (*effect) == VALUE_EFFECT_THROW)
                 {
                     return test;
                 }
@@ -424,7 +424,7 @@ static value_t *apply_statement(statement_t *statement, map_t *variables, value_
 
                 test = apply_statement(data->condition, variables, effect);
 
-                if ((*effect) == VALUE_EFFECT_THROW || (*effect) == VALUE_EFFECT_BREAK || (*effect) == VALUE_EFFECT_CONTINUE)
+                if ((*effect) == VALUE_EFFECT_BREAK || (*effect) == VALUE_EFFECT_CONTINUE || (*effect) == VALUE_EFFECT_THROW)
                 {
                     return test;
                 }
@@ -446,11 +446,7 @@ static value_t *apply_statement(statement_t *statement, map_t *variables, value_
 
                     last = apply_body_statements(data->body, variables, effect);
 
-                    if ((*effect) == VALUE_EFFECT_THROW)
-                    {
-                        break;
-                    }
-                    else if ((*effect) == VALUE_EFFECT_BREAK)
+                    if ((*effect) == VALUE_EFFECT_BREAK)
                     {
                         (*effect) = VALUE_EFFECT_RETURN;
                         break;
@@ -459,6 +455,10 @@ static value_t *apply_statement(statement_t *statement, map_t *variables, value_
                     {
                         (*effect) = VALUE_EFFECT_RETURN;
                         continue;
+                    }
+                    else if ((*effect) == VALUE_EFFECT_THROW)
+                    {
+                        break;
                     }
                 }
                 else
@@ -485,14 +485,14 @@ static value_t *apply_statement(statement_t *statement, map_t *variables, value_
             data = statement->data;
             last = apply_body_statements(data->body, variables, effect);
 
-            if ((*effect) == VALUE_EFFECT_THROW)
+            if ((*effect) == VALUE_EFFECT_BREAK || (*effect) == VALUE_EFFECT_CONTINUE)
+            {
+                return last;
+            }
+            else if ((*effect) == VALUE_EFFECT_THROW)
             {
                 (*effect) = VALUE_EFFECT_RETURN;
 
-                return last;
-            }
-            else if ((*effect) == VALUE_EFFECT_BREAK || (*effect) == VALUE_EFFECT_CONTINUE)
-            {
                 return last;
             }
             else
@@ -562,7 +562,7 @@ static value_t *apply_body_statements(list_t *body, map_t *variables, value_effe
 
         last = apply_statement(body->items[index], variables, effect);
 
-        if ((*effect) == VALUE_EFFECT_THROW || (*effect) == VALUE_EFFECT_BREAK || (*effect) == VALUE_EFFECT_CONTINUE)
+        if ((*effect) == VALUE_EFFECT_BREAK || (*effect) == VALUE_EFFECT_CONTINUE || (*effect) == VALUE_EFFECT_THROW)
         {
             break;
         }
@@ -1976,7 +1976,7 @@ static int next_argument(argument_iterator_t *arguments, map_t *variables, int t
     arguments->evaluated[arguments->index] = result;
     arguments->index += 1;
 
-    if ((*effect) == VALUE_EFFECT_THROW || (*effect) == VALUE_EFFECT_BREAK || (*effect) == VALUE_EFFECT_CONTINUE)
+    if ((*effect) == VALUE_EFFECT_BREAK || (*effect) == VALUE_EFFECT_CONTINUE || (*effect) == VALUE_EFFECT_THROW)
     {
         result->owners += 1;
         (*out) = result;
