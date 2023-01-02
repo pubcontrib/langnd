@@ -188,6 +188,11 @@ static value_t *apply_statement(statement_t *statement, map_t *variables, value_
             {
                 return throw_error("unexpected reference type", effect);
             }
+            else
+            {
+                crash_with_message("unsupported branch invoked");
+                return new_null();
+            }
         }
 
         case STATEMENT_TYPE_ASSIGNMENT:
