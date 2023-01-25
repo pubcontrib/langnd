@@ -790,24 +790,33 @@ static statement_t *read_branch_statement(capsule_t *capsule)
                 }
                 else
                 {
-                    list_t *body;
+                    destroy_list(branches);
 
-                    body = read_body_expressions(capsule);
-
-                    if (!body)
-                    {
-                        destroy_list(branches);
-
-                        return create_unknown_statement();
-                    }
-
-                    branch = allocate(sizeof(conditional_branch_t));
-                    branch->condition = create_literal_statement(new_boolean(BOOLEAN_TRUE));
-                    branch->body = body;
-                    add_list_item(branches, branch);
-
-                    break;
+                    return create_unknown_statement();
                 }
+            }
+            else if (is_keyword_match(keyword, "otherwise"))
+            {
+                list_t *body;
+
+                destroy_string(keyword);
+                next_token(capsule);
+
+                body = read_body_expressions(capsule);
+
+                if (!body)
+                {
+                    destroy_list(branches);
+
+                    return create_unknown_statement();
+                }
+
+                branch = allocate(sizeof(conditional_branch_t));
+                branch->condition = create_literal_statement(new_boolean(BOOLEAN_TRUE));
+                branch->body = body;
+                add_list_item(branches, branch);
+
+                break;
             }
             else
             {

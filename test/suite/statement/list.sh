@@ -17,7 +17,7 @@ verify '$item=1 [$item]' \
     'errors with parse message' '$item]'
 verify '[@cast("1", "NUMBER")]' \
     'errors with parse message' ')]'
-verify '[if true \ 1 / else \ 2 /]' \
+verify '[if true \ 1 / otherwise \ 2 /]' \
     'errors with parse message' '/]'
 verify '[catch \ throw 1 /]' \
     'errors with parse message' '/]'
