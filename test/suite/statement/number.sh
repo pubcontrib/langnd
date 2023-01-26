@@ -2,6 +2,10 @@ suite 'statement/number'
 
 verify '0' \
     'prints to stdout' ''
+verify '-0' \
+    'prints to stdout' ''
+verify '+0' \
+    'prints to stdout' ''
 verify '1' \
     'prints to stdout' ''
 verify '-1' \
@@ -24,6 +28,8 @@ verify '-1-2-3' \
     'prints to stdout' ''
 verify '+1+2+3' \
     'prints to stdout' ''
+verify '1 2 3' \
+    'prints to stdout' ''
 verify '-1 -2 -3' \
     'prints to stdout' ''
 verify '+1 +2 +3' \
@@ -32,11 +38,11 @@ verify '-1.0-2.0-3.0' \
     'prints to stdout' ''
 verify '+1.0+2.0+3.0' \
     'prints to stdout' ''
+verify '1.0 2.0 3.0' \
+    'prints to stdout' ''
 verify '-1.0 -2.0 -3.0' \
     'prints to stdout' ''
 verify '+1.0 +2.0 +3.0' \
-    'prints to stdout' ''
-verify '1.0 2.0 3.0' \
     'prints to stdout' ''
 
 verify '32768' \
