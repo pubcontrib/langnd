@@ -1184,6 +1184,18 @@ int string_to_number(const string_t *text, number_t *out)
                 return 1;
             }
         }
+        else if (symbol == '+')
+        {
+            if (index == 0)
+            {
+                negative = 0;
+                continue;
+            }
+            else
+            {
+                return 1;
+            }
+        }
         else if (symbol == '.')
         {
             if (index > 0)

@@ -54,7 +54,7 @@ void progress_scanner(scanner_t *scanner)
             return;
         }
         else if (is_number_symbol(symbol)
-            || (symbol == '-' && has_another_symbol(scanner) && is_number_symbol(peek_next_symbol(scanner))))
+            || ((symbol == '-' || symbol == '+') && has_another_symbol(scanner) && is_number_symbol(peek_next_symbol(scanner))))
         {
             read_number_token(scanner);
             return;
