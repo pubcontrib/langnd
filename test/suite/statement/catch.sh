@@ -47,5 +47,3 @@ verify 'catch' \
     'errors with parse message' 'catch'
 verify 'catch \' \
     'errors with parse message' '\'
-verify 'catch "error"' \
-    'errors with parse message' 'catch "error"'

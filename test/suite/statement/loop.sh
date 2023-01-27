@@ -14,13 +14,11 @@ verify '$result=while false \ "first" "..." "last" / @write(@freeze($result), 1)
 verify 'while' \
     'errors with parse message' 'while'
 verify 'while \ /' \
-    'errors with parse message' '\ /'
+    'errors with parse message' '/'
 verify 'while false \' \
     'errors with parse message' '\'
 verify 'while false /' \
-    'errors with parse message' 'false /'
-verify 'while false 100' \
-    'errors with parse message' 'false 100'
+    'errors with parse message' '/'
 verify 'while false \ 100' \
     'errors with parse message' '100'
 

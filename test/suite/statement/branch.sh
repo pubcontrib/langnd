@@ -54,15 +54,13 @@ verify 'if true \ @write("first ", 1) / if true \ @write("second ", 1) / if true
 verify 'if' \
     'errors with parse message' 'if'
 verify 'if \ /' \
-    'errors with parse message' '\ /'
+    'errors with parse message' '/'
 verify 'if true' \
     'errors with parse message' 'true'
 verify 'if true \' \
     'errors with parse message' '\'
 verify 'if true /' \
-    'errors with parse message' 'true /'
-verify 'if true 100' \
-    'errors with parse message' 'true 100'
+    'errors with parse message' '/'
 verify 'if true \ 100' \
     'errors with parse message' '100'
 verify 'if true \ 100 / else' \
@@ -75,16 +73,12 @@ verify 'if true \ 100 / else \ 200' \
     'errors with parse message' 'else \ 200'
 verify 'if true \ 100 / else if' \
     'errors with parse message' 'if'
-verify 'if true \ 100 / else if \ /' \
-    'errors with parse message' '\ /'
 verify 'if true \ 100 / else if true' \
     'errors with parse message' 'true'
 verify 'if true \ 100 / else if true \' \
     'errors with parse message' '\'
 verify 'if true \ 100 / else if true /' \
-    'errors with parse message' 'true /'
-verify 'if true \ 100 / else if true 200' \
-    'errors with parse message' 'true 200'
+    'errors with parse message' '/'
 verify 'if true \ 100 / else if true \ 200' \
     'errors with parse message' '200'
 verify 'if true \ 100 / else catch \ /' \
@@ -94,7 +88,7 @@ verify 'if true \ 100 / otherwise' \
 verify 'if true \ 100 / otherwise \' \
     'errors with parse message' '\'
 verify 'if true \ 100 / otherwise /' \
-    'errors with parse message' 'otherwise /'
+    'errors with parse message' '/'
 verify 'if true \ 100 / otherwise \ 200' \
     'errors with parse message' '200'
 verify '$a=true if $a=false \ /' \

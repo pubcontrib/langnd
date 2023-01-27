@@ -21,7 +21,6 @@ typedef enum
 } value_effect_t;
 
 static value_t *apply_statement(statement_t *statement, map_t *variables, value_effect_t *effect);
-static value_t *apply_body_statements(list_t *body, map_t *variables, value_effect_t *effect);
 static value_t *run_add(argument_iterator_t *arguments, map_t *variables, value_effect_t *effect);
 static value_t *run_subtract(argument_iterator_t *arguments, map_t *variables, value_effect_t *effect);
 static value_t *run_multiply(argument_iterator_t *arguments, map_t *variables, value_effect_t *effect);
@@ -394,7 +393,7 @@ static value_t *apply_statement(statement_t *statement, map_t *variables, value_
 
                     if (pass == BOOLEAN_TRUE)
                     {
-                        last = apply_body_statements(branch->body, variables, effect);
+                        last = apply_statement(branch->action, variables, effect);
 
                         break;
                     }
@@ -449,7 +448,7 @@ static value_t *apply_statement(statement_t *statement, map_t *variables, value_
                         dereference_value(last);
                     }
 
-                    last = apply_body_statements(data->body, variables, effect);
+                    last = apply_statement(data->action, variables, effect);
 
                     if ((*effect) == VALUE_EFFECT_BREAK)
                     {
@@ -488,7 +487,7 @@ static value_t *apply_statement(statement_t *statement, map_t *variables, value_
             value_t *last;
 
             data = statement->data;
-            last = apply_body_statements(data->body, variables, effect);
+            last = apply_statement(data->action, variables, effect);
 
             if ((*effect) == VALUE_EFFECT_BREAK || (*effect) == VALUE_EFFECT_CONTINUE)
             {
@@ -544,41 +543,45 @@ static value_t *apply_statement(statement_t *statement, map_t *variables, value_
             return test;
         }
 
+        case STATEMENT_TYPE_SNIPPET:
+        {
+            snippet_statement_data_t *data;
+            list_t *statements;
+            value_t *last;
+            size_t index;
+
+            data = statement->data;
+            statements = data->statements;
+            last = NULL;
+
+            for (index = 0; index < statements->length; index++)
+            {
+                if (last)
+                {
+                    dereference_value(last);
+                }
+
+                last = apply_statement(statements->items[index], variables, effect);
+
+                if ((*effect) == VALUE_EFFECT_BREAK || (*effect) == VALUE_EFFECT_CONTINUE || (*effect) == VALUE_EFFECT_THROW)
+                {
+                    break;
+                }
+            }
+
+            if (!last)
+            {
+                last = new_null();
+            }
+
+            return last;
+        }
+
         default:
             break;
     }
 
     return new_null();
-}
-
-static value_t *apply_body_statements(list_t *body, map_t *variables, value_effect_t *effect)
-{
-    value_t *last;
-    size_t index;
-
-    last = NULL;
-
-    for (index = 0; index < body->length; index++)
-    {
-        if (last)
-        {
-            dereference_value(last);
-        }
-
-        last = apply_statement(body->items[index], variables, effect);
-
-        if ((*effect) == VALUE_EFFECT_BREAK || (*effect) == VALUE_EFFECT_CONTINUE || (*effect) == VALUE_EFFECT_THROW)
-        {
-            break;
-        }
-    }
-
-    if (!last)
-    {
-        last = new_null();
-    }
-
-    return last;
 }
 
 static value_t *run_add(argument_iterator_t *arguments, map_t *variables, value_effect_t *effect)

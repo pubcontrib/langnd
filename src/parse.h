@@ -15,7 +15,8 @@ typedef enum
     STATEMENT_TYPE_CATCH,
     STATEMENT_TYPE_BREAK,
     STATEMENT_TYPE_CONTINUE,
-    STATEMENT_TYPE_THROW
+    STATEMENT_TYPE_THROW,
+    STATEMENT_TYPE_SNIPPET
 } statement_type_t;
 
 typedef struct
@@ -61,7 +62,7 @@ typedef struct
 typedef struct
 {
     statement_t *condition;
-    list_t *body;
+    statement_t *action;
 } conditional_branch_t;
 
 typedef struct
@@ -72,12 +73,12 @@ typedef struct
 typedef struct
 {
     statement_t *condition;
-    list_t *body;
+    statement_t *action;
 } loop_statement_data_t;
 
 typedef struct
 {
-    list_t *body;
+    statement_t *action;
 } catch_statement_data_t;
 
 typedef struct
@@ -94,6 +95,11 @@ typedef struct
 {
     statement_t *error;
 } throw_statement_data_t;
+
+typedef struct
+{
+   list_t *statements;
+} snippet_statement_data_t;
 
 typedef struct
 {

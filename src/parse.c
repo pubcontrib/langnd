@@ -25,8 +25,8 @@ static statement_t *read_catch_statement(capsule_t *capsule);
 static statement_t *read_break_statement(capsule_t *capsule);
 static statement_t *read_continue_statement(capsule_t *capsule);
 static statement_t *read_throw_statement(capsule_t *capsule);
+static statement_t *read_snippet_statement(capsule_t *capsule);
 static conditional_branch_t *read_conditional_branch(capsule_t *capsule);
-static list_t *read_body_expressions(capsule_t *capsule);
 static char is_value_statement(const statement_t *statement);
 static token_t *peek_token(capsule_t *capsule);
 static token_t *next_token(capsule_t *capsule);
@@ -42,11 +42,12 @@ static statement_t *create_reference_statement(identifier_t *identifier);
 static statement_t *create_assignment_statement(identifier_t *identifier, statement_t *value);
 static statement_t *create_invoke_statement(identifier_t *identifier, list_t *arguments);
 static statement_t *create_branch_statement(list_t *branches);
-static statement_t *create_loop_statement(statement_t *condition, list_t *body);
-static statement_t *create_catch_statement(list_t *body);
+static statement_t *create_loop_statement(statement_t *condition, statement_t *action);
+static statement_t *create_catch_statement(statement_t *action);
 static statement_t *create_break_statement(statement_t *pick);
 static statement_t *create_continue_statement(statement_t *pick);
 static statement_t *create_throw_statement(statement_t *error);
+static statement_t *create_snippet_statement(list_t *statements);
 static statement_t *create_statement(statement_type_t type, void *data);
 static void destroy_statement_unsafe(void *statement);
 static void dereference_value_unsafe(void *value);
@@ -213,9 +214,9 @@ void destroy_statement(statement_t *statement)
                     destroy_statement(data->condition);
                 }
 
-                if (data->body)
+                if (data->action)
                 {
-                    destroy_list(data->body);
+                    destroy_statement(data->action);
                 }
 
                 free(data);
@@ -228,9 +229,9 @@ void destroy_statement(statement_t *statement)
 
                 data = statement->data;
 
-                if (data->body)
+                if (data->action)
                 {
-                    destroy_list(data->body);
+                    destroy_statement(data->action);
                 }
 
                 free(data);
@@ -291,6 +292,21 @@ void destroy_statement(statement_t *statement)
                 if (data->identifier)
                 {
                     destroy_identifier(data->identifier);
+                }
+
+                free(data);
+                break;
+            }
+
+            case STATEMENT_TYPE_SNIPPET:
+            {
+                snippet_statement_data_t *data;
+
+                data = statement->data;
+
+                if (data->statements)
+                {
+                    destroy_list(data->statements);
                 }
 
                 free(data);
@@ -446,6 +462,10 @@ static statement_t *read_any_statement(capsule_t *capsule)
         else if (is_symbol_token('{', capsule->scanner.code, token))
         {
             return read_map_statement(capsule);
+        }
+        else if (is_symbol_token('\\', capsule->scanner.code, token))
+        {
+            return read_snippet_statement(capsule);
         }
     }
 
@@ -797,23 +817,23 @@ static statement_t *read_branch_statement(capsule_t *capsule)
             }
             else if (is_keyword_match(keyword, "otherwise"))
             {
-                list_t *body;
+                statement_t *action;
 
                 destroy_string(keyword);
                 next_token(capsule);
 
-                body = read_body_expressions(capsule);
+                action = read_any_statement(capsule);
 
-                if (!body)
+                if (!action || action->type == STATEMENT_TYPE_UNKNOWN)
                 {
                     destroy_list(branches);
 
-                    return create_unknown_statement();
+                    return action != NULL ? action : create_unknown_statement();
                 }
 
                 branch = allocate(sizeof(conditional_branch_t));
                 branch->condition = create_literal_statement(new_boolean(BOOLEAN_TRUE));
-                branch->body = body;
+                branch->action = action;
                 add_list_item(branches, branch);
 
                 break;
@@ -836,8 +856,7 @@ static statement_t *read_branch_statement(capsule_t *capsule)
 
 static statement_t *read_loop_statement(capsule_t *capsule)
 {
-    statement_t *condition;
-    list_t *body;
+    statement_t *condition, *action;
 
     condition = read_any_statement(capsule);
 
@@ -851,30 +870,30 @@ static statement_t *read_loop_statement(capsule_t *capsule)
         return create_unknown_statement();
     }
 
-    body = read_body_expressions(capsule);
+    action = read_any_statement(capsule);
 
-    if (!body)
+    if (!action || action->type == STATEMENT_TYPE_UNKNOWN)
     {
         destroy_statement(condition);
 
-        return create_unknown_statement();
+        return action != NULL ? action : create_unknown_statement();
     }
 
-    return create_loop_statement(condition, body);
+    return create_loop_statement(condition, action);
 }
 
 static statement_t *read_catch_statement(capsule_t *capsule)
 {
-    list_t *body;
+    statement_t *action;
 
-    body = read_body_expressions(capsule);
+    action = read_any_statement(capsule);
 
-    if (!body)
+    if (!action || action->type == STATEMENT_TYPE_UNKNOWN)
     {
-        return create_unknown_statement();
+        return action != NULL ? action : create_unknown_statement();
     }
 
-    return create_catch_statement(body);
+    return create_catch_statement(action);
 }
 
 static statement_t *read_break_statement(capsule_t *capsule)
@@ -934,11 +953,45 @@ static statement_t *read_throw_statement(capsule_t *capsule)
     return create_throw_statement(error);
 }
 
+static statement_t *read_snippet_statement(capsule_t *capsule)
+{
+    list_t *statements;
+
+    statements = empty_list(destroy_statement_unsafe, 1);
+
+    while (1)
+    {
+        statement_t *statement;
+        token_t *optional;
+
+        optional = peek_token(capsule);
+
+        if (is_symbol_token('/', capsule->scanner.code, optional))
+        {
+            next_token(capsule);
+
+            break;
+        }
+
+        statement = read_any_statement(capsule);
+
+        if (!statement || statement->type == STATEMENT_TYPE_UNKNOWN)
+        {
+            destroy_list(statements);
+
+            return statement != NULL ? statement : create_unknown_statement();
+        }
+
+        add_list_item(statements, statement);
+    }
+
+    return create_snippet_statement(statements);
+}
+
 static conditional_branch_t *read_conditional_branch(capsule_t *capsule)
 {
     conditional_branch_t *branch;
-    statement_t *condition;
-    list_t *body;
+    statement_t *condition, *action;
 
     condition = read_any_statement(capsule);
 
@@ -952,63 +1005,25 @@ static conditional_branch_t *read_conditional_branch(capsule_t *capsule)
         return NULL;
     }
 
-    body = read_body_expressions(capsule);
+    action = read_any_statement(capsule);
 
-    if (!body)
+    if (!action || action->type == STATEMENT_TYPE_UNKNOWN)
     {
         destroy_statement(condition);
+
+        if (action)
+        {
+            destroy_statement(action);
+        }
 
         return NULL;
     }
 
     branch = allocate(sizeof(conditional_branch_t));
     branch->condition = condition;
-    branch->body = body;
+    branch->action = action;
 
     return branch;
-}
-
-static list_t *read_body_expressions(capsule_t *capsule)
-{
-    list_t *body;
-    token_t *optional;
-
-    optional = peek_token(capsule);
-
-    if (!is_symbol_token('\\', capsule->scanner.code, optional))
-    {
-        return NULL;
-    }
-
-    next_token(capsule);
-    body = empty_list(destroy_statement_unsafe, 1);
-
-    while (1)
-    {
-        statement_t *part;
-
-        optional = peek_token(capsule);
-
-        if (is_symbol_token('/', capsule->scanner.code, optional))
-        {
-            next_token(capsule);
-
-            break;
-        }
-
-        part = read_any_statement(capsule);
-
-        if (!part || part->type == STATEMENT_TYPE_UNKNOWN)
-        {
-            destroy_list(body);
-
-            return NULL;
-        }
-
-        add_list_item(body, part);
-    }
-
-    return body;
 }
 
 static char is_value_statement(const statement_t *statement)
@@ -1021,6 +1036,7 @@ static char is_value_statement(const statement_t *statement)
         case STATEMENT_TYPE_BRANCH:
         case STATEMENT_TYPE_LOOP:
         case STATEMENT_TYPE_CATCH:
+        case STATEMENT_TYPE_SNIPPET:
             return 1;
 
         default:
@@ -1373,23 +1389,23 @@ static statement_t *create_branch_statement(list_t *branches)
     return create_statement(STATEMENT_TYPE_BRANCH, data);
 }
 
-static statement_t *create_loop_statement(statement_t *condition, list_t *body)
+static statement_t *create_loop_statement(statement_t *condition, statement_t *action)
 {
     loop_statement_data_t *data;
 
     data = allocate(sizeof(loop_statement_data_t));
     data->condition = condition;
-    data->body = body;
+    data->action = action;
 
     return create_statement(STATEMENT_TYPE_LOOP, data);
 }
 
-static statement_t *create_catch_statement(list_t *body)
+static statement_t *create_catch_statement(statement_t *action)
 {
     catch_statement_data_t *data;
 
     data = allocate(sizeof(catch_statement_data_t));
-    data->body = body;
+    data->action = action;
 
     return create_statement(STATEMENT_TYPE_CATCH, data);
 }
@@ -1424,6 +1440,16 @@ static statement_t *create_throw_statement(statement_t *error)
     return create_statement(STATEMENT_TYPE_THROW, data);
 }
 
+static statement_t *create_snippet_statement(list_t *statements)
+{
+    snippet_statement_data_t *data;
+
+    data = allocate(sizeof(snippet_statement_data_t));
+    data->statements = statements;
+
+    return create_statement(STATEMENT_TYPE_SNIPPET, data);
+}
+
 static statement_t *create_statement(statement_type_t type, void *data)
 {
     statement_t *statement;
@@ -1452,9 +1478,9 @@ static void destroy_conditional_branch(conditional_branch_t *branch)
         destroy_statement(branch->condition);
     }
 
-    if (branch->body)
+    if (branch->action)
     {
-        destroy_list(branch->body);
+        destroy_statement(branch->action);
     }
 
     free(branch);

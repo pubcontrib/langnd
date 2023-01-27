@@ -44,6 +44,7 @@ introduce
 . suite/statement/throw.sh
 . suite/statement/break.sh
 . suite/statement/continue.sh
+. suite/statement/snippet.sh
 
 . suite/function/add.sh
 . suite/function/subtract.sh
