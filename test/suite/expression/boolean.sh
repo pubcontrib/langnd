@@ -1,4 +1,4 @@
-suite 'statement/boolean'
+suite 'expression/boolean'
 
 verify 'false' \
     'prints to stdout' ''

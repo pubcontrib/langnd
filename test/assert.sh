@@ -63,10 +63,10 @@ verify()
     # Keep building up test setup while there are more arguments
     while [ "${1+x}" = 'x' ]
     do
-        statement="$1"
+        expression="$1"
         shift
 
-        case "$statement" in
+        case "$expression" in
             'prints to stdout')
                 if [ "${1+x}" != 'x' ]
                 then
@@ -156,7 +156,7 @@ verify()
                 ;;
 
             *)
-                flaw='unknown test statement'
+                flaw='unknown test expression'
                 break
         esac
     done

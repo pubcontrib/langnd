@@ -7,7 +7,7 @@
 
 typedef struct
 {
-    list_t *statements;
+    list_t *expressions;
     value_t **evaluated;
     size_t index;
 } argument_iterator_t;
@@ -20,7 +20,7 @@ typedef enum
     VALUE_EFFECT_THROW
 } value_effect_t;
 
-static value_t *apply_statement(statement_t *statement, map_t *variables, value_effect_t *effect);
+static value_t *apply_expression(expression_t *expression, map_t *variables, value_effect_t *effect);
 static value_t *run_add(argument_iterator_t *arguments, map_t *variables, value_effect_t *effect);
 static value_t *run_subtract(argument_iterator_t *arguments, map_t *variables, value_effect_t *effect);
 static value_t *run_multiply(argument_iterator_t *arguments, map_t *variables, value_effect_t *effect);
@@ -61,7 +61,7 @@ outcome_t *execute(string_t *code)
     outcome_t *outcome;
     script_t *script;
     map_t *variables;
-    list_t *statements;
+    list_t *expressions;
     size_t index;
 
     outcome = allocate(sizeof(outcome_t));
@@ -80,15 +80,15 @@ outcome_t *execute(string_t *code)
     }
 
     variables = empty_map(hash_string, dereference_value_unsafe, 8);
-    statements = script->statements;
+    expressions = script->expressions;
 
-    for (index = 0; index < statements->length; index++)
+    for (index = 0; index < expressions->length; index++)
     {
         value_t *result;
         value_effect_t effect;
 
         effect = VALUE_EFFECT_RETURN;
-        result = apply_statement(statements->items[index], variables, &effect);
+        result = apply_expression(expressions->items[index], variables, &effect);
 
         if (effect == VALUE_EFFECT_RETURN)
         {
@@ -145,27 +145,27 @@ void destroy_outcome(outcome_t *outcome)
     free(outcome);
 }
 
-static value_t *apply_statement(statement_t *statement, map_t *variables, value_effect_t *effect)
+static value_t *apply_expression(expression_t *expression, map_t *variables, value_effect_t *effect)
 {
-    switch (statement->type)
+    switch (expression->type)
     {
-        case STATEMENT_TYPE_LITERAL:
+        case EXPRESSION_TYPE_LITERAL:
         {
-            literal_statement_data_t *data;
+            literal_expression_data_t *data;
             value_t *value;
 
-            data = statement->data;
+            data = expression->data;
             value = data->value;
             value->owners += 1;
 
             return value;
         }
 
-        case STATEMENT_TYPE_REFERENCE:
+        case EXPRESSION_TYPE_REFERENCE:
         {
-            reference_statement_data_t *data;
+            reference_expression_data_t *data;
 
-            data = statement->data;
+            data = expression->data;
 
             if (data->identifier->type == IDENTIFIER_TYPE_VARIABLE)
             {
@@ -194,13 +194,13 @@ static value_t *apply_statement(statement_t *statement, map_t *variables, value_
             }
         }
 
-        case STATEMENT_TYPE_ASSIGNMENT:
+        case EXPRESSION_TYPE_ASSIGNMENT:
         {
-            assignment_statement_data_t *data;
+            assignment_expression_data_t *data;
             value_t *value;
 
-            data = statement->data;
-            value = apply_statement(data->value, variables, effect);
+            data = expression->data;
+            value = apply_expression(data->value, variables, effect);
 
             if ((*effect) == VALUE_EFFECT_BREAK || (*effect) == VALUE_EFFECT_CONTINUE || (*effect) == VALUE_EFFECT_THROW)
             {
@@ -213,14 +213,14 @@ static value_t *apply_statement(statement_t *statement, map_t *variables, value_
             return value;
         }
 
-        case STATEMENT_TYPE_INVOKE:
+        case EXPRESSION_TYPE_INVOKE:
         {
-            invoke_statement_data_t *data;
+            invoke_expression_data_t *data;
             argument_iterator_t arguments;
             value_t *result;
 
-            data = statement->data;
-            arguments.statements = data->arguments;
+            data = expression->data;
+            arguments.expressions = data->arguments;
 
             if (data->arguments->length > 0)
             {
@@ -361,14 +361,14 @@ static value_t *apply_statement(statement_t *statement, map_t *variables, value_
             return result;
         }
 
-        case STATEMENT_TYPE_BRANCH:
+        case EXPRESSION_TYPE_BRANCH:
         {
-            branch_statement_data_t *data;
+            branch_expression_data_t *data;
             list_t *branches;
             value_t *last;
             size_t index;
 
-            data = statement->data;
+            data = expression->data;
             branches = data->branches;
             last = NULL;
 
@@ -378,7 +378,7 @@ static value_t *apply_statement(statement_t *statement, map_t *variables, value_
                 value_t *test;
 
                 branch = branches->items[index];
-                test = apply_statement(branch->condition, variables, effect);
+                test = apply_expression(branch->condition, variables, effect);
 
                 if ((*effect) == VALUE_EFFECT_BREAK || (*effect) == VALUE_EFFECT_CONTINUE || (*effect) == VALUE_EFFECT_THROW)
                 {
@@ -394,7 +394,7 @@ static value_t *apply_statement(statement_t *statement, map_t *variables, value_
 
                     if (pass == BOOLEAN_TRUE)
                     {
-                        last = apply_statement(branch->action, variables, effect);
+                        last = apply_expression(branch->action, variables, effect);
 
                         break;
                     }
@@ -415,19 +415,19 @@ static value_t *apply_statement(statement_t *statement, map_t *variables, value_
             return last;
         }
 
-        case STATEMENT_TYPE_LOOP:
+        case EXPRESSION_TYPE_LOOP:
         {
-            loop_statement_data_t *data;
+            loop_expression_data_t *data;
             value_t *last;
 
-            data = statement->data;
+            data = expression->data;
             last = NULL;
 
             while (1)
             {
                 value_t *test;
 
-                test = apply_statement(data->condition, variables, effect);
+                test = apply_expression(data->condition, variables, effect);
 
                 if ((*effect) == VALUE_EFFECT_BREAK || (*effect) == VALUE_EFFECT_CONTINUE || (*effect) == VALUE_EFFECT_THROW)
                 {
@@ -449,7 +449,7 @@ static value_t *apply_statement(statement_t *statement, map_t *variables, value_
                         dereference_value(last);
                     }
 
-                    last = apply_statement(data->action, variables, effect);
+                    last = apply_expression(data->action, variables, effect);
 
                     if ((*effect) == VALUE_EFFECT_BREAK)
                     {
@@ -482,13 +482,13 @@ static value_t *apply_statement(statement_t *statement, map_t *variables, value_
             return last;
         }
 
-        case STATEMENT_TYPE_CATCH:
+        case EXPRESSION_TYPE_CATCH:
         {
-            catch_statement_data_t *data;
+            catch_expression_data_t *data;
             value_t *last;
 
-            data = statement->data;
-            last = apply_statement(data->action, variables, effect);
+            data = expression->data;
+            last = apply_expression(data->action, variables, effect);
 
             if ((*effect) == VALUE_EFFECT_BREAK || (*effect) == VALUE_EFFECT_CONTINUE)
             {
@@ -508,61 +508,61 @@ static value_t *apply_statement(statement_t *statement, map_t *variables, value_
             return new_null();
         }
 
-        case STATEMENT_TYPE_BREAK:
+        case EXPRESSION_TYPE_BREAK:
         {
-            break_statement_data_t *data;
+            break_expression_data_t *data;
             value_t *test;
 
-            data = statement->data;
-            test = apply_statement(data->pick, variables, effect);
+            data = expression->data;
+            test = apply_expression(data->pick, variables, effect);
             (*effect) = VALUE_EFFECT_BREAK;
 
             return test;
         }
 
-        case STATEMENT_TYPE_CONTINUE:
+        case EXPRESSION_TYPE_CONTINUE:
         {
-            continue_statement_data_t *data;
+            continue_expression_data_t *data;
             value_t *test;
 
-            data = statement->data;
-            test = apply_statement(data->pick, variables, effect);
+            data = expression->data;
+            test = apply_expression(data->pick, variables, effect);
             (*effect) = VALUE_EFFECT_CONTINUE;
 
             return test;
         }
 
-        case STATEMENT_TYPE_THROW:
+        case EXPRESSION_TYPE_THROW:
         {
-            throw_statement_data_t *data;
+            throw_expression_data_t *data;
             value_t *test;
 
-            data = statement->data;
-            test = apply_statement(data->error, variables, effect);
+            data = expression->data;
+            test = apply_expression(data->error, variables, effect);
             (*effect) = VALUE_EFFECT_THROW;
 
             return test;
         }
 
-        case STATEMENT_TYPE_SNIPPET:
+        case EXPRESSION_TYPE_SNIPPET:
         {
-            snippet_statement_data_t *data;
-            list_t *statements;
+            snippet_expression_data_t *data;
+            list_t *expressions;
             value_t *last;
             size_t index;
 
-            data = statement->data;
-            statements = data->statements;
+            data = expression->data;
+            expressions = data->expressions;
             last = NULL;
 
-            for (index = 0; index < statements->length; index++)
+            for (index = 0; index < expressions->length; index++)
             {
                 if (last)
                 {
                     dereference_value(last);
                 }
 
-                last = apply_statement(statements->items[index], variables, effect);
+                last = apply_expression(expressions->items[index], variables, effect);
 
                 if ((*effect) == VALUE_EFFECT_BREAK || (*effect) == VALUE_EFFECT_CONTINUE || (*effect) == VALUE_EFFECT_THROW)
                 {
@@ -1122,8 +1122,8 @@ static value_t *run_thaw(argument_iterator_t *arguments, map_t *variables, value
 {
     value_t *code, *value;
     script_t *script;
-    statement_t *statement;
-    literal_statement_data_t *data;
+    expression_t *expression;
+    literal_expression_data_t *data;
 
     if (!next_argument(arguments, variables, VALUE_TYPE_STRING, &code, effect))
     {
@@ -1132,23 +1132,23 @@ static value_t *run_thaw(argument_iterator_t *arguments, map_t *variables, value
 
     script = parse_script(view_string(code));
 
-    if (script->errorMessage || script->statements->length != 1)
+    if (script->errorMessage || script->expressions->length != 1)
     {
         destroy_script(script);
 
         return throw_error("melting error", effect);
     }
 
-    statement = script->statements->items[0];
+    expression = script->expressions->items[0];
 
-    if (statement->type != STATEMENT_TYPE_LITERAL)
+    if (expression->type != EXPRESSION_TYPE_LITERAL)
     {
         destroy_script(script);
 
         return throw_error("melting error", effect);
     }
 
-    data = statement->data;
+    data = expression->data;
     value = data->value;
     data->value = NULL;
     destroy_script(script);
@@ -1981,7 +1981,7 @@ static int next_argument(argument_iterator_t *arguments, map_t *variables, int t
         return 0;
     }
 
-    result = apply_statement(arguments->statements->items[arguments->index], variables, effect);
+    result = apply_expression(arguments->expressions->items[arguments->index], variables, effect);
     arguments->evaluated[arguments->index] = result;
     arguments->index += 1;
 
@@ -2004,7 +2004,7 @@ static int next_argument(argument_iterator_t *arguments, map_t *variables, int t
 
 static int has_next_argument(const argument_iterator_t *arguments)
 {
-    return arguments->index < arguments->statements->length;
+    return arguments->index < arguments->expressions->length;
 }
 
 static void copy_map_items(const map_t *source, map_t *destination)

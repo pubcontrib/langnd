@@ -30,21 +30,21 @@ introduce
 . suite/token/identifier.sh
 . suite/token/keyword.sh
 
-. suite/statement/null.sh
-. suite/statement/boolean.sh
-. suite/statement/number.sh
-. suite/statement/string.sh
-. suite/statement/list.sh
-. suite/statement/map.sh
-. suite/statement/assignment.sh
-. suite/statement/invoke.sh
-. suite/statement/branch.sh
-. suite/statement/loop.sh
-. suite/statement/catch.sh
-. suite/statement/throw.sh
-. suite/statement/break.sh
-. suite/statement/continue.sh
-. suite/statement/snippet.sh
+. suite/expression/null.sh
+. suite/expression/boolean.sh
+. suite/expression/number.sh
+. suite/expression/string.sh
+. suite/expression/list.sh
+. suite/expression/map.sh
+. suite/expression/assignment.sh
+. suite/expression/invoke.sh
+. suite/expression/branch.sh
+. suite/expression/loop.sh
+. suite/expression/catch.sh
+. suite/expression/throw.sh
+. suite/expression/break.sh
+. suite/expression/continue.sh
+. suite/expression/snippet.sh
 
 . suite/function/add.sh
 . suite/function/subtract.sh

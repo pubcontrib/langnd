@@ -5,25 +5,25 @@
 
 typedef enum
 {
-    STATEMENT_TYPE_UNKNOWN,
-    STATEMENT_TYPE_LITERAL,
-    STATEMENT_TYPE_REFERENCE,
-    STATEMENT_TYPE_ASSIGNMENT,
-    STATEMENT_TYPE_INVOKE,
-    STATEMENT_TYPE_BRANCH,
-    STATEMENT_TYPE_LOOP,
-    STATEMENT_TYPE_CATCH,
-    STATEMENT_TYPE_BREAK,
-    STATEMENT_TYPE_CONTINUE,
-    STATEMENT_TYPE_THROW,
-    STATEMENT_TYPE_SNIPPET
-} statement_type_t;
+    EXPRESSION_TYPE_UNKNOWN,
+    EXPRESSION_TYPE_LITERAL,
+    EXPRESSION_TYPE_REFERENCE,
+    EXPRESSION_TYPE_ASSIGNMENT,
+    EXPRESSION_TYPE_INVOKE,
+    EXPRESSION_TYPE_BRANCH,
+    EXPRESSION_TYPE_LOOP,
+    EXPRESSION_TYPE_CATCH,
+    EXPRESSION_TYPE_BREAK,
+    EXPRESSION_TYPE_CONTINUE,
+    EXPRESSION_TYPE_THROW,
+    EXPRESSION_TYPE_SNIPPET
+} expression_type_t;
 
 typedef struct
 {
-    statement_type_t type;
+    expression_type_t type;
     void *data;
-} statement_t;
+} expression_t;
 
 typedef enum
 {
@@ -40,77 +40,77 @@ typedef struct
 typedef struct
 {
     value_t *value;
-} literal_statement_data_t;
+} literal_expression_data_t;
 
 typedef struct
 {
     identifier_t *identifier;
-} reference_statement_data_t;
+} reference_expression_data_t;
 
 typedef struct
 {
     identifier_t *identifier;
-    statement_t *value;
-} assignment_statement_data_t;
+    expression_t *value;
+} assignment_expression_data_t;
 
 typedef struct
 {
     identifier_t *identifier;
     list_t *arguments;
-} invoke_statement_data_t;
+} invoke_expression_data_t;
 
 typedef struct
 {
-    statement_t *condition;
-    statement_t *action;
+    expression_t *condition;
+    expression_t *action;
 } conditional_branch_t;
 
 typedef struct
 {
     list_t *branches;
-} branch_statement_data_t;
+} branch_expression_data_t;
 
 typedef struct
 {
-    statement_t *condition;
-    statement_t *action;
-} loop_statement_data_t;
+    expression_t *condition;
+    expression_t *action;
+} loop_expression_data_t;
 
 typedef struct
 {
-    statement_t *action;
-} catch_statement_data_t;
+    expression_t *action;
+} catch_expression_data_t;
 
 typedef struct
 {
-    statement_t *pick;
-} break_statement_data_t;
+    expression_t *pick;
+} break_expression_data_t;
 
 typedef struct
 {
-    statement_t *pick;
-} continue_statement_data_t;
+    expression_t *pick;
+} continue_expression_data_t;
 
 typedef struct
 {
-    statement_t *error;
-} throw_statement_data_t;
+    expression_t *error;
+} throw_expression_data_t;
 
 typedef struct
 {
-   list_t *statements;
-} snippet_statement_data_t;
+   list_t *expressions;
+} snippet_expression_data_t;
 
 typedef struct
 {
-    list_t *statements;
+    list_t *expressions;
     string_t *errorMessage;
     string_t *hintMessage;
 } script_t;
 
 script_t *parse_script(string_t *code);
 void destroy_script(script_t *script);
-void destroy_statement(statement_t *statement);
+void destroy_expression(expression_t *expression);
 void destroy_identifier(identifier_t *identifier);
 
 #endif

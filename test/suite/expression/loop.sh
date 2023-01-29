@@ -1,4 +1,4 @@
-suite 'statement/loop'
+suite 'expression/loop'
 
 verify 'while false \ @write("HERE", 1) /' \
     'prints to stdout' ''

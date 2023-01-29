@@ -1,4 +1,4 @@
-suite 'statement/break'
+suite 'expression/break'
 
 verify 'while true \ @write("a", 1) break "here" @write("b", 1) / @write("c", 1)' \
     'prints to stdout' 'ac'

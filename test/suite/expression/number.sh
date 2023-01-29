@@ -1,4 +1,4 @@
-suite 'statement/number'
+suite 'expression/number'
 
 verify '0' \
     'prints to stdout' ''

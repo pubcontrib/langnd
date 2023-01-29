@@ -1,4 +1,4 @@
-suite 'statement/map'
+suite 'expression/map'
 
 verify '{}' \
     'prints to stdout' ''

@@ -1,4 +1,4 @@
-suite 'statement/catch'
+suite 'expression/catch'
 
 verify 'catch \ /' \
     'prints to stdout' ''

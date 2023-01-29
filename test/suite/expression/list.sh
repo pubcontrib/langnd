@@ -1,4 +1,4 @@
-suite 'statement/list'
+suite 'expression/list'
 
 verify '[]' \
     'prints to stdout' ''

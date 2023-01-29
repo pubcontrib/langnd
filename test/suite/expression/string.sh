@@ -1,4 +1,4 @@
-suite 'statement/string'
+suite 'expression/string'
 
 verify '"text"' \
     'prints to stdout' ''

@@ -1,4 +1,4 @@
-suite 'statement/assignment'
+suite 'expression/assignment'
 
 verify '$a=null' \
     'prints to stdout' ''

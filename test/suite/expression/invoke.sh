@@ -1,4 +1,4 @@
-suite 'statement/invoke'
+suite 'expression/invoke'
 
 verify '@add(' \
     'errors with parse message' '('

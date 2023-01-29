@@ -1,4 +1,4 @@
-suite 'statement/null'
+suite 'expression/null'
 
 verify 'null' \
     'prints to stdout' ''

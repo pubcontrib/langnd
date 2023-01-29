@@ -1,4 +1,4 @@
-suite 'statement/throw'
+suite 'expression/throw'
 
 verify 'throw null' \
     'errors with execute message' 'null'

@@ -14,18 +14,18 @@ typedef struct
     int ahead;
 } capsule_t;
 
-static statement_t *read_any_statement(capsule_t *capsule);
-static statement_t *read_list_statement(capsule_t *capsule);
-static statement_t *read_map_statement(capsule_t *capsule);
-static statement_t *read_assignment_statement(capsule_t *capsule, identifier_t *identifier);
-static statement_t *read_invoke_statement(capsule_t *capsule, identifier_t *identifier);
-static statement_t *read_branch_statement(capsule_t *capsule);
-static statement_t *read_loop_statement(capsule_t *capsule);
-static statement_t *read_catch_statement(capsule_t *capsule);
-static statement_t *read_break_statement(capsule_t *capsule);
-static statement_t *read_continue_statement(capsule_t *capsule);
-static statement_t *read_throw_statement(capsule_t *capsule);
-static statement_t *read_snippet_statement(capsule_t *capsule);
+static expression_t *read_any_expression(capsule_t *capsule);
+static expression_t *read_list_expression(capsule_t *capsule);
+static expression_t *read_map_expression(capsule_t *capsule);
+static expression_t *read_assignment_expression(capsule_t *capsule, identifier_t *identifier);
+static expression_t *read_invoke_expression(capsule_t *capsule, identifier_t *identifier);
+static expression_t *read_branch_expression(capsule_t *capsule);
+static expression_t *read_loop_expression(capsule_t *capsule);
+static expression_t *read_catch_expression(capsule_t *capsule);
+static expression_t *read_break_expression(capsule_t *capsule);
+static expression_t *read_continue_expression(capsule_t *capsule);
+static expression_t *read_throw_expression(capsule_t *capsule);
+static expression_t *read_snippet_expression(capsule_t *capsule);
 static conditional_branch_t *read_conditional_branch(capsule_t *capsule);
 static token_t *peek_token(capsule_t *capsule);
 static token_t *next_token(capsule_t *capsule);
@@ -35,20 +35,20 @@ static string_t *substring_to_newline(const string_t *code, size_t start, size_t
 static identifier_t *parse_identifier(const string_t *code, const token_t *token);
 static string_t *unescape_string(const string_t *code, const token_t *token);
 static char is_symbol_token(char symbol, const string_t *code, const token_t *token);
-static statement_t *create_unknown_statement();
-static statement_t *create_literal_statement(value_t *value);
-static statement_t *create_reference_statement(identifier_t *identifier);
-static statement_t *create_assignment_statement(identifier_t *identifier, statement_t *value);
-static statement_t *create_invoke_statement(identifier_t *identifier, list_t *arguments);
-static statement_t *create_branch_statement(list_t *branches);
-static statement_t *create_loop_statement(statement_t *condition, statement_t *action);
-static statement_t *create_catch_statement(statement_t *action);
-static statement_t *create_break_statement(statement_t *pick);
-static statement_t *create_continue_statement(statement_t *pick);
-static statement_t *create_throw_statement(statement_t *error);
-static statement_t *create_snippet_statement(list_t *statements);
-static statement_t *create_statement(statement_type_t type, void *data);
-static void destroy_statement_unsafe(void *statement);
+static expression_t *create_unknown_expression();
+static expression_t *create_literal_expression(value_t *value);
+static expression_t *create_reference_expression(identifier_t *identifier);
+static expression_t *create_assignment_expression(identifier_t *identifier, expression_t *value);
+static expression_t *create_invoke_expression(identifier_t *identifier, list_t *arguments);
+static expression_t *create_branch_expression(list_t *branches);
+static expression_t *create_loop_expression(expression_t *condition, expression_t *action);
+static expression_t *create_catch_expression(expression_t *action);
+static expression_t *create_break_expression(expression_t *pick);
+static expression_t *create_continue_expression(expression_t *pick);
+static expression_t *create_throw_expression(expression_t *error);
+static expression_t *create_snippet_expression(list_t *expressions);
+static expression_t *create_expression(expression_type_t type, void *data);
+static void destroy_expression_unsafe(void *expression);
 static void dereference_value_unsafe(void *value);
 static void destroy_conditional_branch(conditional_branch_t *branch);
 static void destroy_conditional_branch_unsafe(void *branch);
@@ -57,7 +57,7 @@ script_t *parse_script(string_t *code)
 {
     capsule_t capsule;
     script_t *script;
-    list_t *statements;
+    list_t *expressions;
     string_t *errorMessage;
     string_t *hintMessage;
 
@@ -66,29 +66,29 @@ script_t *parse_script(string_t *code)
     capsule.ahead = 0;
     start_scanner(&capsule.scanner, code);
 
-    statements = empty_list(destroy_statement_unsafe, 1);
+    expressions = empty_list(destroy_expression_unsafe, 1);
     errorMessage = NULL;
     hintMessage = NULL;
 
     while (capsule.scanner.state == SCANNER_STATE_RUNNING)
     {
-        statement_t *statement;
+        expression_t *expression;
 
-        statement = read_any_statement(&capsule);
+        expression = read_any_expression(&capsule);
 
-        if (statement)
+        if (expression)
         {
-            if (statement->type == STATEMENT_TYPE_UNKNOWN && capsule.scanner.state != SCANNER_STATE_ERRORED)
+            if (expression->type == EXPRESSION_TYPE_UNKNOWN && capsule.scanner.state != SCANNER_STATE_ERRORED)
             {
-                destroy_list(statements);
-                destroy_statement(statement);
-                statements = NULL;
+                destroy_list(expressions);
+                destroy_expression(expression);
+                expressions = NULL;
                 errorMessage = cstring_to_string("failed to parse code");
                 hintMessage = substring_to_newline(capsule.scanner.code, capsule.present.start, 50);
                 break;
             }
 
-            add_list_item(statements, statement);
+            add_list_item(expressions, expression);
         }
     }
 
@@ -99,7 +99,7 @@ script_t *parse_script(string_t *code)
     }
 
     script = allocate(sizeof(script_t));
-    script->statements = statements;
+    script->expressions = expressions;
     script->errorMessage = errorMessage;
     script->hintMessage = hintMessage;
 
@@ -118,25 +118,25 @@ void destroy_script(script_t *script)
         destroy_string(script->hintMessage);
     }
 
-    if (script->statements)
+    if (script->expressions)
     {
-        destroy_list(script->statements);
+        destroy_list(script->expressions);
     }
 
     free(script);
 }
 
-void destroy_statement(statement_t *statement)
+void destroy_expression(expression_t *expression)
 {
-    if (statement->data)
+    if (expression->data)
     {
-        switch (statement->type)
+        switch (expression->type)
         {
-            case STATEMENT_TYPE_LITERAL:
+            case EXPRESSION_TYPE_LITERAL:
             {
-                literal_statement_data_t *data;
+                literal_expression_data_t *data;
 
-                data = statement->data;
+                data = expression->data;
 
                 if (data->value)
                 {
@@ -147,11 +147,11 @@ void destroy_statement(statement_t *statement)
                 break;
             }
 
-            case STATEMENT_TYPE_REFERENCE:
+            case EXPRESSION_TYPE_REFERENCE:
             {
-                reference_statement_data_t *data;
+                reference_expression_data_t *data;
 
-                data = statement->data;
+                data = expression->data;
 
                 if (data->identifier)
                 {
@@ -162,11 +162,11 @@ void destroy_statement(statement_t *statement)
                 break;
             }
 
-            case STATEMENT_TYPE_ASSIGNMENT:
+            case EXPRESSION_TYPE_ASSIGNMENT:
             {
-                assignment_statement_data_t *data;
+                assignment_expression_data_t *data;
 
-                data = statement->data;
+                data = expression->data;
 
                 if (data->identifier)
                 {
@@ -175,18 +175,18 @@ void destroy_statement(statement_t *statement)
 
                 if (data->value)
                 {
-                    destroy_statement(data->value);
+                    destroy_expression(data->value);
                 }
 
                 free(data);
                 break;
             }
 
-            case STATEMENT_TYPE_INVOKE:
+            case EXPRESSION_TYPE_INVOKE:
             {
-                invoke_statement_data_t *data;
+                invoke_expression_data_t *data;
 
-                data = statement->data;
+                data = expression->data;
 
                 if (data->identifier)
                 {
@@ -202,11 +202,11 @@ void destroy_statement(statement_t *statement)
                 break;
             }
 
-            case STATEMENT_TYPE_BRANCH:
+            case EXPRESSION_TYPE_BRANCH:
             {
-                branch_statement_data_t *data;
+                branch_expression_data_t *data;
 
-                data = statement->data;
+                data = expression->data;
 
                 if (data->branches)
                 {
@@ -217,95 +217,95 @@ void destroy_statement(statement_t *statement)
                 break;
             }
 
-            case STATEMENT_TYPE_LOOP:
+            case EXPRESSION_TYPE_LOOP:
             {
-                loop_statement_data_t *data;
+                loop_expression_data_t *data;
 
-                data = statement->data;
+                data = expression->data;
 
                 if (data->condition)
                 {
-                    destroy_statement(data->condition);
+                    destroy_expression(data->condition);
                 }
 
                 if (data->action)
                 {
-                    destroy_statement(data->action);
+                    destroy_expression(data->action);
                 }
 
                 free(data);
                 break;
             }
 
-            case STATEMENT_TYPE_CATCH:
+            case EXPRESSION_TYPE_CATCH:
             {
-                catch_statement_data_t *data;
+                catch_expression_data_t *data;
 
-                data = statement->data;
+                data = expression->data;
 
                 if (data->action)
                 {
-                    destroy_statement(data->action);
+                    destroy_expression(data->action);
                 }
 
                 free(data);
                 break;
             }
 
-            case STATEMENT_TYPE_BREAK:
+            case EXPRESSION_TYPE_BREAK:
             {
-                break_statement_data_t *data;
+                break_expression_data_t *data;
 
-                data = statement->data;
+                data = expression->data;
 
                 if (data->pick)
                 {
-                    destroy_statement(data->pick);
+                    destroy_expression(data->pick);
                 }
 
                 free(data);
                 break;
             }
 
-            case STATEMENT_TYPE_CONTINUE:
+            case EXPRESSION_TYPE_CONTINUE:
             {
-                continue_statement_data_t *data;
+                continue_expression_data_t *data;
 
-                data = statement->data;
+                data = expression->data;
 
                 if (data->pick)
                 {
-                    destroy_statement(data->pick);
+                    destroy_expression(data->pick);
                 }
 
                 free(data);
                 break;
             }
 
-            case STATEMENT_TYPE_THROW:
+            case EXPRESSION_TYPE_THROW:
             {
-                throw_statement_data_t *data;
+                throw_expression_data_t *data;
 
-                data = statement->data;
+                data = expression->data;
 
                 if (data->error)
                 {
-                    destroy_statement(data->error);
+                    destroy_expression(data->error);
                 }
 
                 free(data);
                 break;
             }
 
-            case STATEMENT_TYPE_SNIPPET:
+            case EXPRESSION_TYPE_SNIPPET:
             {
-                snippet_statement_data_t *data;
+                snippet_expression_data_t *data;
 
-                data = statement->data;
+                data = expression->data;
 
-                if (data->statements)
+                if (data->expressions)
                 {
-                    destroy_list(data->statements);
+                    destroy_list(data->expressions);
                 }
 
                 free(data);
@@ -318,7 +318,7 @@ void destroy_statement(statement_t *statement)
         }
     }
 
-    free(statement);
+    free(expression);
 }
 
 void destroy_identifier(identifier_t *identifier)
@@ -331,7 +331,7 @@ void destroy_identifier(identifier_t *identifier)
     free(identifier);
 }
 
-static statement_t *read_any_statement(capsule_t *capsule)
+static expression_t *read_any_expression(capsule_t *capsule)
 {
     token_t *token;
 
@@ -353,12 +353,12 @@ static statement_t *read_any_statement(capsule_t *capsule)
         {
             destroy_string(text);
 
-            return create_unknown_statement();
+            return create_unknown_expression();
         }
 
         destroy_string(text);
 
-        return create_literal_statement(new_number(value));
+        return create_literal_expression(new_number(value));
     }
     else if (token->type == TOKEN_TYPE_STRING)
     {
@@ -366,7 +366,7 @@ static statement_t *read_any_statement(capsule_t *capsule)
 
         string = unescape_string(capsule->scanner.code, token);
 
-        return string ? create_literal_statement(steal_string(string)) : create_unknown_statement();
+        return string ? create_literal_expression(steal_string(string)) : create_unknown_expression();
     }
     else if (token->type == TOKEN_TYPE_IDENTIFIER)
     {
@@ -377,7 +377,7 @@ static statement_t *read_any_statement(capsule_t *capsule)
 
         if (!identifier)
         {
-            return create_unknown_statement();
+            return create_unknown_expression();
         }
 
         optional = peek_token(capsule);
@@ -386,61 +386,61 @@ static statement_t *read_any_statement(capsule_t *capsule)
         {
             next_token(capsule);
 
-            return read_assignment_statement(capsule, identifier);
+            return read_assignment_expression(capsule, identifier);
         }
         else if (is_symbol_token('(', capsule->scanner.code, optional))
         {
             next_token(capsule);
 
-            return read_invoke_statement(capsule, identifier);
+            return read_invoke_expression(capsule, identifier);
         }
         else
         {
-            return create_reference_statement(identifier);
+            return create_reference_expression(identifier);
         }
     }
     else if (token->type == TOKEN_TYPE_KEYWORD)
     {
-        statement_t *statement;
+        expression_t *expression;
         string_t *keyword;
 
         keyword = substring_using_token(capsule->scanner.code, token);
 
         if (is_keyword_match(keyword, "null"))
         {
-            statement = create_literal_statement(new_null());
+            expression = create_literal_expression(new_null());
         }
         else if (is_keyword_match(keyword, "false"))
         {
-            statement = create_literal_statement(new_boolean(BOOLEAN_FALSE));
+            expression = create_literal_expression(new_boolean(BOOLEAN_FALSE));
         }
         else if (is_keyword_match(keyword, "true"))
         {
-            statement = create_literal_statement(new_boolean(BOOLEAN_TRUE));
+            expression = create_literal_expression(new_boolean(BOOLEAN_TRUE));
         }
         else if (is_keyword_match(keyword, "if"))
         {
-            statement = read_branch_statement(capsule);
+            expression = read_branch_expression(capsule);
         }
         else if (is_keyword_match(keyword, "while"))
         {
-            statement = read_loop_statement(capsule);
+            expression = read_loop_expression(capsule);
         }
         else if (is_keyword_match(keyword, "catch"))
         {
-            statement = read_catch_statement(capsule);
+            expression = read_catch_expression(capsule);
         }
         else if (is_keyword_match(keyword, "break"))
         {
-            statement = read_break_statement(capsule);
+            expression = read_break_expression(capsule);
         }
         else if (is_keyword_match(keyword, "continue"))
         {
-            statement = read_continue_statement(capsule);
+            expression = read_continue_expression(capsule);
         }
         else if (is_keyword_match(keyword, "throw"))
         {
-            statement = read_throw_statement(capsule);
+            expression = read_throw_expression(capsule);
         }
         else
         {
@@ -450,28 +450,28 @@ static statement_t *read_any_statement(capsule_t *capsule)
 
         destroy_string(keyword);
 
-        return statement;
+        return expression;
     }
     else if (token->type == TOKEN_TYPE_SYMBOL)
     {
         if (is_symbol_token('[', capsule->scanner.code, token))
         {
-            return read_list_statement(capsule);
+            return read_list_expression(capsule);
         }
         else if (is_symbol_token('{', capsule->scanner.code, token))
         {
-            return read_map_statement(capsule);
+            return read_map_expression(capsule);
         }
         else if (is_symbol_token('\\', capsule->scanner.code, token))
         {
-            return read_snippet_statement(capsule);
+            return read_snippet_expression(capsule);
         }
     }
 
-    return create_unknown_statement();
+    return create_unknown_expression();
 }
 
-static statement_t *read_list_statement(capsule_t *capsule)
+static expression_t *read_list_expression(capsule_t *capsule)
 {
     list_t *items;
     int ready;
@@ -499,49 +499,49 @@ static statement_t *read_list_statement(capsule_t *capsule)
             {
                 destroy_list(items);
 
-                return create_unknown_statement();
+                return create_unknown_expression();
             }
 
             ready = 1;
         }
         else
         {
-            statement_t *item;
-            literal_statement_data_t *data;
+            expression_t *item;
+            literal_expression_data_t *data;
 
             if (!ready)
             {
                 destroy_list(items);
 
-                return create_unknown_statement();
+                return create_unknown_expression();
             }
 
-            item = read_any_statement(capsule);
+            item = read_any_expression(capsule);
 
-            if (!item || item->type != STATEMENT_TYPE_LITERAL)
+            if (!item || item->type != EXPRESSION_TYPE_LITERAL)
             {
                 if (item)
                 {
-                    destroy_statement(item);
+                    destroy_expression(item);
                 }
 
                 destroy_list(items);
 
-                return create_unknown_statement();
+                return create_unknown_expression();
             }
 
             ready = 0;
-            data = (literal_statement_data_t *) item->data;
+            data = (literal_expression_data_t *) item->data;
             add_list_item(items, data->value);
             data->value = NULL;
-            destroy_statement(item);
+            destroy_expression(item);
         }
     }
 
-    return create_literal_statement(steal_list(items));
+    return create_literal_expression(steal_list(items));
 }
 
-static statement_t *read_map_statement(capsule_t *capsule)
+static expression_t *read_map_expression(capsule_t *capsule)
 {
     map_t *mappings;
     int mode; /* 0:wants_key, 1:wants_glue, 2:wants_value, 3:wants_delimiter_or_end */
@@ -559,8 +559,8 @@ static statement_t *read_map_statement(capsule_t *capsule)
 
         if (mode == 0)
         {
-            statement_t *key;
-            literal_statement_data_t *data;
+            expression_t *key;
+            literal_expression_data_t *data;
             value_t *steal;
 
             if (is_symbol_token('}', capsule->scanner.code, optional))
@@ -570,18 +570,18 @@ static statement_t *read_map_statement(capsule_t *capsule)
                 break;
             }
 
-            key = read_any_statement(capsule);
+            key = read_any_expression(capsule);
 
-            if (!key || key->type != STATEMENT_TYPE_LITERAL)
+            if (!key || key->type != EXPRESSION_TYPE_LITERAL)
             {
                 if (key)
                 {
-                    destroy_statement(key);
+                    destroy_expression(key);
                 }
 
                 destroy_map(mappings);
 
-                return create_unknown_statement();
+                return create_unknown_expression();
             }
 
             mode = 1;
@@ -590,15 +590,15 @@ static statement_t *read_map_statement(capsule_t *capsule)
 
             if (steal->type != VALUE_TYPE_STRING)
             {
-                destroy_statement(key);
+                destroy_expression(key);
                 destroy_map(mappings);
 
-                return create_unknown_statement();
+                return create_unknown_expression();
             }
 
             hold = view_string(steal);
             steal->data = NULL;
-            destroy_statement(key);
+            destroy_expression(key);
         }
         else if (mode == 1)
         {
@@ -614,27 +614,27 @@ static statement_t *read_map_statement(capsule_t *capsule)
                 destroy_string(hold);
                 destroy_map(mappings);
 
-                return create_unknown_statement();
+                return create_unknown_expression();
             }
         }
         else if (mode == 2)
         {
-            statement_t *value;
-            literal_statement_data_t *data;
+            expression_t *value;
+            literal_expression_data_t *data;
 
-            value = read_any_statement(capsule);
+            value = read_any_expression(capsule);
 
-            if (!value || value->type != STATEMENT_TYPE_LITERAL)
+            if (!value || value->type != EXPRESSION_TYPE_LITERAL)
             {
                 if (value)
                 {
-                    destroy_statement(value);
+                    destroy_expression(value);
                 }
 
                 destroy_string(hold);
                 destroy_map(mappings);
 
-                return create_unknown_statement();
+                return create_unknown_expression();
             }
 
             mode = 3;
@@ -642,7 +642,7 @@ static statement_t *read_map_statement(capsule_t *capsule)
             set_map_item(mappings, hold, data->value);
             hold = NULL;
             data->value = NULL;
-            destroy_statement(value);
+            destroy_expression(value);
         }
         else if (mode == 3)
         {
@@ -655,31 +655,31 @@ static statement_t *read_map_statement(capsule_t *capsule)
         }
     }
 
-    return create_literal_statement(steal_map(mappings));
+    return create_literal_expression(steal_map(mappings));
 }
 
-static statement_t *read_assignment_statement(capsule_t *capsule, identifier_t *identifier)
+static expression_t *read_assignment_expression(capsule_t *capsule, identifier_t *identifier)
 {
-    statement_t *value;
+    expression_t *value;
 
-    value = read_any_statement(capsule);
+    value = read_any_expression(capsule);
 
-    if (!value || value->type == STATEMENT_TYPE_UNKNOWN)
+    if (!value || value->type == EXPRESSION_TYPE_UNKNOWN)
     {
         destroy_identifier(identifier);
 
-        return value != NULL ? value : create_unknown_statement();
+        return value != NULL ? value : create_unknown_expression();
     }
 
-    return create_assignment_statement(identifier, value);
+    return create_assignment_expression(identifier, value);
 }
 
-static statement_t *read_invoke_statement(capsule_t *capsule, identifier_t *identifier)
+static expression_t *read_invoke_expression(capsule_t *capsule, identifier_t *identifier)
 {
     list_t *arguments;
     int ready;
 
-    arguments = empty_list(destroy_statement_unsafe, 1);
+    arguments = empty_list(destroy_expression_unsafe, 1);
     ready = 1;
 
     while (1)
@@ -702,31 +702,31 @@ static statement_t *read_invoke_statement(capsule_t *capsule, identifier_t *iden
                 destroy_identifier(identifier);
                 destroy_list(arguments);
 
-                return create_unknown_statement();
+                return create_unknown_expression();
             }
 
             ready = 1;
         }
         else
         {
-            statement_t *argument;
+            expression_t *argument;
 
             if (!ready)
             {
                 destroy_identifier(identifier);
                 destroy_list(arguments);
 
-                return create_unknown_statement();
+                return create_unknown_expression();
             }
 
-            argument = read_any_statement(capsule);
+            argument = read_any_expression(capsule);
 
-            if (!argument || argument->type == STATEMENT_TYPE_UNKNOWN)
+            if (!argument || argument->type == EXPRESSION_TYPE_UNKNOWN)
             {
                 destroy_identifier(identifier);
                 destroy_list(arguments);
 
-                return argument != NULL ? argument : create_unknown_statement();
+                return argument != NULL ? argument : create_unknown_expression();
             }
 
             ready = 0;
@@ -734,10 +734,10 @@ static statement_t *read_invoke_statement(capsule_t *capsule, identifier_t *iden
         }
     }
 
-    return create_invoke_statement(identifier, arguments);
+    return create_invoke_expression(identifier, arguments);
 }
 
-static statement_t *read_branch_statement(capsule_t *capsule)
+static expression_t *read_branch_expression(capsule_t *capsule)
 {
     list_t *branches;
     conditional_branch_t *branch;
@@ -747,7 +747,7 @@ static statement_t *read_branch_statement(capsule_t *capsule)
 
     if (!branch)
     {
-        return create_unknown_statement();
+        return create_unknown_expression();
     }
 
     branches = empty_list(destroy_conditional_branch_unsafe, 1);
@@ -784,7 +784,7 @@ static statement_t *read_branch_statement(capsule_t *capsule)
                         {
                             destroy_list(branches);
 
-                            return create_unknown_statement();
+                            return create_unknown_expression();
                         }
 
                         add_list_item(branches, branch);
@@ -794,34 +794,34 @@ static statement_t *read_branch_statement(capsule_t *capsule)
                         destroy_string(keyword);
                         destroy_list(branches);
 
-                        return create_unknown_statement();
+                        return create_unknown_expression();
                     }
                 }
                 else
                 {
                     destroy_list(branches);
 
-                    return create_unknown_statement();
+                    return create_unknown_expression();
                 }
             }
             else if (is_keyword_match(keyword, "otherwise"))
             {
-                statement_t *action;
+                expression_t *action;
 
                 destroy_string(keyword);
                 next_token(capsule);
 
-                action = read_any_statement(capsule);
+                action = read_any_expression(capsule);
 
-                if (!action || action->type == STATEMENT_TYPE_UNKNOWN)
+                if (!action || action->type == EXPRESSION_TYPE_UNKNOWN)
                 {
                     destroy_list(branches);
 
-                    return action != NULL ? action : create_unknown_statement();
+                    return action != NULL ? action : create_unknown_expression();
                 }
 
                 branch = allocate(sizeof(conditional_branch_t));
-                branch->condition = create_literal_statement(new_boolean(BOOLEAN_TRUE));
+                branch->condition = create_literal_expression(new_boolean(BOOLEAN_TRUE));
                 branch->action = action;
                 add_list_item(branches, branch);
 
@@ -840,97 +840,97 @@ static statement_t *read_branch_statement(capsule_t *capsule)
         }
     }
 
-    return create_branch_statement(branches);
+    return create_branch_expression(branches);
 }
 
-static statement_t *read_loop_statement(capsule_t *capsule)
+static expression_t *read_loop_expression(capsule_t *capsule)
 {
-    statement_t *condition, *action;
+    expression_t *condition, *action;
 
-    condition = read_any_statement(capsule);
+    condition = read_any_expression(capsule);
 
-    if (!condition || condition->type == STATEMENT_TYPE_UNKNOWN)
+    if (!condition || condition->type == EXPRESSION_TYPE_UNKNOWN)
     {
-        return condition != NULL ? condition : create_unknown_statement();
+        return condition != NULL ? condition : create_unknown_expression();
     }
 
-    action = read_any_statement(capsule);
+    action = read_any_expression(capsule);
 
-    if (!action || action->type == STATEMENT_TYPE_UNKNOWN)
+    if (!action || action->type == EXPRESSION_TYPE_UNKNOWN)
     {
-        destroy_statement(condition);
+        destroy_expression(condition);
 
-        return action != NULL ? action : create_unknown_statement();
+        return action != NULL ? action : create_unknown_expression();
     }
 
-    return create_loop_statement(condition, action);
+    return create_loop_expression(condition, action);
 }
 
-static statement_t *read_catch_statement(capsule_t *capsule)
+static expression_t *read_catch_expression(capsule_t *capsule)
 {
-    statement_t *action;
+    expression_t *action;
 
-    action = read_any_statement(capsule);
+    action = read_any_expression(capsule);
 
-    if (!action || action->type == STATEMENT_TYPE_UNKNOWN)
+    if (!action || action->type == EXPRESSION_TYPE_UNKNOWN)
     {
-        return action != NULL ? action : create_unknown_statement();
+        return action != NULL ? action : create_unknown_expression();
     }
 
-    return create_catch_statement(action);
+    return create_catch_expression(action);
 }
 
-static statement_t *read_break_statement(capsule_t *capsule)
+static expression_t *read_break_expression(capsule_t *capsule)
 {
-    statement_t *pick;
+    expression_t *pick;
 
-    pick = read_any_statement(capsule);
+    pick = read_any_expression(capsule);
 
-    if (!pick || pick->type == STATEMENT_TYPE_UNKNOWN)
+    if (!pick || pick->type == EXPRESSION_TYPE_UNKNOWN)
     {
-        return pick != NULL ? pick : create_unknown_statement();
+        return pick != NULL ? pick : create_unknown_expression();
     }
 
-    return create_break_statement(pick);
+    return create_break_expression(pick);
 }
 
-static statement_t *read_continue_statement(capsule_t *capsule)
+static expression_t *read_continue_expression(capsule_t *capsule)
 {
-    statement_t *pick;
+    expression_t *pick;
 
-    pick = read_any_statement(capsule);
+    pick = read_any_expression(capsule);
 
-    if (!pick || pick->type == STATEMENT_TYPE_UNKNOWN)
+    if (!pick || pick->type == EXPRESSION_TYPE_UNKNOWN)
     {
-        return pick != NULL ? pick : create_unknown_statement();
+        return pick != NULL ? pick : create_unknown_expression();
     }
 
-    return create_continue_statement(pick);
+    return create_continue_expression(pick);
 }
 
-static statement_t *read_throw_statement(capsule_t *capsule)
+static expression_t *read_throw_expression(capsule_t *capsule)
 {
-    statement_t *error;
+    expression_t *error;
 
-    error = read_any_statement(capsule);
+    error = read_any_expression(capsule);
 
-    if (!error || error->type == STATEMENT_TYPE_UNKNOWN)
+    if (!error || error->type == EXPRESSION_TYPE_UNKNOWN)
     {
-        return error != NULL ? error : create_unknown_statement();
+        return error != NULL ? error : create_unknown_expression();
     }
 
-    return create_throw_statement(error);
+    return create_throw_expression(error);
 }
 
-static statement_t *read_snippet_statement(capsule_t *capsule)
+static expression_t *read_snippet_expression(capsule_t *capsule)
 {
-    list_t *statements;
+    list_t *expressions;
 
-    statements = empty_list(destroy_statement_unsafe, 1);
+    expressions = empty_list(destroy_expression_unsafe, 1);
 
     while (1)
     {
-        statement_t *statement;
+        expression_t *expression;
         token_t *optional;
 
         optional = peek_token(capsule);
@@ -942,47 +942,47 @@ static statement_t *read_snippet_statement(capsule_t *capsule)
             break;
         }
 
-        statement = read_any_statement(capsule);
+        expression = read_any_expression(capsule);
 
-        if (!statement || statement->type == STATEMENT_TYPE_UNKNOWN)
+        if (!expression || expression->type == EXPRESSION_TYPE_UNKNOWN)
         {
-            destroy_list(statements);
+            destroy_list(expressions);
 
-            return statement != NULL ? statement : create_unknown_statement();
+            return expression != NULL ? expression : create_unknown_expression();
         }
 
-        add_list_item(statements, statement);
+        add_list_item(expressions, expression);
     }
 
-    return create_snippet_statement(statements);
+    return create_snippet_expression(expressions);
 }
 
 static conditional_branch_t *read_conditional_branch(capsule_t *capsule)
 {
     conditional_branch_t *branch;
-    statement_t *condition, *action;
+    expression_t *condition, *action;
 
-    condition = read_any_statement(capsule);
+    condition = read_any_expression(capsule);
 
-    if (!condition || condition->type == STATEMENT_TYPE_UNKNOWN)
+    if (!condition || condition->type == EXPRESSION_TYPE_UNKNOWN)
     {
         if (condition)
         {
-            destroy_statement(condition);
+            destroy_expression(condition);
         }
 
         return NULL;
     }
 
-    action = read_any_statement(capsule);
+    action = read_any_expression(capsule);
 
-    if (!action || action->type == STATEMENT_TYPE_UNKNOWN)
+    if (!action || action->type == EXPRESSION_TYPE_UNKNOWN)
     {
-        destroy_statement(condition);
+        destroy_expression(condition);
 
         if (action)
         {
-            destroy_statement(action);
+            destroy_expression(action);
         }
 
         return NULL;
@@ -1283,138 +1283,138 @@ static char is_symbol_token(char symbol, const string_t *code, const token_t *to
         && code->bytes[token->start] == symbol;
 }
 
-static statement_t *create_unknown_statement()
+static expression_t *create_unknown_expression()
 {
-    return create_statement(STATEMENT_TYPE_UNKNOWN, NULL);
+    return create_expression(EXPRESSION_TYPE_UNKNOWN, NULL);
 }
 
-static statement_t *create_literal_statement(value_t *value)
+static expression_t *create_literal_expression(value_t *value)
 {
-    literal_statement_data_t *data;
+    literal_expression_data_t *data;
 
-    data = allocate(sizeof(literal_statement_data_t));
+    data = allocate(sizeof(literal_expression_data_t));
     data->value = value;
 
-    return create_statement(STATEMENT_TYPE_LITERAL, data);
+    return create_expression(EXPRESSION_TYPE_LITERAL, data);
 }
 
-static statement_t *create_reference_statement(identifier_t *identifier)
+static expression_t *create_reference_expression(identifier_t *identifier)
 {
-    reference_statement_data_t *data;
+    reference_expression_data_t *data;
 
-    data = allocate(sizeof(reference_statement_data_t));
+    data = allocate(sizeof(reference_expression_data_t));
     data->identifier = identifier;
 
-    return create_statement(STATEMENT_TYPE_REFERENCE, data);
+    return create_expression(EXPRESSION_TYPE_REFERENCE, data);
 }
 
-static statement_t *create_assignment_statement(identifier_t *identifier, statement_t *value)
+static expression_t *create_assignment_expression(identifier_t *identifier, expression_t *value)
 {
-    assignment_statement_data_t *data;
+    assignment_expression_data_t *data;
 
-    data = allocate(sizeof(assignment_statement_data_t));
+    data = allocate(sizeof(assignment_expression_data_t));
     data->identifier = identifier;
     data->value = value;
 
-    return create_statement(STATEMENT_TYPE_ASSIGNMENT, data);
+    return create_expression(EXPRESSION_TYPE_ASSIGNMENT, data);
 }
 
-static statement_t *create_invoke_statement(identifier_t *identifier, list_t *arguments)
+static expression_t *create_invoke_expression(identifier_t *identifier, list_t *arguments)
 {
-    invoke_statement_data_t *data;
+    invoke_expression_data_t *data;
 
-    data = allocate(sizeof(invoke_statement_data_t));
+    data = allocate(sizeof(invoke_expression_data_t));
     data->identifier = identifier;
     data->arguments = arguments;
 
-    return create_statement(STATEMENT_TYPE_INVOKE, data);
+    return create_expression(EXPRESSION_TYPE_INVOKE, data);
 }
 
-static statement_t *create_branch_statement(list_t *branches)
+static expression_t *create_branch_expression(list_t *branches)
 {
-    branch_statement_data_t *data;
+    branch_expression_data_t *data;
 
-    data = allocate(sizeof(branch_statement_data_t));
+    data = allocate(sizeof(branch_expression_data_t));
     data->branches = branches;
 
-    return create_statement(STATEMENT_TYPE_BRANCH, data);
+    return create_expression(EXPRESSION_TYPE_BRANCH, data);
 }
 
-static statement_t *create_loop_statement(statement_t *condition, statement_t *action)
+static expression_t *create_loop_expression(expression_t *condition, expression_t *action)
 {
-    loop_statement_data_t *data;
+    loop_expression_data_t *data;
 
-    data = allocate(sizeof(loop_statement_data_t));
+    data = allocate(sizeof(loop_expression_data_t));
     data->condition = condition;
     data->action = action;
 
-    return create_statement(STATEMENT_TYPE_LOOP, data);
+    return create_expression(EXPRESSION_TYPE_LOOP, data);
 }
 
-static statement_t *create_catch_statement(statement_t *action)
+static expression_t *create_catch_expression(expression_t *action)
 {
-    catch_statement_data_t *data;
+    catch_expression_data_t *data;
 
-    data = allocate(sizeof(catch_statement_data_t));
+    data = allocate(sizeof(catch_expression_data_t));
     data->action = action;
 
-    return create_statement(STATEMENT_TYPE_CATCH, data);
+    return create_expression(EXPRESSION_TYPE_CATCH, data);
 }
 
-static statement_t *create_break_statement(statement_t *pick)
+static expression_t *create_break_expression(expression_t *pick)
 {
-    break_statement_data_t *data;
+    break_expression_data_t *data;
 
-    data = allocate(sizeof(break_statement_data_t));
+    data = allocate(sizeof(break_expression_data_t));
     data->pick = pick;
 
-    return create_statement(STATEMENT_TYPE_BREAK, data);
+    return create_expression(EXPRESSION_TYPE_BREAK, data);
 }
 
-static statement_t *create_continue_statement(statement_t *pick)
+static expression_t *create_continue_expression(expression_t *pick)
 {
-    continue_statement_data_t *data;
+    continue_expression_data_t *data;
 
-    data = allocate(sizeof(continue_statement_data_t));
+    data = allocate(sizeof(continue_expression_data_t));
     data->pick = pick;
 
-    return create_statement(STATEMENT_TYPE_CONTINUE, data);
+    return create_expression(EXPRESSION_TYPE_CONTINUE, data);
 }
 
-static statement_t *create_throw_statement(statement_t *error)
+static expression_t *create_throw_expression(expression_t *error)
 {
-    throw_statement_data_t *data;
+    throw_expression_data_t *data;
 
-    data = allocate(sizeof(throw_statement_data_t));
+    data = allocate(sizeof(throw_expression_data_t));
     data->error = error;
 
-    return create_statement(STATEMENT_TYPE_THROW, data);
+    return create_expression(EXPRESSION_TYPE_THROW, data);
 }
 
-static statement_t *create_snippet_statement(list_t *statements)
+static expression_t *create_snippet_expression(list_t *expressions)
 {
-    snippet_statement_data_t *data;
+    snippet_expression_data_t *data;
 
-    data = allocate(sizeof(snippet_statement_data_t));
-    data->statements = statements;
+    data = allocate(sizeof(snippet_expression_data_t));
+    data->expressions = expressions;
 
-    return create_statement(STATEMENT_TYPE_SNIPPET, data);
+    return create_expression(EXPRESSION_TYPE_SNIPPET, data);
 }
 
-static statement_t *create_statement(statement_type_t type, void *data)
+static expression_t *create_expression(expression_type_t type, void *data)
 {
-    statement_t *statement;
+    expression_t *expression;
 
-    statement = allocate(sizeof(statement_t));
-    statement->type = type;
-    statement->data = data;
+    expression = allocate(sizeof(expression_t));
+    expression->type = type;
+    expression->data = data;
 
-    return statement;
+    return expression;
 }
 
-static void destroy_statement_unsafe(void *statement)
+static void destroy_expression_unsafe(void *expression)
 {
-    destroy_statement((statement_t *) statement);
+    destroy_expression((expression_t *) expression);
 }
 
 static void dereference_value_unsafe(void *value)
@@ -1426,12 +1426,12 @@ static void destroy_conditional_branch(conditional_branch_t *branch)
 {
     if (branch->condition)
     {
-        destroy_statement(branch->condition);
+        destroy_expression(branch->condition);
     }
 
     if (branch->action)
     {
-        destroy_statement(branch->action);
+        destroy_expression(branch->action);
     }
 
     free(branch);

@@ -1,4 +1,4 @@
-suite 'statement/branch'
+suite 'expression/branch'
 
 verify 'if false \ @write("hit", 1) /' \
     'prints to stdout' ''

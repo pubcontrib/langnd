@@ -1,4 +1,4 @@
-suite 'statement/snippet'
+suite 'expression/snippet'
 
 verify '@write(@freeze(\ /), 1)' \
     'prints to stdout' 'null'
