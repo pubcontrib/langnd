@@ -50,6 +50,16 @@ verify '$b=3 if @equals($b, 1) \ @write("first", 1) / else if @equals($b, 2) \ @
     'prints to stdout' 'third'
 verify 'if true \ @write("first ", 1) / if true \ @write("second ", 1) / if true \ @write("third", 1) /' \
     'prints to stdout' 'first second third'
+verify 'if if true \ true / \ @write("hit", 1) /' \
+    'prints to stdout' 'hit'
+verify 'if true if true \ @write("hit", 1) /' \
+    'prints to stdout' 'hit'
+verify 'if false \ / else if if true \ true / \ @write("hit", 1) /' \
+    'prints to stdout' 'hit'
+verify 'if false \ / else if true if true \ @write("hit", 1) /' \
+    'prints to stdout' 'hit'
+verify 'if false \ / otherwise if true \ @write("hit", 1) /' \
+    'prints to stdout' 'hit'
 
 verify 'if' \
     'errors with parse message' 'if'

@@ -60,6 +60,8 @@ verify '$id="found" @write($"id", 1)' \
     'prints to stdout' 'found'
 verify '$"id"="found" @write($id, 1)' \
     'prints to stdout' 'found'
+verify '$copy=$new="found" @write($copy, 1)' \
+    'prints to stdout' 'found'
 
 verify '$a=' \
     'errors with parse message' '='

@@ -12,6 +12,8 @@ verify '$result=while true \ catch \ break "here" / / @write($freeze($result), 1
     'prints to stdout' '"here"'
 verify '$result=while true \ catch \ $pick="here" break $pick / / @write($freeze($result), 1)' \
     'prints to stdout' '"here"'
+verify '$result=while true \ break break "here" / @write($freeze($result), 1)' \
+    'prints to stdout' '"here"'
 
 verify 'break' \
     'errors with parse message' 'break'

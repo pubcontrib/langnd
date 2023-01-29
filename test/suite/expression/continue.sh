@@ -6,6 +6,8 @@ verify '$i=0 $result=while @precedes($i, 10) \ $i=@add($i, 1) if @equals(@modulo
     'prints to stdout' '"here"'
 verify '$i=0 $result=while @precedes($i, 10) \ $i=@add($i, 1) if @equals(@modulo($i, 2), 1) \ continue "here" / "there" / @write(@freeze($result), 1)' \
     'prints to stdout' '"there"'
+verify '$i=0 $result=while @precedes($i, 10) \ $i=@add($i, 1) if @equals(@modulo($i, 2), 0) \ continue continue "here" / "there" / @write(@freeze($result), 1)' \
+    'prints to stdout' '"here"'
 
 verify 'continue' \
     'errors with parse message' 'continue'

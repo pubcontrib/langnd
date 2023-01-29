@@ -10,6 +10,10 @@ verify '$loop=true $result=while $loop \ "first" $loop=false "last" / @write(@fr
     'prints to stdout' '"last"'
 verify '$result=while false \ "first" "..." "last" / @write(@freeze($result), 1)' \
     'prints to stdout' 'null'
+verify '$loop=true $result=while if true \ $loop / \ $loop=false "last" / @write(@freeze($result), 1)' \
+    'prints to stdout' '"last"'
+verify '$loop=true $result=while $loop if true \ $loop=false "last" / @write(@freeze($result), 1)' \
+    'prints to stdout' '"last"'
 
 verify 'while' \
     'errors with parse message' 'while'
