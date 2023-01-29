@@ -14,6 +14,10 @@ verify '$result=while true \ catch \ $pick="here" break $pick / / @write($freeze
     'prints to stdout' '"here"'
 verify '$result=while true \ break break "here" / @write($freeze($result), 1)' \
     'prints to stdout' '"here"'
+verify 'throw break "here"' \
+    'errors with execute message' '"lost break"'
+verify 'continue break "here"' \
+    'errors with execute message' '"lost break"'
 
 verify 'break' \
     'errors with parse message' 'break'

@@ -515,6 +515,12 @@ static value_t *apply_expression(expression_t *expression, map_t *variables, val
 
             data = expression->data;
             test = apply_expression(data->pick, variables, effect);
+
+            if ((*effect) == VALUE_EFFECT_BREAK || (*effect) == VALUE_EFFECT_CONTINUE || (*effect) == VALUE_EFFECT_THROW)
+            {
+                return test;
+            }
+
             (*effect) = VALUE_EFFECT_BREAK;
 
             return test;
@@ -527,6 +533,12 @@ static value_t *apply_expression(expression_t *expression, map_t *variables, val
 
             data = expression->data;
             test = apply_expression(data->pick, variables, effect);
+
+            if ((*effect) == VALUE_EFFECT_BREAK || (*effect) == VALUE_EFFECT_CONTINUE || (*effect) == VALUE_EFFECT_THROW)
+            {
+                return test;
+            }
+
             (*effect) = VALUE_EFFECT_CONTINUE;
 
             return test;
@@ -539,6 +551,12 @@ static value_t *apply_expression(expression_t *expression, map_t *variables, val
 
             data = expression->data;
             test = apply_expression(data->error, variables, effect);
+
+            if ((*effect) == VALUE_EFFECT_BREAK || (*effect) == VALUE_EFFECT_CONTINUE || (*effect) == VALUE_EFFECT_THROW)
+            {
+                return test;
+            }
+
             (*effect) = VALUE_EFFECT_THROW;
 
             return test;

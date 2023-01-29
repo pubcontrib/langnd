@@ -22,6 +22,10 @@ verify 'throw @merge($missing, "!")' \
     'errors with execute message' '"absent variable"'
 verify 'throw throw "text"' \
     'errors with execute message' '"text"'
+verify 'break throw "text"' \
+    'errors with execute message' '"text"'
+verify 'continue throw "text"' \
+    'errors with execute message' '"text"'
 
 verify 'throw "0000000000111111111122222222223333333333444444444455555555556666666666777777777788888888889999999999"' \
     'errors with execute message' '"0000000000111111111122222222223333333333444444444455555555556666666666777777777788888888889999999999"'
