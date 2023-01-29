@@ -148,6 +148,21 @@ void destroy_statement(statement_t *statement)
                 break;
             }
 
+            case STATEMENT_TYPE_REFERENCE:
+            {
+                reference_statement_data_t *data;
+
+                data = statement->data;
+
+                if (data->identifier)
+                {
+                    destroy_identifier(data->identifier);
+                }
+
+                free(data);
+                break;
+            }
+
             case STATEMENT_TYPE_ASSIGNMENT:
             {
                 assignment_statement_data_t *data;
@@ -238,21 +253,6 @@ void destroy_statement(statement_t *statement)
                 break;
             }
 
-            case STATEMENT_TYPE_THROW:
-            {
-                throw_statement_data_t *data;
-
-                data = statement->data;
-
-                if (data->error)
-                {
-                    destroy_statement(data->error);
-                }
-
-                free(data);
-                break;
-            }
-
             case STATEMENT_TYPE_BREAK:
             {
                 break_statement_data_t *data;
@@ -283,15 +283,15 @@ void destroy_statement(statement_t *statement)
                 break;
             }
 
-            case STATEMENT_TYPE_REFERENCE:
+            case STATEMENT_TYPE_THROW:
             {
-                reference_statement_data_t *data;
+                throw_statement_data_t *data;
 
                 data = statement->data;
 
-                if (data->identifier)
+                if (data->error)
                 {
-                    destroy_identifier(data->identifier);
+                    destroy_statement(data->error);
                 }
 
                 free(data);
