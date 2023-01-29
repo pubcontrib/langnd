@@ -208,8 +208,9 @@ static value_t *apply_statement(statement_t *statement, map_t *variables, value_
             }
 
             set_map_item(variables, copy_string(data->identifier->name), value);
+            value->owners += 1;
 
-            return new_null();
+            return value;
         }
 
         case STATEMENT_TYPE_INVOKE:
