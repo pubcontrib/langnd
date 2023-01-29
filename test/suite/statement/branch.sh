@@ -91,8 +91,6 @@ verify 'if true \ 100 / otherwise /' \
     'errors with parse message' '/'
 verify 'if true \ 100 / otherwise \ 200' \
     'errors with parse message' '200'
-verify '$a=true if $a=false \ /' \
-    'errors with parse message' 'false \ /'
 
 verify 'if null \ /' \
     'errors with execute message' '"branch with non-boolean condition"'

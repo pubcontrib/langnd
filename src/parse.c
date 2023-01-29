@@ -27,7 +27,6 @@ static statement_t *read_continue_statement(capsule_t *capsule);
 static statement_t *read_throw_statement(capsule_t *capsule);
 static statement_t *read_snippet_statement(capsule_t *capsule);
 static conditional_branch_t *read_conditional_branch(capsule_t *capsule);
-static char is_value_statement(const statement_t *statement);
 static token_t *peek_token(capsule_t *capsule);
 static token_t *next_token(capsule_t *capsule);
 static token_t *scan_token(scanner_t *scanner);
@@ -665,16 +664,11 @@ static statement_t *read_assignment_statement(capsule_t *capsule, identifier_t *
 
     value = read_any_statement(capsule);
 
-    if (!value || !is_value_statement(value))
+    if (!value || value->type == STATEMENT_TYPE_UNKNOWN)
     {
-        if (value)
-        {
-            destroy_statement(value);
-        }
-
         destroy_identifier(identifier);
 
-        return create_unknown_statement();
+        return value != NULL ? value : create_unknown_statement();
     }
 
     return create_assignment_statement(identifier, value);
@@ -727,17 +721,12 @@ static statement_t *read_invoke_statement(capsule_t *capsule, identifier_t *iden
 
             argument = read_any_statement(capsule);
 
-            if (!argument || !is_value_statement(argument))
+            if (!argument || argument->type == STATEMENT_TYPE_UNKNOWN)
             {
-                if (argument)
-                {
-                    destroy_statement(argument);
-                }
-
                 destroy_identifier(identifier);
                 destroy_list(arguments);
 
-                return create_unknown_statement();
+                return argument != NULL ? argument : create_unknown_statement();
             }
 
             ready = 0;
@@ -860,14 +849,9 @@ static statement_t *read_loop_statement(capsule_t *capsule)
 
     condition = read_any_statement(capsule);
 
-    if (!condition || !is_value_statement(condition))
+    if (!condition || condition->type == STATEMENT_TYPE_UNKNOWN)
     {
-        if (condition)
-        {
-            destroy_statement(condition);
-        }
-
-        return create_unknown_statement();
+        return condition != NULL ? condition : create_unknown_statement();
     }
 
     action = read_any_statement(capsule);
@@ -902,14 +886,9 @@ static statement_t *read_break_statement(capsule_t *capsule)
 
     pick = read_any_statement(capsule);
 
-    if (!pick || !is_value_statement(pick))
+    if (!pick || pick->type == STATEMENT_TYPE_UNKNOWN)
     {
-        if (pick)
-        {
-            destroy_statement(pick);
-        }
-
-        return create_unknown_statement();
+        return pick != NULL ? pick : create_unknown_statement();
     }
 
     return create_break_statement(pick);
@@ -921,14 +900,9 @@ static statement_t *read_continue_statement(capsule_t *capsule)
 
     pick = read_any_statement(capsule);
 
-    if (!pick || !is_value_statement(pick))
+    if (!pick || pick->type == STATEMENT_TYPE_UNKNOWN)
     {
-        if (pick)
-        {
-            destroy_statement(pick);
-        }
-
-        return create_unknown_statement();
+        return pick != NULL ? pick : create_unknown_statement();
     }
 
     return create_continue_statement(pick);
@@ -940,14 +914,9 @@ static statement_t *read_throw_statement(capsule_t *capsule)
 
     error = read_any_statement(capsule);
 
-    if (!error || !is_value_statement(error))
+    if (!error || error->type == STATEMENT_TYPE_UNKNOWN)
     {
-        if (error)
-        {
-            destroy_statement(error);
-        }
-
-        return create_unknown_statement();
+        return error != NULL ? error : create_unknown_statement();
     }
 
     return create_throw_statement(error);
@@ -995,7 +964,7 @@ static conditional_branch_t *read_conditional_branch(capsule_t *capsule)
 
     condition = read_any_statement(capsule);
 
-    if (!condition || !is_value_statement(condition))
+    if (!condition || condition->type == STATEMENT_TYPE_UNKNOWN)
     {
         if (condition)
         {
@@ -1024,24 +993,6 @@ static conditional_branch_t *read_conditional_branch(capsule_t *capsule)
     branch->action = action;
 
     return branch;
-}
-
-static char is_value_statement(const statement_t *statement)
-{
-    switch (statement->type)
-    {
-        case STATEMENT_TYPE_LITERAL:
-        case STATEMENT_TYPE_REFERENCE:
-        case STATEMENT_TYPE_INVOKE:
-        case STATEMENT_TYPE_BRANCH:
-        case STATEMENT_TYPE_LOOP:
-        case STATEMENT_TYPE_CATCH:
-        case STATEMENT_TYPE_SNIPPET:
-            return 1;
-
-        default:
-            return 0;
-    }
 }
 
 static token_t *peek_token(capsule_t *capsule)
