@@ -36,6 +36,7 @@ introduce
 . suite/expression/string.sh
 . suite/expression/list.sh
 . suite/expression/map.sh
+. suite/expression/function.sh
 . suite/expression/assignment.sh
 . suite/expression/invoke.sh
 . suite/expression/branch.sh

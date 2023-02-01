@@ -425,6 +425,15 @@ string_t *represent_value(const value_t *value)
             return buffer;
         }
 
+        case VALUE_TYPE_FUNCTION:
+        {
+            function_t *function;
+
+            function = value->data;
+
+            return copy_string(function->source);
+        }
+
         default:
             crash_with_message("unsupported branch invoked");
             return NULL;
@@ -574,6 +583,18 @@ value_t *steal_map(map_t *map)
     return value;
 }
 
+value_t *steal_function(function_t *function)
+{
+    value_t *value;
+
+    value = allocate(sizeof(value_t));
+    value->type = VALUE_TYPE_FUNCTION;
+    value->data = function;
+    value->owners = 1;
+
+    return value;
+}
+
 void destroy_value(value_t *value)
 {
     if (value->data)
@@ -598,6 +619,10 @@ void destroy_value(value_t *value)
                 destroy_map(value->data);
                 break;
 
+            case VALUE_TYPE_FUNCTION:
+                destroy_function(value->data);
+                break;
+
             default:
                 crash_with_message("unsupported branch invoked");
                 break;
@@ -615,6 +640,32 @@ void dereference_value(value_t *value)
     {
         destroy_value(value);
     }
+}
+
+function_t *create_function(list_t *expressions, string_t *source)
+{
+    function_t *function;
+
+    function = malloc(sizeof(function_t));
+    function->expressions = expressions;
+    function->source = source;
+
+    return function;
+}
+
+void destroy_function(function_t *function)
+{
+    if (function->expressions)
+    {
+        destroy_list(function->expressions);
+    }
+
+    if (function->source)
+    {
+        destroy_string(function->source);
+    }
+
+    free(function);
 }
 
 string_t **list_map_keys(const map_t *map)

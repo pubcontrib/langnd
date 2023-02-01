@@ -76,6 +76,7 @@ void progress_scanner(scanner_t *scanner)
         }
         else if (symbol == '='
             || symbol == '\\' || symbol == '/'
+            || symbol == '<' || symbol == '>'
             || symbol == '(' || symbol == ')' || symbol == ','
             || symbol == '{' || symbol == '}' || symbol == ':'
             || symbol == '[' || symbol == ']')

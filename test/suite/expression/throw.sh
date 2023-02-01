@@ -12,6 +12,8 @@ verify 'throw [1, 2, 3]' \
     'errors with execute message' '[1, 2, 3]'
 verify 'throw {"a": 1, "b": 2, "c": 3}' \
     'errors with execute message' '{"a": 1, "b": 2, "c": 3}'
+verify 'throw <$l=1 $r=2 @add($l, $r)>' \
+    'errors with execute message' '<$l=1 $r=2 @add($l, $r)>'
 verify '$var="PANIC!" throw $var' \
     'errors with execute message' '"PANIC!"'
 verify 'throw @merge("PANIC", "!")' \

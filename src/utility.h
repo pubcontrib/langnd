@@ -52,6 +52,12 @@ typedef struct
     map_chain_t **chains;
 } map_t;
 
+typedef struct
+{
+    list_t *expressions;
+    string_t *source;
+} function_t;
+
 typedef enum
 {
     VALUE_TYPE_NULL = 0x01,
@@ -59,7 +65,8 @@ typedef enum
     VALUE_TYPE_NUMBER = 0x04,
     VALUE_TYPE_STRING = 0x08,
     VALUE_TYPE_LIST = 0x10,
-    VALUE_TYPE_MAP = 0x20
+    VALUE_TYPE_MAP = 0x20,
+    VALUE_TYPE_FUNCTION = 0x40
 } value_type_t;
 
 typedef struct
@@ -83,8 +90,11 @@ value_t *new_number(number_t number);
 value_t *steal_string(string_t *string);
 value_t *steal_list(list_t *list);
 value_t *steal_map(map_t *map);
+value_t *steal_function(function_t *function);
 void destroy_value(value_t *value);
 void dereference_value(value_t *value);
+function_t *create_function(list_t *expressions, string_t *source);
+void destroy_function(function_t *function);
 string_t **list_map_keys(const map_t *map);
 int has_map_item(const map_t *map, const string_t *key);
 void *get_map_item(const map_t *map, const string_t *key);

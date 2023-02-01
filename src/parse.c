@@ -17,6 +17,7 @@ typedef struct
 static expression_t *read_any_expression(capsule_t *capsule);
 static expression_t *read_list_expression(capsule_t *capsule);
 static expression_t *read_map_expression(capsule_t *capsule);
+static expression_t *read_function_expression(capsule_t *capsule_t);
 static expression_t *read_assignment_expression(capsule_t *capsule, identifier_t *identifier);
 static expression_t *read_invoke_expression(capsule_t *capsule, identifier_t *identifier);
 static expression_t *read_branch_expression(capsule_t *capsule);
@@ -462,6 +463,10 @@ static expression_t *read_any_expression(capsule_t *capsule)
         {
             return read_map_expression(capsule);
         }
+        else if (is_symbol_token('<', capsule->scanner.code, token))
+        {
+            return read_function_expression(capsule);
+        }
         else if (is_symbol_token('\\', capsule->scanner.code, token))
         {
             return read_snippet_expression(capsule);
@@ -656,6 +661,53 @@ static expression_t *read_map_expression(capsule_t *capsule)
     }
 
     return create_literal_expression(steal_map(mappings));
+}
+
+static expression_t *read_function_expression(capsule_t *capsule)
+{
+    function_t *function;
+    list_t *expressions;
+    size_t start, end;
+    char *bytes;
+    size_t length;
+
+    start = capsule->present.start;
+
+    expressions = empty_list(destroy_expression_unsafe, 1);
+
+    while (1)
+    {
+        expression_t *expression;
+        token_t *optional;
+
+        optional = peek_token(capsule);
+
+        if (is_symbol_token('>', capsule->scanner.code, optional))
+        {
+            next_token(capsule);
+
+            break;
+        }
+
+        expression = read_any_expression(capsule);
+
+        if (!expression || expression->type == EXPRESSION_TYPE_UNKNOWN)
+        {
+            destroy_list(expressions);
+
+            return expression != NULL ? expression : create_unknown_expression();
+        }
+
+        add_list_item(expressions, expression);
+    }
+
+    end = capsule->present.end;
+    length = end - start;
+    bytes = allocate(sizeof(char) * length);
+    memcpy(bytes, capsule->scanner.code->bytes + start, length);
+    function = create_function(expressions, create_string(bytes, length));
+
+    return create_literal_expression(steal_function(function));
 }
 
 static expression_t *read_assignment_expression(capsule_t *capsule, identifier_t *identifier)
