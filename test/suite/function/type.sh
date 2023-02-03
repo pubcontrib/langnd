@@ -12,3 +12,5 @@ verify '@write(@type([]), 1)' \
     'prints to stdout' 'LIST'
 verify '@write(@type({}), 1)' \
     'prints to stdout' 'MAP'
+verify '@write(@type(<>), 1)' \
+    'prints to stdout' 'FUNCTION'
