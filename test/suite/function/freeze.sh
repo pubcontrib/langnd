@@ -114,10 +114,12 @@ verify '@write(@freeze([[]]), 1)' \
     'prints to stdout' '[[]]'
 verify '@write(@freeze([{}]), 1)' \
     'prints to stdout' '[{}]'
-verify '@write(@freeze([null, false, 0, "", [], {}]), 1)' \
-    'prints to stdout' '[null, false, 0, "", [], {}]'
-verify '@write(@freeze([null, false, 0, "", [null, false, 0, "", [], {}], {}]), 1)' \
-    'prints to stdout' '[null, false, 0, "", [null, false, 0, "", [], {}], {}]'
+verify '@write(@freeze([<>]), 1)' \
+    'prints to stdout' '[<>]'
+verify '@write(@freeze([null, false, 0, "", [], {}, <>]), 1)' \
+    'prints to stdout' '[null, false, 0, "", [], {}, <>]'
+verify '@write(@freeze([null, false, 0, "", [null, false, 0, "", [], {}, <>], {}, <>]), 1)' \
+    'prints to stdout' '[null, false, 0, "", [null, false, 0, "", [], {}, <>], {}, <>]'
 verify '@write(@freeze({}), 1)' \
     'prints to stdout' '{}'
 verify '@write(@freeze({"null": null}), 1)' \
@@ -130,13 +132,33 @@ verify '@write(@freeze({"list": []}), 1)' \
     'prints to stdout' '{"list": []}'
 verify '@write(@freeze({"map": {}}), 1)' \
     'prints to stdout' '{"map": {}}'
-verify '@write(@freeze({"null": null, "boolean": false, "number": 0, "string": "", "list": [], "map": {}}), 1)' \
-    'prints to stdout' '{"boolean": false, "list": [], "map": {}, "null": null, "number": 0, "string": ""}'
-verify '@write(@freeze({"null": null, "boolean": false, "number": 0, "string": "", "list": [], "map": {"null": null, "boolean": false, "number": 0, "string": "", "list": [], "map": {}}}), 1)' \
-    'prints to stdout' '{"boolean": false, "list": [], "map": {"boolean": false, "list": [], "map": {}, "null": null, "number": 0, "string": ""}, "null": null, "number": 0, "string": ""}'
+verify '@write(@freeze({"function": <>}), 1)' \
+    'prints to stdout' '{"function": <>}'
+verify '@write(@freeze({"null": null, "boolean": false, "number": 0, "string": "", "list": [], "map": {}, "function": <>}), 1)' \
+    'prints to stdout' '{"boolean": false, "function": <>, "list": [], "map": {}, "null": null, "number": 0, "string": ""}'
+verify '@write(@freeze({"null": null, "boolean": false, "number": 0, "string": "", "list": [], "map": {"null": null, "boolean": false, "number": 0, "string": "", "list": [], "map": {}, "function": <>}, "function": <>}), 1)' \
+    'prints to stdout' '{"boolean": false, "function": <>, "list": [], "map": {"boolean": false, "function": <>, "list": [], "map": {}, "null": null, "number": 0, "string": ""}, "null": null, "number": 0, "string": ""}'
 verify '@write(@freeze({"1": null, "2": null, "3": null}), 1)' \
     'prints to stdout' '{"1": null, "2": null, "3": null}'
 verify '@write(@freeze({"3": null, "2": null, "1": null}), 1)' \
     'prints to stdout' '{"1": null, "2": null, "3": null}'
 verify '@write(@freeze({"x": 1, "x": 2, "x": 3}), 1)' \
     'prints to stdout' '{"x": 3}'
+verify '@write(@freeze(<>), 1)' \
+    'prints to stdout' '<>'
+verify '@write(@freeze(<null>), 1)' \
+    'prints to stdout' '<null>'
+verify '@write(@freeze(<0>), 1)' \
+    'prints to stdout' '<0>'
+verify '@write(@freeze(<"">), 1)' \
+    'prints to stdout' '<"">'
+verify '@write(@freeze(<[]>), 1)' \
+    'prints to stdout' '<[]>'
+verify '@write(@freeze(<{}>), 1)' \
+    'prints to stdout' '<{}>'
+verify '@write(@freeze(<<>>), 1)' \
+    'prints to stdout' '<<>>'
+verify '@write(@freeze(<   >), 1)' \
+    'prints to stdout' '<   >'
+verify '@write(@freeze(<null 0 "" [] {} <>>), 1)' \
+    'prints to stdout' '<null 0 "" [] {} <>>'
