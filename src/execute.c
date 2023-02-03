@@ -233,117 +233,176 @@ static value_t *apply_expression(expression_t *expression, map_t *variables, val
 
             arguments.index = 0;
 
-            if (is_keyword_match(data->identifier->name, "add"))
+            if (data->identifier->type == IDENTIFIER_TYPE_FUNCTION)
             {
-                result = run_add(&arguments, variables, effect);
+                if (is_keyword_match(data->identifier->name, "add"))
+                {
+                    result = run_add(&arguments, variables, effect);
+                }
+                else if (is_keyword_match(data->identifier->name, "subtract"))
+                {
+                    result = run_subtract(&arguments, variables, effect);
+                }
+                else if (is_keyword_match(data->identifier->name, "multiply"))
+                {
+                    result = run_multiply(&arguments, variables, effect);
+                }
+                else if (is_keyword_match(data->identifier->name, "divide"))
+                {
+                    result = run_divide(&arguments, variables, effect);
+                }
+                else if (is_keyword_match(data->identifier->name, "modulo"))
+                {
+                    result = run_modulo(&arguments, variables, effect);
+                }
+                else if (is_keyword_match(data->identifier->name, "truncate"))
+                {
+                    result = run_truncate(&arguments, variables, effect);
+                }
+                else if (is_keyword_match(data->identifier->name, "and"))
+                {
+                    result = run_and(&arguments, variables, effect);
+                }
+                else if (is_keyword_match(data->identifier->name, "or"))
+                {
+                    result = run_or(&arguments, variables, effect);
+                }
+                else if (is_keyword_match(data->identifier->name, "not"))
+                {
+                    result = run_not(&arguments, variables, effect);
+                }
+                else if (is_keyword_match(data->identifier->name, "precedes"))
+                {
+                    result = run_precedes(&arguments, variables, effect);
+                }
+                else if (is_keyword_match(data->identifier->name, "succeeds"))
+                {
+                    result = run_succeeds(&arguments, variables, effect);
+                }
+                else if (is_keyword_match(data->identifier->name, "equals"))
+                {
+                    result = run_equals(&arguments, variables, effect);
+                }
+                else if (is_keyword_match(data->identifier->name, "write"))
+                {
+                    result = run_write(&arguments, variables, effect);
+                }
+                else if (is_keyword_match(data->identifier->name, "read"))
+                {
+                    result = run_read(&arguments, variables, effect);
+                }
+                else if (is_keyword_match(data->identifier->name, "delete"))
+                {
+                    result = run_delete(&arguments, variables, effect);
+                }
+                else if (is_keyword_match(data->identifier->name, "query"))
+                {
+                    result = run_query(&arguments, variables, effect);
+                }
+                else if (is_keyword_match(data->identifier->name, "freeze"))
+                {
+                    result = run_freeze(&arguments, variables, effect);
+                }
+                else if (is_keyword_match(data->identifier->name, "thaw"))
+                {
+                    result = run_thaw(&arguments, variables, effect);
+                }
+                else if (is_keyword_match(data->identifier->name, "type"))
+                {
+                    result = run_type(&arguments, variables, effect);
+                }
+                else if (is_keyword_match(data->identifier->name, "cast"))
+                {
+                    result = run_cast(&arguments, variables, effect);
+                }
+                else if (is_keyword_match(data->identifier->name, "get"))
+                {
+                    result = run_get(&arguments, variables, effect);
+                }
+                else if (is_keyword_match(data->identifier->name, "set"))
+                {
+                    result = run_set(&arguments, variables, effect);
+                }
+                else if (is_keyword_match(data->identifier->name, "unset"))
+                {
+                    result = run_unset(&arguments, variables, effect);
+                }
+                else if (is_keyword_match(data->identifier->name, "merge"))
+                {
+                    result = run_merge(&arguments, variables, effect);
+                }
+                else if (is_keyword_match(data->identifier->name, "length"))
+                {
+                    result = run_length(&arguments, variables, effect);
+                }
+                else if (is_keyword_match(data->identifier->name, "keys"))
+                {
+                    result = run_keys(&arguments, variables, effect);
+                }
+                else if (is_keyword_match(data->identifier->name, "sort"))
+                {
+                    result = run_sort(&arguments, variables, effect);
+                }
+                else
+                {
+                    result = throw_error("absent function", effect);
+                }
             }
-            else if (is_keyword_match(data->identifier->name, "subtract"))
+            else if (data->identifier->type == IDENTIFIER_TYPE_VARIABLE)
             {
-                result = run_subtract(&arguments, variables, effect);
-            }
-            else if (is_keyword_match(data->identifier->name, "multiply"))
-            {
-                result = run_multiply(&arguments, variables, effect);
-            }
-            else if (is_keyword_match(data->identifier->name, "divide"))
-            {
-                result = run_divide(&arguments, variables, effect);
-            }
-            else if (is_keyword_match(data->identifier->name, "modulo"))
-            {
-                result = run_modulo(&arguments, variables, effect);
-            }
-            else if (is_keyword_match(data->identifier->name, "truncate"))
-            {
-                result = run_truncate(&arguments, variables, effect);
-            }
-            else if (is_keyword_match(data->identifier->name, "and"))
-            {
-                result = run_and(&arguments, variables, effect);
-            }
-            else if (is_keyword_match(data->identifier->name, "or"))
-            {
-                result = run_or(&arguments, variables, effect);
-            }
-            else if (is_keyword_match(data->identifier->name, "not"))
-            {
-                result = run_not(&arguments, variables, effect);
-            }
-            else if (is_keyword_match(data->identifier->name, "precedes"))
-            {
-                result = run_precedes(&arguments, variables, effect);
-            }
-            else if (is_keyword_match(data->identifier->name, "succeeds"))
-            {
-                result = run_succeeds(&arguments, variables, effect);
-            }
-            else if (is_keyword_match(data->identifier->name, "equals"))
-            {
-                result = run_equals(&arguments, variables, effect);
-            }
-            else if (is_keyword_match(data->identifier->name, "write"))
-            {
-                result = run_write(&arguments, variables, effect);
-            }
-            else if (is_keyword_match(data->identifier->name, "read"))
-            {
-                result = run_read(&arguments, variables, effect);
-            }
-            else if (is_keyword_match(data->identifier->name, "delete"))
-            {
-                result = run_delete(&arguments, variables, effect);
-            }
-            else if (is_keyword_match(data->identifier->name, "query"))
-            {
-                result = run_query(&arguments, variables, effect);
-            }
-            else if (is_keyword_match(data->identifier->name, "freeze"))
-            {
-                result = run_freeze(&arguments, variables, effect);
-            }
-            else if (is_keyword_match(data->identifier->name, "thaw"))
-            {
-                result = run_thaw(&arguments, variables, effect);
-            }
-            else if (is_keyword_match(data->identifier->name, "type"))
-            {
-                result = run_type(&arguments, variables, effect);
-            }
-            else if (is_keyword_match(data->identifier->name, "cast"))
-            {
-                result = run_cast(&arguments, variables, effect);
-            }
-            else if (is_keyword_match(data->identifier->name, "get"))
-            {
-                result = run_get(&arguments, variables, effect);
-            }
-            else if (is_keyword_match(data->identifier->name, "set"))
-            {
-                result = run_set(&arguments, variables, effect);
-            }
-            else if (is_keyword_match(data->identifier->name, "unset"))
-            {
-                result = run_unset(&arguments, variables, effect);
-            }
-            else if (is_keyword_match(data->identifier->name, "merge"))
-            {
-                result = run_merge(&arguments, variables, effect);
-            }
-            else if (is_keyword_match(data->identifier->name, "length"))
-            {
-                result = run_length(&arguments, variables, effect);
-            }
-            else if (is_keyword_match(data->identifier->name, "keys"))
-            {
-                result = run_keys(&arguments, variables, effect);
-            }
-            else if (is_keyword_match(data->identifier->name, "sort"))
-            {
-                result = run_sort(&arguments, variables, effect);
+                value_t *value;
+
+                value = get_map_item(variables, data->identifier->name);
+
+                if (value)
+                {
+                    if (value->type == VALUE_TYPE_FUNCTION)
+                    {
+                        function_t *function;
+                        list_t *expressions;
+                        value_t *last;
+                        size_t index;
+
+                        function = view_function(value);
+                        expressions = function->expressions;
+                        last = NULL;
+
+                        for (index = 0; index < expressions->length; index++)
+                        {
+                            if (last)
+                            {
+                                dereference_value(last);
+                            }
+
+                            last = apply_expression(expressions->items[index], variables, effect);
+
+                            if ((*effect) == VALUE_EFFECT_BREAK || (*effect) == VALUE_EFFECT_CONTINUE || (*effect) == VALUE_EFFECT_THROW)
+                            {
+                                break;
+                            }
+                        }
+
+                        if (!last)
+                        {
+                            last = new_null();
+                        }
+
+                        return last;
+                    }
+                    else
+                    {
+                        return throw_error("invocation error", effect);
+                    }
+                }
+                else
+                {
+                    return throw_error("absent variable", effect);
+                }
             }
             else
             {
-                result = throw_error("absent function", effect);
+                crash_with_message("unsupported branch invoked");
+                return new_null();
             }
 
             if (arguments.evaluated)
