@@ -148,15 +148,15 @@ verify '@write(@freeze(@precedes(<1>, <2>)), 1)' \
     'prints to stdout' 'true'
 verify '@write(@freeze(@precedes(<2>, <1>)), 1)' \
     'prints to stdout' 'false'
-verify '@write(@freeze(@precedes(null, <$variable="value" $copy=$variable>)), 1)' \
-    'prints to stdout' 'true'
-verify '@write(@freeze(@precedes(true, <$variable="value" $copy=$variable>)), 1)' \
-    'prints to stdout' 'true'
-verify '@write(@freeze(@precedes(100, <$variable="value" $copy=$variable>)), 1)' \
-    'prints to stdout' 'true'
-verify '@write(@freeze(@precedes("text", <$variable="value" $copy=$variable>)), 1)' \
-    'prints to stdout' 'true'
-verify '@write(@freeze(@precedes([1, 2, 3], <$variable="value" $copy=$variable>)), 1)' \
-    'prints to stdout' 'true'
-verify '@write(@freeze(@precedes({"a": 1, "b": 2, "c": 3}, <$variable="value" $copy=$variable>)), 1)' \
-    'prints to stdout' 'true'
+verify '@write(@freeze(@precedes(<$variable="value" $copy=$variable>, null)), 1)' \
+    'prints to stdout' 'false'
+verify '@write(@freeze(@precedes(<$variable="value" $copy=$variable>, true)), 1)' \
+    'prints to stdout' 'false'
+verify '@write(@freeze(@precedes(<$variable="value" $copy=$variable>, 100)), 1)' \
+    'prints to stdout' 'false'
+verify '@write(@freeze(@precedes(<$variable="value" $copy=$variable>, "text")), 1)' \
+    'prints to stdout' 'false'
+verify '@write(@freeze(@precedes(<$variable="value" $copy=$variable>, [1, 2, 3])), 1)' \
+    'prints to stdout' 'false'
+verify '@write(@freeze(@precedes(<$variable="value" $copy=$variable>, {"a": 1, "b": 2, "c": 3})), 1)' \
+    'prints to stdout' 'false'

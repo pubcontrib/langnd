@@ -152,15 +152,15 @@ verify '@write(@freeze(@equals(<1>, <2>)), 1)' \
     'prints to stdout' 'false'
 verify '@write(@freeze(@equals(<2>, <1>)), 1)' \
     'prints to stdout' 'false'
-verify '@write(@freeze(@equals(null, <$variable="value" $copy=$variable>)), 1)' \
+verify '@write(@freeze(@equals(<$variable="value" $copy=$variable>, null)), 1)' \
     'prints to stdout' 'false'
-verify '@write(@freeze(@equals(true, <$variable="value" $copy=$variable>)), 1)' \
+verify '@write(@freeze(@equals(<$variable="value" $copy=$variable>, true)), 1)' \
     'prints to stdout' 'false'
-verify '@write(@freeze(@equals(100, <$variable="value" $copy=$variable>)), 1)' \
+verify '@write(@freeze(@equals(<$variable="value" $copy=$variable>, 100)), 1)' \
     'prints to stdout' 'false'
-verify '@write(@freeze(@equals("text", <$variable="value" $copy=$variable>)), 1)' \
+verify '@write(@freeze(@equals(<$variable="value" $copy=$variable>, "text")), 1)' \
     'prints to stdout' 'false'
-verify '@write(@freeze(@equals([1, 2, 3], <$variable="value" $copy=$variable>)), 1)' \
+verify '@write(@freeze(@equals(<$variable="value" $copy=$variable>, [1, 2, 3])), 1)' \
     'prints to stdout' 'false'
-verify '@write(@freeze(@equals({"a": 1, "b": 2, "c": 3}, <$variable="value" $copy=$variable>)), 1)' \
+verify '@write(@freeze(@equals(<$variable="value" $copy=$variable>, {"a": 1, "b": 2, "c": 3})), 1)' \
     'prints to stdout' 'false'
