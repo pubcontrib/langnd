@@ -84,6 +84,7 @@ number_t view_number(const value_t *value);
 string_t *view_string(const value_t *value);
 list_t *view_list(const value_t *value);
 map_t *view_map(const value_t *value);
+function_t *view_function(const value_t *value);
 value_t *new_null();
 value_t *new_boolean(boolean_t boolean);
 value_t *new_number(number_t number);

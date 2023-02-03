@@ -185,6 +185,16 @@ int compare_values(const value_t *left, const value_t *right)
             return direction;
         }
 
+        case VALUE_TYPE_FUNCTION:
+        {
+            function_t *leftFunction, *rightFunction;
+
+            leftFunction = view_function(left);
+            rightFunction = view_function(right);
+
+            return compare_strings(leftFunction->source, rightFunction->source);
+        }
+
         default:
             crash_with_message("unsupported branch invoked");
             return 0;
@@ -497,6 +507,19 @@ map_t *view_map(const value_t *value)
     if (value->type == VALUE_TYPE_MAP)
     {
         return (map_t *) value->data;
+    }
+    else
+    {
+        crash_with_message("unsupported branch invoked");
+        return NULL;
+    }
+}
+
+function_t *view_function(const value_t *value)
+{
+    if (value->type == VALUE_TYPE_FUNCTION)
+    {
+        return (function_t *) value->data;
     }
     else
     {
