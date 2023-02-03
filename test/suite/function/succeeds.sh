@@ -12,6 +12,8 @@ verify '@write(@freeze(@succeeds(null, [1, 2, 3])), 1)' \
     'prints to stdout' 'false'
 verify '@write(@freeze(@succeeds(null, {"a": 1, "b": 2, "c": 3})), 1)' \
     'prints to stdout' 'false'
+verify '@write(@freeze(@succeeds(null, <$variable="value" $copy=$variable>)), 1)' \
+    'prints to stdout' 'false'
 verify '@write(@freeze(@succeeds(false, true)), 1)' \
     'prints to stdout' 'false'
 verify '@write(@freeze(@succeeds(true, false)), 1)' \
@@ -27,6 +29,8 @@ verify '@write(@freeze(@succeeds(true, "text")), 1)' \
 verify '@write(@freeze(@succeeds(true, [1, 2, 3])), 1)' \
     'prints to stdout' 'false'
 verify '@write(@freeze(@succeeds(true, {"a": 1, "b": 2, "c": 3})), 1)' \
+    'prints to stdout' 'false'
+verify '@write(@freeze(@succeeds(true, <$variable="value" $copy=$variable>)), 1)' \
     'prints to stdout' 'false'
 verify '@write(@freeze(@succeeds(100, 200)), 1)' \
     'prints to stdout' 'false'
@@ -52,6 +56,8 @@ verify '@write(@freeze(@succeeds(100, [1, 2, 3])), 1)' \
     'prints to stdout' 'false'
 verify '@write(@freeze(@succeeds(100, {"a": 1, "b": 2, "c": 3})), 1)' \
     'prints to stdout' 'false'
+verify '@write(@freeze(@succeeds(100, <$variable="value" $copy=$variable>)), 1)' \
+    'prints to stdout' 'false'
 verify '@write(@freeze(@succeeds("text", "word")), 1)' \
     'prints to stdout' 'false'
 verify '@write(@freeze(@succeeds("word", "text")), 1)' \
@@ -76,6 +82,8 @@ verify '@write(@freeze(@succeeds("text", [1, 2, 3])), 1)' \
     'prints to stdout' 'false'
 verify '@write(@freeze(@succeeds("text", {"a": 1, "b": 2, "c": 3})), 1)' \
     'prints to stdout' 'false'
+verify '@write(@freeze(@succeeds("text", <$variable="value" $copy=$variable>)), 1)' \
+    'prints to stdout' 'false'
 verify '@write(@freeze(@succeeds([1], [])), 1)' \
     'prints to stdout' 'true'
 verify '@write(@freeze(@succeeds([], [1])), 1)' \
@@ -99,6 +107,8 @@ verify '@write(@freeze(@succeeds([1, 2, 3], true)), 1)' \
 verify '@write(@freeze(@succeeds([1, 2, 3], "text")), 1)' \
     'prints to stdout' 'true'
 verify '@write(@freeze(@succeeds([1, 2, 3], {"a": 1, "b": 2, "c": 3})), 1)' \
+    'prints to stdout' 'false'
+verify '@write(@freeze(@succeeds([1, 2, 3], <$variable="value" $copy=$variable>)), 1)' \
     'prints to stdout' 'false'
 verify '@write(@freeze(@succeeds({"a": 1}, {})), 1)' \
     'prints to stdout' 'true'
@@ -126,3 +136,27 @@ verify '@write(@freeze(@succeeds({"a": 1, "b": 2, "c": 3}, true)), 1)' \
     'prints to stdout' 'true'
 verify '@write(@freeze(@succeeds({"a": 1, "b": 2, "c": 3}, "text")), 1)' \
     'prints to stdout' 'true'
+verify '@write(@freeze(@succeeds({"a": 1, "b": 2, "c": 3}, <$variable="value" $copy=$variable>)), 1)' \
+    'prints to stdout' 'false'
+verify '@write(@freeze(@succeeds(<$variable="value" $copy=$variable>, <>)), 1)' \
+    'prints to stdout' 'false'
+verify '@write(@freeze(@succeeds(<>, <$variable="value" $copy=$variable>)), 1)' \
+    'prints to stdout' 'true'
+verify '@write(@freeze(@succeeds(<$variable="value" $copy=$variable>, <$variable="value" $copy=$variable>)), 1)' \
+    'prints to stdout' 'false'
+verify '@write(@freeze(@succeeds(<1>, <2>)), 1)' \
+    'prints to stdout' 'false'
+verify '@write(@freeze(@succeeds(<2>, <1>)), 1)' \
+    'prints to stdout' 'true'
+verify '@write(@freeze(@succeeds(null, <$variable="value" $copy=$variable>)), 1)' \
+    'prints to stdout' 'false'
+verify '@write(@freeze(@succeeds(true, <$variable="value" $copy=$variable>)), 1)' \
+    'prints to stdout' 'false'
+verify '@write(@freeze(@succeeds(100, <$variable="value" $copy=$variable>)), 1)' \
+    'prints to stdout' 'false'
+verify '@write(@freeze(@succeeds("text", <$variable="value" $copy=$variable>)), 1)' \
+    'prints to stdout' 'false'
+verify '@write(@freeze(@succeeds([1, 2, 3], <$variable="value" $copy=$variable>)), 1)' \
+    'prints to stdout' 'false'
+verify '@write(@freeze(@succeeds({"a": 1, "b": 2, "c": 3}, <$variable="value" $copy=$variable>)), 1)' \
+    'prints to stdout' 'false'
