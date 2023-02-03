@@ -31,6 +31,8 @@ verify '@cast([1], "NULL")' \
     'errors with execute message' '"invalid cast"'
 verify '@cast({}, "NULL")' \
     'errors with execute message' '"invalid cast"'
+verify '@cast(<>, "NULL")' \
+    'errors with execute message' '"invalid cast"'
 verify '@cast(null, "BOOLEAN")' \
     'errors with execute message' '"invalid cast"'
 verify '@cast(123.456, "BOOLEAN")' \
@@ -40,6 +42,8 @@ verify '@cast("text", "BOOLEAN")' \
 verify '@cast([1], "BOOLEAN")' \
     'errors with execute message' '"invalid cast"'
 verify '@cast({}, "BOOLEAN")' \
+    'errors with execute message' '"invalid cast"'
+verify '@cast(<>, "BOOLEAN")' \
     'errors with execute message' '"invalid cast"'
 verify '@cast(null, "NUMBER")' \
     'errors with execute message' '"invalid cast"'
@@ -51,9 +55,13 @@ verify '@cast([1], "NUMBER")' \
     'errors with execute message' '"invalid cast"'
 verify '@cast({}, "NUMBER")' \
     'errors with execute message' '"invalid cast"'
+verify '@cast(<>, "NUMBER")' \
+    'errors with execute message' '"invalid cast"'
 verify '@cast([1], "STRING")' \
     'errors with execute message' '"invalid cast"'
 verify '@cast({}, "STRING")' \
+    'errors with execute message' '"invalid cast"'
+verify '@cast(<>, "STRING")' \
     'errors with execute message' '"invalid cast"'
 verify '@cast(null, "LIST")' \
     'errors with execute message' '"invalid cast"'
@@ -67,6 +75,8 @@ verify '@cast([1], "LIST")' \
     'errors with execute message' '"invalid cast"'
 verify '@cast({}, "LIST")' \
     'errors with execute message' '"invalid cast"'
+verify '@cast(<>, "LIST")' \
+    'errors with execute message' '"invalid cast"'
 verify '@cast(null, "MAP")' \
     'errors with execute message' '"invalid cast"'
 verify '@cast(123.456, "MAP")' \
@@ -78,6 +88,22 @@ verify '@cast("text", "MAP")' \
 verify '@cast([1], "MAP")' \
     'errors with execute message' '"invalid cast"'
 verify '@cast({}, "MAP")' \
+    'errors with execute message' '"invalid cast"'
+verify '@cast(<>, "MAP")' \
+    'errors with execute message' '"invalid cast"'
+verify '@cast(null, "FUNCTION")' \
+    'errors with execute message' '"invalid cast"'
+verify '@cast(123.456, "FUNCTION")' \
+    'errors with execute message' '"invalid cast"'
+verify '@cast(true, "FUNCTION")' \
+    'errors with execute message' '"invalid cast"'
+verify '@cast("text", "FUNCTION")' \
+    'errors with execute message' '"invalid cast"'
+verify '@cast([1], "FUNCTION")' \
+    'errors with execute message' '"invalid cast"'
+verify '@cast({}, "FUNCTION")' \
+    'errors with execute message' '"invalid cast"'
+verify '@cast(<>, "FUNCTION")' \
     'errors with execute message' '"invalid cast"'
 verify '@cast(null, "WRONG")' \
     'errors with execute message' '"unknown type"'
