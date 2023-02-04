@@ -24,6 +24,18 @@ verify '$index=<"first"> $index=<"second"> $index=<"third"> @write($index(), 1)'
     'prints to stdout' 'third'
 verify '$original=<@write("source", 1)> $copy=$original $copy()' \
     'prints to stdout' 'source'
+verify '$function=<$local="value"> $function() $local' \
+    'errors with execute message' '"absent variable"'
+verify '$outer="value" $function=<$outer> $function()' \
+    'errors with execute message' '"absent variable"'
+verify '$outer="created" $function=<$outer="updated"> $function() @write(@freeze($outer), 1)' \
+    'prints to stdout' '"created"'
+verify '$top=<$bottom=<$local="value"> $bottom() $local> $top()' \
+    'errors with execute message' '"absent variable"'
+verify '$top=<$outer="value" $bottom=<$outer> $bottom()> $top()' \
+    'errors with execute message' '"absent variable"'
+verify '$top=<$outer="created" $bottom=<$outer="updated"> $bottom() @write(@freeze($outer), 1)> $top()' \
+    'prints to stdout' '"created"'
 
 verify '@add(' \
     'errors with parse message' '('

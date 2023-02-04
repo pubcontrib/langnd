@@ -21,47 +21,55 @@ typedef enum
     VALUE_EFFECT_THROW
 } value_effect_t;
 
-static value_t *apply_expression(expression_t *expression, map_t *variables, value_effect_t *effect);
-static value_t *run_add(argument_iterator_t *arguments, map_t *variables, value_effect_t *effect);
-static value_t *run_subtract(argument_iterator_t *arguments, map_t *variables, value_effect_t *effect);
-static value_t *run_multiply(argument_iterator_t *arguments, map_t *variables, value_effect_t *effect);
-static value_t *run_divide(argument_iterator_t *arguments, map_t *variables, value_effect_t *effect);
-static value_t *run_modulo(argument_iterator_t *arguments, map_t *variables, value_effect_t *effect);
-static value_t *run_truncate(argument_iterator_t *arguments, map_t *variables, value_effect_t *effect);
-static value_t *run_and(argument_iterator_t *arguments, map_t *variables, value_effect_t *effect);
-static value_t *run_or(argument_iterator_t *arguments, map_t *variables, value_effect_t *effect);
-static value_t *run_not(argument_iterator_t *arguments, map_t *variables, value_effect_t *effect);
-static value_t *run_precedes(argument_iterator_t *arguments, map_t *variables, value_effect_t *effect);
-static value_t *run_succeeds(argument_iterator_t *arguments, map_t *variables, value_effect_t *effect);
-static value_t *run_equals(argument_iterator_t *arguments, map_t *variables, value_effect_t *effect);
-static value_t *run_write(argument_iterator_t *arguments, map_t *variables, value_effect_t *effect);
-static value_t *run_read(argument_iterator_t *arguments, map_t *variables, value_effect_t *effect);
-static value_t *run_delete(argument_iterator_t *arguments, map_t *variables, value_effect_t *effect);
-static value_t *run_query(argument_iterator_t *arguments, map_t *variables, value_effect_t *effect);
-static value_t *run_freeze(argument_iterator_t *arguments, map_t *variables, value_effect_t *effect);
-static value_t *run_thaw(argument_iterator_t *arguments, map_t *variables, value_effect_t *effect);
-static value_t *run_type(argument_iterator_t *arguments, map_t *variables, value_effect_t *effect);
-static value_t *run_cast(argument_iterator_t *arguments, map_t *variables, value_effect_t *effect);
-static value_t *run_get(argument_iterator_t *arguments, map_t *variables, value_effect_t *effect);
-static value_t *run_set(argument_iterator_t *arguments, map_t *variables, value_effect_t *effect);
-static value_t *run_unset(argument_iterator_t *arguments, map_t *variables, value_effect_t *effect);
-static value_t *run_merge(argument_iterator_t *arguments, map_t *variables, value_effect_t *effect);
-static value_t *run_length(argument_iterator_t *arguments, map_t *variables, value_effect_t *effect);
-static value_t *run_keys(argument_iterator_t *arguments, map_t *variables, value_effect_t *effect);
-static value_t *run_sort(argument_iterator_t *arguments, map_t *variables, value_effect_t *effect);
-static int next_argument(argument_iterator_t *arguments, map_t *variables, int types, value_t **out, value_effect_t *effect);
-static int has_next_argument(const argument_iterator_t *arguments);
+typedef struct invoke_frame_t
+{
+    map_t *variables;
+    argument_iterator_t arguments;
+    value_effect_t effect;
+    struct invoke_frame_t *parent;
+} invoke_frame_t;
+
+static value_t *apply_expression(expression_t *expression, invoke_frame_t *frame);
+static value_t *run_add(invoke_frame_t *frame);
+static value_t *run_subtract(invoke_frame_t *frame);
+static value_t *run_multiply(invoke_frame_t *frame);
+static value_t *run_divide(invoke_frame_t *frame);
+static value_t *run_modulo(invoke_frame_t *frame);
+static value_t *run_truncate(invoke_frame_t *frame);
+static value_t *run_and(invoke_frame_t *frame);
+static value_t *run_or(invoke_frame_t *frame);
+static value_t *run_not(invoke_frame_t *frame);
+static value_t *run_precedes(invoke_frame_t *frame);
+static value_t *run_succeeds(invoke_frame_t *frame);
+static value_t *run_equals(invoke_frame_t *frame);
+static value_t *run_write(invoke_frame_t *frame);
+static value_t *run_read(invoke_frame_t *frame);
+static value_t *run_delete(invoke_frame_t *frame);
+static value_t *run_query(invoke_frame_t *frame);
+static value_t *run_freeze(invoke_frame_t *frame);
+static value_t *run_thaw(invoke_frame_t *frame);
+static value_t *run_type(invoke_frame_t *frame);
+static value_t *run_cast(invoke_frame_t *frame);
+static value_t *run_get(invoke_frame_t *frame);
+static value_t *run_set(invoke_frame_t *frame);
+static value_t *run_unset(invoke_frame_t *frame);
+static value_t *run_merge(invoke_frame_t *frame);
+static value_t *run_length(invoke_frame_t *frame);
+static value_t *run_keys(invoke_frame_t *frame);
+static value_t *run_sort(invoke_frame_t *frame);
+static int next_argument(int types, value_t **out, invoke_frame_t *frame);
+static int has_next_argument(const invoke_frame_t *frame);
 static void copy_map_items(const map_t *source, map_t *destination);
 static int compare_values_ascending(const void *left, const void *right);
 static int compare_values_descending(const void *left, const void *right);
-static value_t *throw_error(const char *message, value_effect_t *effect);
+static value_t *throw_error(const char *message, invoke_frame_t *frame);
 static void dereference_value_unsafe(void *value);
 
 outcome_t *execute(string_t *code)
 {
     outcome_t *outcome;
     script_t *script;
-    map_t *variables;
+    invoke_frame_t root;
     list_t *expressions;
     size_t index;
 
@@ -80,22 +88,21 @@ outcome_t *execute(string_t *code)
         return outcome;
     }
 
-    variables = empty_map(hash_string, dereference_value_unsafe, 8);
+    root.variables = empty_map(hash_string, dereference_value_unsafe, 8);
+    root.effect = VALUE_EFFECT_PROGRESS;
     expressions = script->expressions;
 
     for (index = 0; index < expressions->length; index++)
     {
         value_t *result;
-        value_effect_t effect;
 
-        effect = VALUE_EFFECT_PROGRESS;
-        result = apply_expression(expressions->items[index], variables, &effect);
+        result = apply_expression(expressions->items[index], &root);
 
-        if (effect == VALUE_EFFECT_PROGRESS)
+        if (root.effect == VALUE_EFFECT_PROGRESS)
         {
             dereference_value(result);
         }
-        else if (effect == VALUE_EFFECT_RETURN)
+        else if (root.effect == VALUE_EFFECT_RETURN)
         {
             dereference_value(result);
             result = steal_string(cstring_to_string("lost return"));
@@ -105,7 +112,7 @@ outcome_t *execute(string_t *code)
 
             break;
         }
-        else if (effect == VALUE_EFFECT_BREAK)
+        else if (root.effect == VALUE_EFFECT_BREAK)
         {
             dereference_value(result);
             result = steal_string(cstring_to_string("lost break"));
@@ -115,7 +122,7 @@ outcome_t *execute(string_t *code)
 
             break;
         }
-        else if (effect == VALUE_EFFECT_CONTINUE)
+        else if (root.effect == VALUE_EFFECT_CONTINUE)
         {
             dereference_value(result);
             result = steal_string(cstring_to_string("lost continue"));
@@ -125,7 +132,7 @@ outcome_t *execute(string_t *code)
 
             break;
         }
-        else if (effect == VALUE_EFFECT_THROW)
+        else if (root.effect == VALUE_EFFECT_THROW)
         {
             outcome->errorMessage = cstring_to_string("failed to execute code");
             outcome->hintMessage = represent_value(result);
@@ -135,7 +142,7 @@ outcome_t *execute(string_t *code)
         }
     }
 
-    destroy_map(variables);
+    destroy_map(root.variables);
     destroy_script(script);
 
     return outcome;
@@ -156,7 +163,7 @@ void destroy_outcome(outcome_t *outcome)
     free(outcome);
 }
 
-static value_t *apply_expression(expression_t *expression, map_t *variables, value_effect_t *effect)
+static value_t *apply_expression(expression_t *expression, invoke_frame_t *frame)
 {
     switch (expression->type)
     {
@@ -182,7 +189,7 @@ static value_t *apply_expression(expression_t *expression, map_t *variables, val
             {
                 value_t *value;
 
-                value = get_map_item(variables, data->identifier->name);
+                value = get_map_item(frame->variables, data->identifier->name);
 
                 if (value)
                 {
@@ -191,12 +198,12 @@ static value_t *apply_expression(expression_t *expression, map_t *variables, val
                 }
                 else
                 {
-                    return throw_error("absent variable", effect);
+                    return throw_error("absent variable", frame);
                 }
             }
             else if (data->identifier->type == IDENTIFIER_TYPE_FUNCTION)
             {
-                return throw_error("unexpected reference type", effect);
+                return throw_error("unexpected reference type", frame);
             }
             else
             {
@@ -211,14 +218,14 @@ static value_t *apply_expression(expression_t *expression, map_t *variables, val
             value_t *value;
 
             data = expression->data;
-            value = apply_expression(data->value, variables, effect);
+            value = apply_expression(data->value, frame);
 
-            if ((*effect) == VALUE_EFFECT_RETURN || (*effect) == VALUE_EFFECT_BREAK || (*effect) == VALUE_EFFECT_CONTINUE || (*effect) == VALUE_EFFECT_THROW)
+            if (frame->effect == VALUE_EFFECT_RETURN || frame->effect == VALUE_EFFECT_BREAK || frame->effect == VALUE_EFFECT_CONTINUE || frame->effect == VALUE_EFFECT_THROW)
             {
                 return value;
             }
 
-            set_map_item(variables, copy_string(data->identifier->name), value);
+            set_map_item(frame->variables, copy_string(data->identifier->name), value);
             value->owners += 1;
 
             return value;
@@ -227,143 +234,146 @@ static value_t *apply_expression(expression_t *expression, map_t *variables, val
         case EXPRESSION_TYPE_INVOKE:
         {
             invoke_expression_data_t *data;
-            argument_iterator_t arguments;
+            invoke_frame_t descendant;
             value_t *result;
 
             data = expression->data;
-            arguments.expressions = data->arguments;
+            descendant.variables = empty_map(hash_string, dereference_value_unsafe, 8);
+            descendant.arguments.expressions = data->arguments;
 
             if (data->arguments->length > 0)
             {
-                arguments.evaluated = allocate_with_zeros(sizeof(value_t *), data->arguments->length);
+                descendant.arguments.evaluated = allocate_with_zeros(sizeof(value_t *), data->arguments->length);
             }
             else
             {
-                arguments.evaluated = NULL;
+                descendant.arguments.evaluated = NULL;
             }
 
-            arguments.index = 0;
+            descendant.arguments.index = 0;
+            descendant.effect = VALUE_EFFECT_PROGRESS;
+            descendant.parent = frame;
 
             if (data->identifier->type == IDENTIFIER_TYPE_FUNCTION)
             {
                 if (is_keyword_match(data->identifier->name, "add"))
                 {
-                    result = run_add(&arguments, variables, effect);
+                    result = run_add(&descendant);
                 }
                 else if (is_keyword_match(data->identifier->name, "subtract"))
                 {
-                    result = run_subtract(&arguments, variables, effect);
+                    result = run_subtract(&descendant);
                 }
                 else if (is_keyword_match(data->identifier->name, "multiply"))
                 {
-                    result = run_multiply(&arguments, variables, effect);
+                    result = run_multiply(&descendant);
                 }
                 else if (is_keyword_match(data->identifier->name, "divide"))
                 {
-                    result = run_divide(&arguments, variables, effect);
+                    result = run_divide(&descendant);
                 }
                 else if (is_keyword_match(data->identifier->name, "modulo"))
                 {
-                    result = run_modulo(&arguments, variables, effect);
+                    result = run_modulo(&descendant);
                 }
                 else if (is_keyword_match(data->identifier->name, "truncate"))
                 {
-                    result = run_truncate(&arguments, variables, effect);
+                    result = run_truncate(&descendant);
                 }
                 else if (is_keyword_match(data->identifier->name, "and"))
                 {
-                    result = run_and(&arguments, variables, effect);
+                    result = run_and(&descendant);
                 }
                 else if (is_keyword_match(data->identifier->name, "or"))
                 {
-                    result = run_or(&arguments, variables, effect);
+                    result = run_or(&descendant);
                 }
                 else if (is_keyword_match(data->identifier->name, "not"))
                 {
-                    result = run_not(&arguments, variables, effect);
+                    result = run_not(&descendant);
                 }
                 else if (is_keyword_match(data->identifier->name, "precedes"))
                 {
-                    result = run_precedes(&arguments, variables, effect);
+                    result = run_precedes(&descendant);
                 }
                 else if (is_keyword_match(data->identifier->name, "succeeds"))
                 {
-                    result = run_succeeds(&arguments, variables, effect);
+                    result = run_succeeds(&descendant);
                 }
                 else if (is_keyword_match(data->identifier->name, "equals"))
                 {
-                    result = run_equals(&arguments, variables, effect);
+                    result = run_equals(&descendant);
                 }
                 else if (is_keyword_match(data->identifier->name, "write"))
                 {
-                    result = run_write(&arguments, variables, effect);
+                    result = run_write(&descendant);
                 }
                 else if (is_keyword_match(data->identifier->name, "read"))
                 {
-                    result = run_read(&arguments, variables, effect);
+                    result = run_read(&descendant);
                 }
                 else if (is_keyword_match(data->identifier->name, "delete"))
                 {
-                    result = run_delete(&arguments, variables, effect);
+                    result = run_delete(&descendant);
                 }
                 else if (is_keyword_match(data->identifier->name, "query"))
                 {
-                    result = run_query(&arguments, variables, effect);
+                    result = run_query(&descendant);
                 }
                 else if (is_keyword_match(data->identifier->name, "freeze"))
                 {
-                    result = run_freeze(&arguments, variables, effect);
+                    result = run_freeze(&descendant);
                 }
                 else if (is_keyword_match(data->identifier->name, "thaw"))
                 {
-                    result = run_thaw(&arguments, variables, effect);
+                    result = run_thaw(&descendant);
                 }
                 else if (is_keyword_match(data->identifier->name, "type"))
                 {
-                    result = run_type(&arguments, variables, effect);
+                    result = run_type(&descendant);
                 }
                 else if (is_keyword_match(data->identifier->name, "cast"))
                 {
-                    result = run_cast(&arguments, variables, effect);
+                    result = run_cast(&descendant);
                 }
                 else if (is_keyword_match(data->identifier->name, "get"))
                 {
-                    result = run_get(&arguments, variables, effect);
+                    result = run_get(&descendant);
                 }
                 else if (is_keyword_match(data->identifier->name, "set"))
                 {
-                    result = run_set(&arguments, variables, effect);
+                    result = run_set(&descendant);
                 }
                 else if (is_keyword_match(data->identifier->name, "unset"))
                 {
-                    result = run_unset(&arguments, variables, effect);
+                    result = run_unset(&descendant);
                 }
                 else if (is_keyword_match(data->identifier->name, "merge"))
                 {
-                    result = run_merge(&arguments, variables, effect);
+                    result = run_merge(&descendant);
                 }
                 else if (is_keyword_match(data->identifier->name, "length"))
                 {
-                    result = run_length(&arguments, variables, effect);
+                    result = run_length(&descendant);
                 }
                 else if (is_keyword_match(data->identifier->name, "keys"))
                 {
-                    result = run_keys(&arguments, variables, effect);
+                    result = run_keys(&descendant);
                 }
                 else if (is_keyword_match(data->identifier->name, "sort"))
                 {
-                    result = run_sort(&arguments, variables, effect);
+                    result = run_sort(&descendant);
                 }
                 else
                 {
-                    result = throw_error("absent function", effect);
+                    result = throw_error("absent function", &descendant);
                 }
             }
             else if (data->identifier->type == IDENTIFIER_TYPE_VARIABLE)
             {
                 value_t *value;
 
-                value = get_map_item(variables, data->identifier->name);
+                value = get_map_item(frame->variables, data->identifier->name);
 
                 if (value)
                 {
@@ -385,14 +395,14 @@ static value_t *apply_expression(expression_t *expression, map_t *variables, val
                                 dereference_value(last);
                             }
 
-                            last = apply_expression(expressions->items[index], variables, effect);
+                            last = apply_expression(expressions->items[index], &descendant);
 
-                            if ((*effect) == VALUE_EFFECT_RETURN)
+                            if (descendant.effect == VALUE_EFFECT_RETURN)
                             {
-                                (*effect) = VALUE_EFFECT_PROGRESS;
+                                descendant.effect = VALUE_EFFECT_PROGRESS;
                                 break;
                             }
-                            else if ((*effect) == VALUE_EFFECT_BREAK || (*effect) == VALUE_EFFECT_CONTINUE || (*effect) == VALUE_EFFECT_THROW)
+                            else if (descendant.effect == VALUE_EFFECT_BREAK || descendant.effect == VALUE_EFFECT_CONTINUE || descendant.effect == VALUE_EFFECT_THROW)
                             {
                                 break;
                             }
@@ -403,16 +413,16 @@ static value_t *apply_expression(expression_t *expression, map_t *variables, val
                             last = new_null();
                         }
 
-                        return last;
+                        result = last;
                     }
                     else
                     {
-                        return throw_error("invocation error", effect);
+                        result = throw_error("invocation error", &descendant);
                     }
                 }
                 else
                 {
-                    return throw_error("absent variable", effect);
+                    result = throw_error("absent variable", &descendant);
                 }
             }
             else
@@ -421,17 +431,21 @@ static value_t *apply_expression(expression_t *expression, map_t *variables, val
                 return new_null();
             }
 
-            if (arguments.evaluated)
+            destroy_map(descendant.variables);
+
+            if (descendant.arguments.evaluated)
             {
                 size_t index;
 
-                for (index = 0; index < arguments.index; index++)
+                for (index = 0; index < descendant.arguments.index; index++)
                 {
-                    dereference_value(arguments.evaluated[index]);
+                    dereference_value(descendant.arguments.evaluated[index]);
                 }
 
-                free(arguments.evaluated);
+                free(descendant.arguments.evaluated);
             }
+
+            frame->effect = descendant.effect;
 
             return result;
         }
@@ -453,9 +467,9 @@ static value_t *apply_expression(expression_t *expression, map_t *variables, val
                 value_t *test;
 
                 branch = branches->items[index];
-                test = apply_expression(branch->condition, variables, effect);
+                test = apply_expression(branch->condition, frame);
 
-                if ((*effect) == VALUE_EFFECT_RETURN || (*effect) == VALUE_EFFECT_BREAK || (*effect) == VALUE_EFFECT_CONTINUE || (*effect) == VALUE_EFFECT_THROW)
+                if (frame->effect == VALUE_EFFECT_RETURN || frame->effect == VALUE_EFFECT_BREAK || frame->effect == VALUE_EFFECT_CONTINUE || frame->effect == VALUE_EFFECT_THROW)
                 {
                     return test;
                 }
@@ -469,7 +483,7 @@ static value_t *apply_expression(expression_t *expression, map_t *variables, val
 
                     if (pass == BOOLEAN_TRUE)
                     {
-                        last = apply_expression(branch->action, variables, effect);
+                        last = apply_expression(branch->action, frame);
 
                         break;
                     }
@@ -478,7 +492,7 @@ static value_t *apply_expression(expression_t *expression, map_t *variables, val
                 {
                     dereference_value(test);
 
-                    return throw_error("branch with non-boolean condition", effect);
+                    return throw_error("branch with non-boolean condition", frame);
                 }
             }
 
@@ -502,9 +516,9 @@ static value_t *apply_expression(expression_t *expression, map_t *variables, val
             {
                 value_t *test;
 
-                test = apply_expression(data->condition, variables, effect);
+                test = apply_expression(data->condition, frame);
 
-                if ((*effect) == VALUE_EFFECT_RETURN || (*effect) == VALUE_EFFECT_BREAK || (*effect) == VALUE_EFFECT_CONTINUE || (*effect) == VALUE_EFFECT_THROW)
+                if (frame->effect == VALUE_EFFECT_RETURN || frame->effect == VALUE_EFFECT_BREAK || frame->effect == VALUE_EFFECT_CONTINUE || frame->effect == VALUE_EFFECT_THROW)
                 {
                     return test;
                 }
@@ -524,19 +538,19 @@ static value_t *apply_expression(expression_t *expression, map_t *variables, val
                         dereference_value(last);
                     }
 
-                    last = apply_expression(data->action, variables, effect);
+                    last = apply_expression(data->action, frame);
 
-                    if ((*effect) == VALUE_EFFECT_BREAK)
+                    if (frame->effect == VALUE_EFFECT_BREAK)
                     {
-                        (*effect) = VALUE_EFFECT_PROGRESS;
+                        frame->effect = VALUE_EFFECT_PROGRESS;
                         break;
                     }
-                    else if ((*effect) == VALUE_EFFECT_CONTINUE)
+                    else if (frame->effect == VALUE_EFFECT_CONTINUE)
                     {
-                        (*effect) = VALUE_EFFECT_PROGRESS;
+                        frame->effect = VALUE_EFFECT_PROGRESS;
                         continue;
                     }
-                    else if ((*effect) == VALUE_EFFECT_THROW)
+                    else if (frame->effect == VALUE_EFFECT_THROW)
                     {
                         break;
                     }
@@ -545,7 +559,7 @@ static value_t *apply_expression(expression_t *expression, map_t *variables, val
                 {
                     dereference_value(test);
 
-                    return throw_error("loop with non-boolean condition", effect);
+                    return throw_error("loop with non-boolean condition", frame);
                 }
             }
 
@@ -563,15 +577,15 @@ static value_t *apply_expression(expression_t *expression, map_t *variables, val
             value_t *last;
 
             data = expression->data;
-            last = apply_expression(data->action, variables, effect);
+            last = apply_expression(data->action, frame);
 
-            if ((*effect) == VALUE_EFFECT_RETURN || (*effect) == VALUE_EFFECT_BREAK || (*effect) == VALUE_EFFECT_CONTINUE)
+            if (frame->effect == VALUE_EFFECT_RETURN || frame->effect == VALUE_EFFECT_BREAK || frame->effect == VALUE_EFFECT_CONTINUE)
             {
                 return last;
             }
-            else if ((*effect) == VALUE_EFFECT_THROW)
+            else if (frame->effect == VALUE_EFFECT_THROW)
             {
-                (*effect) = VALUE_EFFECT_PROGRESS;
+                frame->effect = VALUE_EFFECT_PROGRESS;
 
                 return last;
             }
@@ -589,14 +603,14 @@ static value_t *apply_expression(expression_t *expression, map_t *variables, val
             value_t *test;
 
             data = expression->data;
-            test = apply_expression(data->pick, variables, effect);
+            test = apply_expression(data->pick, frame);
 
-            if ((*effect) == VALUE_EFFECT_RETURN || (*effect) == VALUE_EFFECT_BREAK || (*effect) == VALUE_EFFECT_CONTINUE || (*effect) == VALUE_EFFECT_THROW)
+            if (frame->effect == VALUE_EFFECT_RETURN || frame->effect == VALUE_EFFECT_BREAK || frame->effect == VALUE_EFFECT_CONTINUE || frame->effect == VALUE_EFFECT_THROW)
             {
                 return test;
             }
 
-            (*effect) = VALUE_EFFECT_RETURN;
+            frame->effect = VALUE_EFFECT_RETURN;
 
             return test;
         }
@@ -607,14 +621,14 @@ static value_t *apply_expression(expression_t *expression, map_t *variables, val
             value_t *test;
 
             data = expression->data;
-            test = apply_expression(data->pick, variables, effect);
+            test = apply_expression(data->pick, frame);
 
-            if ((*effect) == VALUE_EFFECT_RETURN || (*effect) == VALUE_EFFECT_BREAK || (*effect) == VALUE_EFFECT_CONTINUE || (*effect) == VALUE_EFFECT_THROW)
+            if (frame->effect == VALUE_EFFECT_RETURN || frame->effect == VALUE_EFFECT_BREAK || frame->effect == VALUE_EFFECT_CONTINUE || frame->effect == VALUE_EFFECT_THROW)
             {
                 return test;
             }
 
-            (*effect) = VALUE_EFFECT_BREAK;
+            frame->effect = VALUE_EFFECT_BREAK;
 
             return test;
         }
@@ -625,14 +639,14 @@ static value_t *apply_expression(expression_t *expression, map_t *variables, val
             value_t *test;
 
             data = expression->data;
-            test = apply_expression(data->pick, variables, effect);
+            test = apply_expression(data->pick, frame);
 
-            if ((*effect) == VALUE_EFFECT_RETURN || (*effect) == VALUE_EFFECT_BREAK || (*effect) == VALUE_EFFECT_CONTINUE || (*effect) == VALUE_EFFECT_THROW)
+            if (frame->effect == VALUE_EFFECT_RETURN || frame->effect == VALUE_EFFECT_BREAK || frame->effect == VALUE_EFFECT_CONTINUE || frame->effect == VALUE_EFFECT_THROW)
             {
                 return test;
             }
 
-            (*effect) = VALUE_EFFECT_CONTINUE;
+            frame->effect = VALUE_EFFECT_CONTINUE;
 
             return test;
         }
@@ -643,14 +657,14 @@ static value_t *apply_expression(expression_t *expression, map_t *variables, val
             value_t *test;
 
             data = expression->data;
-            test = apply_expression(data->error, variables, effect);
+            test = apply_expression(data->error, frame);
 
-            if ((*effect) == VALUE_EFFECT_RETURN || (*effect) == VALUE_EFFECT_BREAK || (*effect) == VALUE_EFFECT_CONTINUE || (*effect) == VALUE_EFFECT_THROW)
+            if (frame->effect == VALUE_EFFECT_RETURN || frame->effect == VALUE_EFFECT_BREAK || frame->effect == VALUE_EFFECT_CONTINUE || frame->effect == VALUE_EFFECT_THROW)
             {
                 return test;
             }
 
-            (*effect) = VALUE_EFFECT_THROW;
+            frame->effect = VALUE_EFFECT_THROW;
 
             return test;
         }
@@ -673,9 +687,9 @@ static value_t *apply_expression(expression_t *expression, map_t *variables, val
                     dereference_value(last);
                 }
 
-                last = apply_expression(expressions->items[index], variables, effect);
+                last = apply_expression(expressions->items[index], frame);
 
-                if ((*effect) == VALUE_EFFECT_RETURN || (*effect) == VALUE_EFFECT_BREAK || (*effect) == VALUE_EFFECT_CONTINUE || (*effect) == VALUE_EFFECT_THROW)
+                if (frame->effect == VALUE_EFFECT_RETURN || frame->effect == VALUE_EFFECT_BREAK || frame->effect == VALUE_EFFECT_CONTINUE || frame->effect == VALUE_EFFECT_THROW)
                 {
                     break;
                 }
@@ -696,126 +710,126 @@ static value_t *apply_expression(expression_t *expression, map_t *variables, val
     return new_null();
 }
 
-static value_t *run_add(argument_iterator_t *arguments, map_t *variables, value_effect_t *effect)
+static value_t *run_add(invoke_frame_t *frame)
 {
     value_t *left, *right;
     number_t sum;
 
-    if (!next_argument(arguments, variables, VALUE_TYPE_NUMBER, &left, effect))
+    if (!next_argument(VALUE_TYPE_NUMBER, &left, frame))
     {
         return left;
     }
 
-    if (!next_argument(arguments, variables, VALUE_TYPE_NUMBER, &right, effect))
+    if (!next_argument(VALUE_TYPE_NUMBER, &right, frame))
     {
         return right;
     }
 
     if (add_numbers(view_number(left), view_number(right), &sum) != 0)
     {
-        return throw_error("arithmetic error", effect);
+        return throw_error("arithmetic error", frame);
     }
 
     return new_number(sum);
 }
 
-static value_t *run_subtract(argument_iterator_t *arguments, map_t *variables, value_effect_t *effect)
+static value_t *run_subtract(invoke_frame_t *frame)
 {
     value_t *left, *right;
     number_t difference;
 
-    if (!next_argument(arguments, variables, VALUE_TYPE_NUMBER, &left, effect))
+    if (!next_argument(VALUE_TYPE_NUMBER, &left, frame))
     {
         return left;
     }
 
-    if (!next_argument(arguments, variables, VALUE_TYPE_NUMBER, &right, effect))
+    if (!next_argument(VALUE_TYPE_NUMBER, &right, frame))
     {
         return right;
     }
 
     if (subtract_numbers(view_number(left), view_number(right), &difference) != 0)
     {
-        return throw_error("arithmetic error", effect);
+        return throw_error("arithmetic error", frame);
     }
 
     return new_number(difference);
 }
 
-static value_t *run_multiply(argument_iterator_t *arguments, map_t *variables, value_effect_t *effect)
+static value_t *run_multiply(invoke_frame_t *frame)
 {
     value_t *left, *right;
     number_t product;
 
-    if (!next_argument(arguments, variables, VALUE_TYPE_NUMBER, &left, effect))
+    if (!next_argument(VALUE_TYPE_NUMBER, &left, frame))
     {
         return left;
     }
 
-    if (!next_argument(arguments, variables, VALUE_TYPE_NUMBER, &right, effect))
+    if (!next_argument(VALUE_TYPE_NUMBER, &right, frame))
     {
         return right;
     }
 
     if (multiply_numbers(view_number(left), view_number(right), &product) != 0)
     {
-        return throw_error("arithmetic error", effect);
+        return throw_error("arithmetic error", frame);
     }
 
     return new_number(product);
 }
 
-static value_t *run_divide(argument_iterator_t *arguments, map_t *variables, value_effect_t *effect)
+static value_t *run_divide(invoke_frame_t *frame)
 {
     value_t *left, *right;
     number_t quotient;
 
-    if (!next_argument(arguments, variables, VALUE_TYPE_NUMBER, &left, effect))
+    if (!next_argument(VALUE_TYPE_NUMBER, &left, frame))
     {
         return left;
     }
 
-    if (!next_argument(arguments, variables, VALUE_TYPE_NUMBER, &right, effect))
+    if (!next_argument(VALUE_TYPE_NUMBER, &right, frame))
     {
         return right;
     }
 
     if (divide_numbers(view_number(left), view_number(right), &quotient) != 0)
     {
-        return throw_error("arithmetic error", effect);
+        return throw_error("arithmetic error", frame);
     }
 
     return new_number(quotient);
 }
 
-static value_t *run_modulo(argument_iterator_t *arguments, map_t *variables, value_effect_t *effect)
+static value_t *run_modulo(invoke_frame_t *frame)
 {
     value_t *left, *right;
     number_t remainder;
 
-    if (!next_argument(arguments, variables, VALUE_TYPE_NUMBER, &left, effect))
+    if (!next_argument(VALUE_TYPE_NUMBER, &left, frame))
     {
         return left;
     }
 
-    if (!next_argument(arguments, variables, VALUE_TYPE_NUMBER, &right, effect))
+    if (!next_argument(VALUE_TYPE_NUMBER, &right, frame))
     {
         return right;
     }
 
     if (modulo_numbers(view_number(left), view_number(right), &remainder) != 0)
     {
-        return throw_error("arithmetic error", effect);
+        return throw_error("arithmetic error", frame);
     }
 
     return new_number(remainder);
 }
 
-static value_t *run_truncate(argument_iterator_t *arguments, map_t *variables, value_effect_t *effect)
+static value_t *run_truncate(invoke_frame_t *frame)
 {
     value_t *value;
 
-    if (!next_argument(arguments, variables, VALUE_TYPE_NUMBER, &value, effect))
+    if (!next_argument(VALUE_TYPE_NUMBER, &value, frame))
     {
         return value;
     }
@@ -823,16 +837,16 @@ static value_t *run_truncate(argument_iterator_t *arguments, map_t *variables, v
     return new_number(truncate_number(view_number(value)));
 }
 
-static value_t *run_and(argument_iterator_t *arguments, map_t *variables, value_effect_t *effect)
+static value_t *run_and(invoke_frame_t *frame)
 {
     value_t *left, *right;
 
-    if (!next_argument(arguments, variables, VALUE_TYPE_BOOLEAN, &left, effect))
+    if (!next_argument(VALUE_TYPE_BOOLEAN, &left, frame))
     {
         return left;
     }
 
-    if (!next_argument(arguments, variables, VALUE_TYPE_BOOLEAN, &right, effect))
+    if (!next_argument(VALUE_TYPE_BOOLEAN, &right, frame))
     {
         return right;
     }
@@ -840,16 +854,16 @@ static value_t *run_and(argument_iterator_t *arguments, map_t *variables, value_
     return new_boolean(view_boolean(left) && view_boolean(right) ? BOOLEAN_TRUE : BOOLEAN_FALSE);
 }
 
-static value_t *run_or(argument_iterator_t *arguments, map_t *variables, value_effect_t *effect)
+static value_t *run_or(invoke_frame_t *frame)
 {
     value_t *left, *right;
 
-    if (!next_argument(arguments, variables, VALUE_TYPE_BOOLEAN, &left, effect))
+    if (!next_argument(VALUE_TYPE_BOOLEAN, &left, frame))
     {
         return left;
     }
 
-    if (!next_argument(arguments, variables, VALUE_TYPE_BOOLEAN, &right, effect))
+    if (!next_argument(VALUE_TYPE_BOOLEAN, &right, frame))
     {
         return right;
     }
@@ -857,11 +871,11 @@ static value_t *run_or(argument_iterator_t *arguments, map_t *variables, value_e
     return new_boolean(view_boolean(left) || view_boolean(right) ? BOOLEAN_TRUE : BOOLEAN_FALSE);
 }
 
-static value_t *run_not(argument_iterator_t *arguments, map_t *variables, value_effect_t *effect)
+static value_t *run_not(invoke_frame_t *frame)
 {
     value_t *value;
 
-    if (!next_argument(arguments, variables, VALUE_TYPE_BOOLEAN, &value, effect))
+    if (!next_argument(VALUE_TYPE_BOOLEAN, &value, frame))
     {
         return value;
     }
@@ -869,16 +883,16 @@ static value_t *run_not(argument_iterator_t *arguments, map_t *variables, value_
     return new_boolean(!view_boolean(value) ? BOOLEAN_TRUE : BOOLEAN_FALSE);
 }
 
-static value_t *run_precedes(argument_iterator_t *arguments, map_t *variables, value_effect_t *effect)
+static value_t *run_precedes(invoke_frame_t *frame)
 {
     value_t *left, *right;
 
-    if (!next_argument(arguments, variables, VALUE_TYPE_NULL | VALUE_TYPE_BOOLEAN | VALUE_TYPE_NUMBER | VALUE_TYPE_STRING | VALUE_TYPE_LIST | VALUE_TYPE_MAP | VALUE_TYPE_FUNCTION, &left, effect))
+    if (!next_argument(VALUE_TYPE_NULL | VALUE_TYPE_BOOLEAN | VALUE_TYPE_NUMBER | VALUE_TYPE_STRING | VALUE_TYPE_LIST | VALUE_TYPE_MAP | VALUE_TYPE_FUNCTION, &left, frame))
     {
         return left;
     }
 
-    if (!next_argument(arguments, variables, VALUE_TYPE_NULL | VALUE_TYPE_BOOLEAN | VALUE_TYPE_NUMBER | VALUE_TYPE_STRING | VALUE_TYPE_LIST | VALUE_TYPE_MAP | VALUE_TYPE_FUNCTION, &right, effect))
+    if (!next_argument(VALUE_TYPE_NULL | VALUE_TYPE_BOOLEAN | VALUE_TYPE_NUMBER | VALUE_TYPE_STRING | VALUE_TYPE_LIST | VALUE_TYPE_MAP | VALUE_TYPE_FUNCTION, &right, frame))
     {
         return right;
     }
@@ -886,16 +900,16 @@ static value_t *run_precedes(argument_iterator_t *arguments, map_t *variables, v
     return new_boolean(compare_values(left, right) < 0 ? BOOLEAN_TRUE : BOOLEAN_FALSE);
 }
 
-static value_t *run_succeeds(argument_iterator_t *arguments, map_t *variables, value_effect_t *effect)
+static value_t *run_succeeds(invoke_frame_t *frame)
 {
     value_t *left, *right;
 
-    if (!next_argument(arguments, variables, VALUE_TYPE_NULL | VALUE_TYPE_BOOLEAN | VALUE_TYPE_NUMBER | VALUE_TYPE_STRING | VALUE_TYPE_LIST | VALUE_TYPE_MAP | VALUE_TYPE_FUNCTION, &left, effect))
+    if (!next_argument(VALUE_TYPE_NULL | VALUE_TYPE_BOOLEAN | VALUE_TYPE_NUMBER | VALUE_TYPE_STRING | VALUE_TYPE_LIST | VALUE_TYPE_MAP | VALUE_TYPE_FUNCTION, &left, frame))
     {
         return left;
     }
 
-    if (!next_argument(arguments, variables, VALUE_TYPE_NULL | VALUE_TYPE_BOOLEAN | VALUE_TYPE_NUMBER | VALUE_TYPE_STRING | VALUE_TYPE_LIST | VALUE_TYPE_MAP | VALUE_TYPE_FUNCTION, &right, effect))
+    if (!next_argument(VALUE_TYPE_NULL | VALUE_TYPE_BOOLEAN | VALUE_TYPE_NUMBER | VALUE_TYPE_STRING | VALUE_TYPE_LIST | VALUE_TYPE_MAP | VALUE_TYPE_FUNCTION, &right, frame))
     {
         return right;
     }
@@ -903,16 +917,16 @@ static value_t *run_succeeds(argument_iterator_t *arguments, map_t *variables, v
     return new_boolean(compare_values(left, right) > 0 ? BOOLEAN_TRUE : BOOLEAN_FALSE);
 }
 
-static value_t *run_equals(argument_iterator_t *arguments, map_t *variables, value_effect_t *effect)
+static value_t *run_equals(invoke_frame_t *frame)
 {
     value_t *left, *right;
 
-    if (!next_argument(arguments, variables, VALUE_TYPE_NULL | VALUE_TYPE_BOOLEAN | VALUE_TYPE_NUMBER | VALUE_TYPE_STRING | VALUE_TYPE_LIST | VALUE_TYPE_MAP | VALUE_TYPE_FUNCTION, &left, effect))
+    if (!next_argument(VALUE_TYPE_NULL | VALUE_TYPE_BOOLEAN | VALUE_TYPE_NUMBER | VALUE_TYPE_STRING | VALUE_TYPE_LIST | VALUE_TYPE_MAP | VALUE_TYPE_FUNCTION, &left, frame))
     {
         return left;
     }
 
-    if (!next_argument(arguments, variables, VALUE_TYPE_NULL | VALUE_TYPE_BOOLEAN | VALUE_TYPE_NUMBER | VALUE_TYPE_STRING | VALUE_TYPE_LIST | VALUE_TYPE_MAP | VALUE_TYPE_FUNCTION, &right, effect))
+    if (!next_argument(VALUE_TYPE_NULL | VALUE_TYPE_BOOLEAN | VALUE_TYPE_NUMBER | VALUE_TYPE_STRING | VALUE_TYPE_LIST | VALUE_TYPE_MAP | VALUE_TYPE_FUNCTION, &right, frame))
     {
         return right;
     }
@@ -920,19 +934,19 @@ static value_t *run_equals(argument_iterator_t *arguments, map_t *variables, val
     return new_boolean(compare_values(left, right) == 0 ? BOOLEAN_TRUE : BOOLEAN_FALSE);
 }
 
-static value_t *run_write(argument_iterator_t *arguments, map_t *variables, value_effect_t *effect)
+static value_t *run_write(invoke_frame_t *frame)
 {
     value_t *message, *file;
     FILE *handle;
     int closable, flushable;
     string_t *string;
 
-    if (!next_argument(arguments, variables, VALUE_TYPE_STRING, &message, effect))
+    if (!next_argument(VALUE_TYPE_STRING, &message, frame))
     {
         return message;
     }
 
-    if (!next_argument(arguments, variables, VALUE_TYPE_NUMBER | VALUE_TYPE_STRING, &file, effect))
+    if (!next_argument(VALUE_TYPE_NUMBER | VALUE_TYPE_STRING, &file, frame))
     {
         return file;
     }
@@ -993,7 +1007,7 @@ static value_t *run_write(argument_iterator_t *arguments, map_t *variables, valu
 
     if (!handle)
     {
-        return throw_error("absent file", effect);
+        return throw_error("absent file", frame);
     }
 
     fwrite(string->bytes, sizeof(char), string->length, handle);
@@ -1005,7 +1019,7 @@ static value_t *run_write(argument_iterator_t *arguments, map_t *variables, valu
             fclose(handle);
         }
 
-        return throw_error("io error", effect);
+        return throw_error("io error", frame);
     }
 
     if (flushable)
@@ -1021,7 +1035,7 @@ static value_t *run_write(argument_iterator_t *arguments, map_t *variables, valu
     return new_null();
 }
 
-static value_t *run_read(argument_iterator_t *arguments, map_t *variables, value_effect_t *effect)
+static value_t *run_read(invoke_frame_t *frame)
 {
     value_t *file, *until;
     FILE *handle;
@@ -1030,12 +1044,12 @@ static value_t *run_read(argument_iterator_t *arguments, map_t *variables, value
     char *bytes;
     size_t fill, length;
 
-    if (!next_argument(arguments, variables, VALUE_TYPE_NUMBER | VALUE_TYPE_STRING, &file, effect))
+    if (!next_argument(VALUE_TYPE_NUMBER | VALUE_TYPE_STRING, &file, frame))
     {
         return file;
     }
 
-    if (!next_argument(arguments, variables, VALUE_TYPE_NULL | VALUE_TYPE_STRING, &until, effect))
+    if (!next_argument(VALUE_TYPE_NULL | VALUE_TYPE_STRING, &until, frame))
     {
         return until;
     }
@@ -1045,7 +1059,7 @@ static value_t *run_read(argument_iterator_t *arguments, map_t *variables, value
 
     if (terminated && terminator->length != 1)
     {
-        return throw_error("invalid terminator", effect);
+        return throw_error("invalid terminator", frame);
     }
 
     closable = 0;
@@ -1100,7 +1114,7 @@ static value_t *run_read(argument_iterator_t *arguments, map_t *variables, value
 
     if (!handle)
     {
-        return throw_error("absent file", effect);
+        return throw_error("absent file", frame);
     }
 
     fill = 0;
@@ -1122,7 +1136,7 @@ static value_t *run_read(argument_iterator_t *arguments, map_t *variables, value
 
             free(bytes);
 
-            return throw_error("io error", effect);
+            return throw_error("io error", frame);
         }
 
         if (symbol == EOF || (terminated && terminator->bytes[0] == symbol))
@@ -1152,11 +1166,11 @@ static value_t *run_read(argument_iterator_t *arguments, map_t *variables, value
     return steal_string(create_string(bytes, fill));
 }
 
-static value_t *run_delete(argument_iterator_t *arguments, map_t *variables, value_effect_t *effect)
+static value_t *run_delete(invoke_frame_t *frame)
 {
     value_t *file;
 
-    if (!next_argument(arguments, variables, VALUE_TYPE_NUMBER | VALUE_TYPE_STRING, &file, effect))
+    if (!next_argument(VALUE_TYPE_NUMBER | VALUE_TYPE_STRING, &file, frame))
     {
         return file;
     }
@@ -1165,7 +1179,7 @@ static value_t *run_delete(argument_iterator_t *arguments, map_t *variables, val
     {
         case VALUE_TYPE_NUMBER:
         {
-            return throw_error("io error", effect);
+            return throw_error("io error", frame);
         }
 
         case VALUE_TYPE_STRING:
@@ -1183,7 +1197,7 @@ static value_t *run_delete(argument_iterator_t *arguments, map_t *variables, val
             }
             else
             {
-                return throw_error("io error", effect);
+                return throw_error("io error", frame);
             }
         }
 
@@ -1193,12 +1207,12 @@ static value_t *run_delete(argument_iterator_t *arguments, map_t *variables, val
     }
 }
 
-static value_t *run_query(argument_iterator_t *arguments, map_t *variables, value_effect_t *effect)
+static value_t *run_query(invoke_frame_t *frame)
 {
     value_t *key;
     char *value, *cstring;
 
-    if (!next_argument(arguments, variables, VALUE_TYPE_STRING, &key, effect))
+    if (!next_argument(VALUE_TYPE_STRING, &key, frame))
     {
         return key;
     }
@@ -1213,15 +1227,15 @@ static value_t *run_query(argument_iterator_t *arguments, map_t *variables, valu
     }
     else
     {
-        return throw_error("absent environment variable", effect);
+        return throw_error("absent environment variable", frame);
     }
 }
 
-static value_t *run_freeze(argument_iterator_t *arguments, map_t *variables, value_effect_t *effect)
+static value_t *run_freeze(invoke_frame_t *frame)
 {
     value_t *value;
 
-    if (!next_argument(arguments, variables, VALUE_TYPE_NULL | VALUE_TYPE_BOOLEAN | VALUE_TYPE_NUMBER | VALUE_TYPE_STRING | VALUE_TYPE_LIST | VALUE_TYPE_MAP | VALUE_TYPE_FUNCTION, &value, effect))
+    if (!next_argument(VALUE_TYPE_NULL | VALUE_TYPE_BOOLEAN | VALUE_TYPE_NUMBER | VALUE_TYPE_STRING | VALUE_TYPE_LIST | VALUE_TYPE_MAP | VALUE_TYPE_FUNCTION, &value, frame))
     {
         return value;
     }
@@ -1229,14 +1243,14 @@ static value_t *run_freeze(argument_iterator_t *arguments, map_t *variables, val
     return steal_string(represent_value(value));
 }
 
-static value_t *run_thaw(argument_iterator_t *arguments, map_t *variables, value_effect_t *effect)
+static value_t *run_thaw(invoke_frame_t *frame)
 {
     value_t *code, *value;
     script_t *script;
     expression_t *expression;
     literal_expression_data_t *data;
 
-    if (!next_argument(arguments, variables, VALUE_TYPE_STRING, &code, effect))
+    if (!next_argument(VALUE_TYPE_STRING, &code, frame))
     {
         return code;
     }
@@ -1247,7 +1261,7 @@ static value_t *run_thaw(argument_iterator_t *arguments, map_t *variables, value
     {
         destroy_script(script);
 
-        return throw_error("melting error", effect);
+        return throw_error("melting error", frame);
     }
 
     expression = script->expressions->items[0];
@@ -1256,7 +1270,7 @@ static value_t *run_thaw(argument_iterator_t *arguments, map_t *variables, value
     {
         destroy_script(script);
 
-        return throw_error("melting error", effect);
+        return throw_error("melting error", frame);
     }
 
     data = expression->data;
@@ -1267,11 +1281,11 @@ static value_t *run_thaw(argument_iterator_t *arguments, map_t *variables, value
     return value;
 }
 
-static value_t *run_type(argument_iterator_t *arguments, map_t *variables, value_effect_t *effect)
+static value_t *run_type(invoke_frame_t *frame)
 {
     value_t *value;
 
-    if (!next_argument(arguments, variables, VALUE_TYPE_NULL | VALUE_TYPE_BOOLEAN | VALUE_TYPE_NUMBER | VALUE_TYPE_STRING | VALUE_TYPE_LIST | VALUE_TYPE_MAP | VALUE_TYPE_FUNCTION, &value, effect))
+    if (!next_argument(VALUE_TYPE_NULL | VALUE_TYPE_BOOLEAN | VALUE_TYPE_NUMBER | VALUE_TYPE_STRING | VALUE_TYPE_LIST | VALUE_TYPE_MAP | VALUE_TYPE_FUNCTION, &value, frame))
     {
         return value;
     }
@@ -1305,17 +1319,17 @@ static value_t *run_type(argument_iterator_t *arguments, map_t *variables, value
     }
 }
 
-static value_t *run_cast(argument_iterator_t *arguments, map_t *variables, value_effect_t *effect)
+static value_t *run_cast(invoke_frame_t *frame)
 {
     value_t *value, *type;
     string_t *pattern;
 
-    if (!next_argument(arguments, variables, VALUE_TYPE_NULL | VALUE_TYPE_BOOLEAN | VALUE_TYPE_NUMBER | VALUE_TYPE_STRING | VALUE_TYPE_LIST | VALUE_TYPE_MAP | VALUE_TYPE_FUNCTION, &value, effect))
+    if (!next_argument(VALUE_TYPE_NULL | VALUE_TYPE_BOOLEAN | VALUE_TYPE_NUMBER | VALUE_TYPE_STRING | VALUE_TYPE_LIST | VALUE_TYPE_MAP | VALUE_TYPE_FUNCTION, &value, frame))
     {
         return value;
     }
 
-    if (!next_argument(arguments, variables, VALUE_TYPE_STRING, &type, effect))
+    if (!next_argument(VALUE_TYPE_STRING, &type, frame))
     {
         return type;
     }
@@ -1342,12 +1356,12 @@ static value_t *run_cast(argument_iterator_t *arguments, map_t *variables, value
             }
             else
             {
-                return throw_error("invalid cast", effect);
+                return throw_error("invalid cast", frame);
             }
         }
         else
         {
-            return throw_error("invalid cast", effect);
+            return throw_error("invalid cast", frame);
         }
     }
     else if (is_keyword_match(pattern, "BOOLEAN"))
@@ -1374,12 +1388,12 @@ static value_t *run_cast(argument_iterator_t *arguments, map_t *variables, value
             }
             else
             {
-                return throw_error("invalid cast", effect);
+                return throw_error("invalid cast", frame);
             }
         }
         else
         {
-            return throw_error("invalid cast", effect);
+            return throw_error("invalid cast", frame);
         }
     }
     else if (is_keyword_match(pattern, "NUMBER"))
@@ -1396,14 +1410,14 @@ static value_t *run_cast(argument_iterator_t *arguments, map_t *variables, value
 
             if (string_to_number(value->data, &number) != 0)
             {
-                return throw_error("invalid cast", effect);
+                return throw_error("invalid cast", frame);
             }
 
             return new_number(number);
         }
         else
         {
-            return throw_error("invalid cast", effect);
+            return throw_error("invalid cast", frame);
         }
     }
     else if (is_keyword_match(pattern, "STRING"))
@@ -1428,32 +1442,32 @@ static value_t *run_cast(argument_iterator_t *arguments, map_t *variables, value
         }
         else
         {
-            return throw_error("invalid cast", effect);
+            return throw_error("invalid cast", frame);
         }
     }
     else if (is_keyword_match(pattern, "LIST"))
     {
-        return throw_error("invalid cast", effect);
+        return throw_error("invalid cast", frame);
     }
     else if (is_keyword_match(pattern, "MAP"))
     {
-        return throw_error("invalid cast", effect);
+        return throw_error("invalid cast", frame);
     }
     else if (is_keyword_match(pattern, "FUNCTION"))
     {
-        return throw_error("invalid cast", effect);
+        return throw_error("invalid cast", frame);
     }
     else
     {
-        return throw_error("unknown type", effect);
+        return throw_error("unknown type", frame);
     }
 }
 
-static value_t *run_get(argument_iterator_t *arguments, map_t *variables, value_effect_t *effect)
+static value_t *run_get(invoke_frame_t *frame)
 {
     value_t *collection, *key;
 
-    if (!next_argument(arguments, variables, VALUE_TYPE_STRING | VALUE_TYPE_LIST | VALUE_TYPE_MAP, &collection, effect))
+    if (!next_argument(VALUE_TYPE_STRING | VALUE_TYPE_LIST | VALUE_TYPE_MAP, &collection, frame))
     {
         return collection;
     }
@@ -1466,7 +1480,7 @@ static value_t *run_get(argument_iterator_t *arguments, map_t *variables, value_
             string_t *string;
             int number;
 
-            if (!next_argument(arguments, variables, VALUE_TYPE_NUMBER, &key, effect))
+            if (!next_argument(VALUE_TYPE_NUMBER, &key, frame))
             {
                 return key;
             }
@@ -1480,7 +1494,7 @@ static value_t *run_get(argument_iterator_t *arguments, map_t *variables, value_
 
             if (number < 1 || (size_t) number > string->length)
             {
-                return throw_error("absent key", effect);
+                return throw_error("absent key", frame);
             }
 
             bytes = allocate(sizeof(char));
@@ -1495,7 +1509,7 @@ static value_t *run_get(argument_iterator_t *arguments, map_t *variables, value_
             size_t index, cursor;
             int number;
 
-            if (!next_argument(arguments, variables, VALUE_TYPE_NUMBER, &key, effect))
+            if (!next_argument(VALUE_TYPE_NUMBER, &key, frame))
             {
                 return key;
             }
@@ -1509,7 +1523,7 @@ static value_t *run_get(argument_iterator_t *arguments, map_t *variables, value_
 
             if (number < 1 || (size_t) number > list->length)
             {
-                return throw_error("absent key", effect);
+                return throw_error("absent key", frame);
             }
 
             index = number - 1;
@@ -1536,7 +1550,7 @@ static value_t *run_get(argument_iterator_t *arguments, map_t *variables, value_
             value_t *value;
             map_t *map;
 
-            if (!next_argument(arguments, variables, VALUE_TYPE_STRING, &key, effect))
+            if (!next_argument(VALUE_TYPE_STRING, &key, frame))
             {
                 return key;
             }
@@ -1551,7 +1565,7 @@ static value_t *run_get(argument_iterator_t *arguments, map_t *variables, value_
             }
             else
             {
-                return throw_error("absent key", effect);
+                return throw_error("absent key", frame);
             }
         }
 
@@ -1561,11 +1575,11 @@ static value_t *run_get(argument_iterator_t *arguments, map_t *variables, value_
     }
 }
 
-static value_t *run_set(argument_iterator_t *arguments, map_t *variables, value_effect_t *effect)
+static value_t *run_set(invoke_frame_t *frame)
 {
     value_t *collection, *key, *item;
 
-    if (!next_argument(arguments, variables, VALUE_TYPE_STRING | VALUE_TYPE_LIST | VALUE_TYPE_MAP, &collection, effect))
+    if (!next_argument(VALUE_TYPE_STRING | VALUE_TYPE_LIST | VALUE_TYPE_MAP, &collection, frame))
     {
         return collection;
     }
@@ -1579,12 +1593,12 @@ static value_t *run_set(argument_iterator_t *arguments, map_t *variables, value_
             int index;
             size_t beforeLength, afterLength, destinationLength;
 
-            if (!next_argument(arguments, variables, VALUE_TYPE_NUMBER, &key, effect))
+            if (!next_argument(VALUE_TYPE_NUMBER, &key, frame))
             {
                 return key;
             }
 
-            if (!next_argument(arguments, variables, VALUE_TYPE_STRING, &item, effect))
+            if (!next_argument(VALUE_TYPE_STRING, &item, frame))
             {
                 return item;
             }
@@ -1599,7 +1613,7 @@ static value_t *run_set(argument_iterator_t *arguments, map_t *variables, value_
 
             if (index < 1 || (size_t) index > source->length)
             {
-                return throw_error("absent key", effect);
+                return throw_error("absent key", frame);
             }
 
             beforeLength = index - 1;
@@ -1620,12 +1634,12 @@ static value_t *run_set(argument_iterator_t *arguments, map_t *variables, value_
             size_t index, cursor;
             int number;
 
-            if (!next_argument(arguments, variables, VALUE_TYPE_NUMBER, &key, effect))
+            if (!next_argument(VALUE_TYPE_NUMBER, &key, frame))
             {
                 return key;
             }
 
-            if (!next_argument(arguments, variables, VALUE_TYPE_NULL | VALUE_TYPE_BOOLEAN | VALUE_TYPE_NUMBER | VALUE_TYPE_STRING | VALUE_TYPE_LIST | VALUE_TYPE_MAP, &item, effect))
+            if (!next_argument(VALUE_TYPE_NULL | VALUE_TYPE_BOOLEAN | VALUE_TYPE_NUMBER | VALUE_TYPE_STRING | VALUE_TYPE_LIST | VALUE_TYPE_MAP, &item, frame))
             {
                 return item;
             }
@@ -1639,7 +1653,7 @@ static value_t *run_set(argument_iterator_t *arguments, map_t *variables, value_
 
             if (number < 1 || (size_t) number > source->length)
             {
-                return throw_error("absent key", effect);
+                return throw_error("absent key", frame);
             }
 
             index = number - 1;
@@ -1671,12 +1685,12 @@ static value_t *run_set(argument_iterator_t *arguments, map_t *variables, value_
         {
             map_t *source, *destination;
 
-            if (!next_argument(arguments, variables, VALUE_TYPE_STRING, &key, effect))
+            if (!next_argument(VALUE_TYPE_STRING, &key, frame))
             {
                 return key;
             }
 
-            if (!next_argument(arguments, variables, VALUE_TYPE_NULL | VALUE_TYPE_BOOLEAN | VALUE_TYPE_NUMBER | VALUE_TYPE_STRING | VALUE_TYPE_LIST | VALUE_TYPE_MAP, &item, effect))
+            if (!next_argument(VALUE_TYPE_NULL | VALUE_TYPE_BOOLEAN | VALUE_TYPE_NUMBER | VALUE_TYPE_STRING | VALUE_TYPE_LIST | VALUE_TYPE_MAP, &item, frame))
             {
                 return item;
             }
@@ -1698,11 +1712,11 @@ static value_t *run_set(argument_iterator_t *arguments, map_t *variables, value_
     }
 }
 
-static value_t *run_unset(argument_iterator_t *arguments, map_t *variables, value_effect_t *effect)
+static value_t *run_unset(invoke_frame_t *frame)
 {
     value_t *collection, *key;
 
-    if (!next_argument(arguments, variables, VALUE_TYPE_STRING | VALUE_TYPE_LIST | VALUE_TYPE_MAP, &collection, effect))
+    if (!next_argument(VALUE_TYPE_STRING | VALUE_TYPE_LIST | VALUE_TYPE_MAP, &collection, frame))
     {
         return collection;
     }
@@ -1714,7 +1728,7 @@ static value_t *run_unset(argument_iterator_t *arguments, map_t *variables, valu
             string_t *source;
             int number;
 
-            if (!next_argument(arguments, variables, VALUE_TYPE_NUMBER, &key, effect))
+            if (!next_argument(VALUE_TYPE_NUMBER, &key, frame))
             {
                 return key;
             }
@@ -1728,7 +1742,7 @@ static value_t *run_unset(argument_iterator_t *arguments, map_t *variables, valu
 
             if (number < 1 || (size_t) number > source->length)
             {
-                return throw_error("absent key", effect);
+                return throw_error("absent key", frame);
             }
 
             if (source->length > 1)
@@ -1753,7 +1767,7 @@ static value_t *run_unset(argument_iterator_t *arguments, map_t *variables, valu
             int number;
             size_t index, cursor;
 
-            if (!next_argument(arguments, variables, VALUE_TYPE_NUMBER, &key, effect))
+            if (!next_argument(VALUE_TYPE_NUMBER, &key, frame))
             {
                 return key;
             }
@@ -1767,7 +1781,7 @@ static value_t *run_unset(argument_iterator_t *arguments, map_t *variables, valu
 
             if (number < 1 || (size_t) number > source->length)
             {
-                return throw_error("absent key", effect);
+                return throw_error("absent key", frame);
             }
 
             index = number - 1;
@@ -1793,7 +1807,7 @@ static value_t *run_unset(argument_iterator_t *arguments, map_t *variables, valu
         {
             map_t *source, *destination;
 
-            if (!next_argument(arguments, variables, VALUE_TYPE_STRING, &key, effect))
+            if (!next_argument(VALUE_TYPE_STRING, &key, frame))
             {
                 return key;
             }
@@ -1813,11 +1827,11 @@ static value_t *run_unset(argument_iterator_t *arguments, map_t *variables, valu
     }
 }
 
-static value_t *run_merge(argument_iterator_t *arguments, map_t *variables, value_effect_t *effect)
+static value_t *run_merge(invoke_frame_t *frame)
 {
     value_t *left, *right;
 
-    if (!next_argument(arguments, variables, VALUE_TYPE_STRING | VALUE_TYPE_LIST | VALUE_TYPE_MAP, &left, effect))
+    if (!next_argument(VALUE_TYPE_STRING | VALUE_TYPE_LIST | VALUE_TYPE_MAP, &left, frame))
     {
         return left;
     }
@@ -1826,7 +1840,7 @@ static value_t *run_merge(argument_iterator_t *arguments, map_t *variables, valu
     {
         case VALUE_TYPE_STRING:
         {
-            if (!next_argument(arguments, variables, VALUE_TYPE_STRING, &right, effect))
+            if (!next_argument(VALUE_TYPE_STRING, &right, frame))
             {
                 return right;
             }
@@ -1839,7 +1853,7 @@ static value_t *run_merge(argument_iterator_t *arguments, map_t *variables, valu
             list_t *source, *destination;
             size_t index;
 
-            if (!next_argument(arguments, variables, VALUE_TYPE_LIST, &right, effect))
+            if (!next_argument(VALUE_TYPE_LIST, &right, frame))
             {
                 return right;
             }
@@ -1876,7 +1890,7 @@ static value_t *run_merge(argument_iterator_t *arguments, map_t *variables, valu
         {
             map_t *source, *destination;
 
-            if (!next_argument(arguments, variables, VALUE_TYPE_MAP, &right, effect))
+            if (!next_argument(VALUE_TYPE_MAP, &right, frame))
             {
                 return right;
             }
@@ -1899,13 +1913,13 @@ static value_t *run_merge(argument_iterator_t *arguments, map_t *variables, valu
     }
 }
 
-static value_t *run_length(argument_iterator_t *arguments, map_t *variables, value_effect_t *effect)
+static value_t *run_length(invoke_frame_t *frame)
 {
     value_t *collection;
     size_t length;
     number_t number;
 
-    if (!next_argument(arguments, variables, VALUE_TYPE_STRING | VALUE_TYPE_LIST | VALUE_TYPE_MAP, &collection, effect))
+    if (!next_argument(VALUE_TYPE_STRING | VALUE_TYPE_LIST | VALUE_TYPE_MAP, &collection, frame))
     {
         return collection;
     }
@@ -1931,17 +1945,17 @@ static value_t *run_length(argument_iterator_t *arguments, map_t *variables, val
 
     if (length >= PORTABLE_INT_LIMIT || integer_to_number(length, &number) != 0)
     {
-        return throw_error("constraint error", effect);
+        return throw_error("constraint error", frame);
     }
 
     return new_number(number);
 }
 
-static value_t *run_keys(argument_iterator_t *arguments, map_t *variables, value_effect_t *effect)
+static value_t *run_keys(invoke_frame_t *frame)
 {
     value_t *collection;
 
-    if (!next_argument(arguments, variables, VALUE_TYPE_STRING | VALUE_TYPE_LIST | VALUE_TYPE_MAP, &collection, effect))
+    if (!next_argument(VALUE_TYPE_STRING | VALUE_TYPE_LIST | VALUE_TYPE_MAP, &collection, frame))
     {
         return collection;
     }
@@ -1959,7 +1973,7 @@ static value_t *run_keys(argument_iterator_t *arguments, map_t *variables, value
 
             if (string->length >= PORTABLE_INT_LIMIT || integer_to_number(string->length, &number) != 0)
             {
-                return throw_error("constraint error", effect);
+                return throw_error("constraint error", frame);
             }
 
             keys = empty_list(dereference_value_unsafe, 1);
@@ -1972,7 +1986,7 @@ static value_t *run_keys(argument_iterator_t *arguments, map_t *variables, value
                 {
                     destroy_list(keys);
 
-                    return throw_error("constraint error", effect);
+                    return throw_error("constraint error", frame);
                 }
 
                 add_list_item(keys, new_number(key));
@@ -1992,7 +2006,7 @@ static value_t *run_keys(argument_iterator_t *arguments, map_t *variables, value
 
             if (length >= PORTABLE_INT_LIMIT || integer_to_number(length, &number) != 0)
             {
-                return throw_error("constraint error", effect);
+                return throw_error("constraint error", frame);
             }
 
             keys = empty_list(dereference_value_unsafe, 1);
@@ -2005,7 +2019,7 @@ static value_t *run_keys(argument_iterator_t *arguments, map_t *variables, value
                 {
                     destroy_list(keys);
 
-                    return throw_error("constraint error", effect);
+                    return throw_error("constraint error", frame);
                 }
 
                 add_list_item(keys, new_number(key));
@@ -2041,19 +2055,19 @@ static value_t *run_keys(argument_iterator_t *arguments, map_t *variables, value
     }
 }
 
-static value_t *run_sort(argument_iterator_t *arguments, map_t *variables, value_effect_t *effect)
+static value_t *run_sort(invoke_frame_t *frame)
 {
     value_t *collection, *direction;
     list_t *source, *destination;
     int ascending;
     size_t index;
 
-    if (!next_argument(arguments, variables, VALUE_TYPE_LIST, &collection, effect))
+    if (!next_argument(VALUE_TYPE_LIST, &collection, frame))
     {
         return collection;
     }
 
-    if (!next_argument(arguments, variables, VALUE_TYPE_STRING, &direction, effect))
+    if (!next_argument(VALUE_TYPE_STRING, &direction, frame))
     {
         return direction;
     }
@@ -2068,7 +2082,7 @@ static value_t *run_sort(argument_iterator_t *arguments, map_t *variables, value
     }
     else
     {
-        return throw_error("invalid direction", effect);
+        return throw_error("invalid direction", frame);
     }
 
     source = view_list(collection);
@@ -2089,21 +2103,23 @@ static value_t *run_sort(argument_iterator_t *arguments, map_t *variables, value
     return steal_list(destination);
 }
 
-static int next_argument(argument_iterator_t *arguments, map_t *variables, int types, value_t **out, value_effect_t *effect)
+static int next_argument(int types, value_t **out, invoke_frame_t *frame)
 {
     value_t *result;
 
-    if (!has_next_argument(arguments))
+    if (!has_next_argument(frame))
     {
-        (*out) = throw_error("absent argument", effect);
+        (*out) = throw_error("absent argument", frame);
         return 0;
     }
 
-    result = apply_expression(arguments->expressions->items[arguments->index], variables, effect);
-    arguments->evaluated[arguments->index] = result;
-    arguments->index += 1;
+    result = apply_expression(frame->arguments.expressions->items[frame->arguments.index], frame->parent);
+    frame->arguments.evaluated[frame->arguments.index] = result;
+    frame->arguments.index += 1;
+    frame->effect = frame->parent->effect;
+    frame->parent->effect = VALUE_EFFECT_PROGRESS;
 
-    if ((*effect) == VALUE_EFFECT_RETURN || (*effect) == VALUE_EFFECT_BREAK || (*effect) == VALUE_EFFECT_CONTINUE || (*effect) == VALUE_EFFECT_THROW)
+    if (frame->effect == VALUE_EFFECT_RETURN || frame->effect == VALUE_EFFECT_BREAK || frame->effect == VALUE_EFFECT_CONTINUE || frame->effect == VALUE_EFFECT_THROW)
     {
         result->owners += 1;
         (*out) = result;
@@ -2112,7 +2128,7 @@ static int next_argument(argument_iterator_t *arguments, map_t *variables, int t
 
     if (!(types & result->type))
     {
-        (*out) = throw_error("wrong argument type", effect);
+        (*out) = throw_error("wrong argument type", frame);
         return 0;
     }
 
@@ -2120,9 +2136,9 @@ static int next_argument(argument_iterator_t *arguments, map_t *variables, int t
     return 1;
 }
 
-static int has_next_argument(const argument_iterator_t *arguments)
+static int has_next_argument(const invoke_frame_t *frame)
 {
-    return arguments->index < arguments->expressions->length;
+    return frame->arguments.index < frame->arguments.expressions->length;
 }
 
 static void copy_map_items(const map_t *source, map_t *destination)
@@ -2158,9 +2174,9 @@ static int compare_values_descending(const void *left, const void *right)
     return compare_values(*(value_t **) left, *(value_t **) right) * -1;
 }
 
-static value_t *throw_error(const char *message, value_effect_t *effect)
+static value_t *throw_error(const char *message, invoke_frame_t *frame)
 {
-    (*effect) = VALUE_EFFECT_THROW;
+    frame->effect = VALUE_EFFECT_THROW;
     return steal_string(cstring_to_string(message));
 }
 
