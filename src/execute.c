@@ -14,6 +14,7 @@ typedef struct
 
 typedef enum
 {
+    VALUE_EFFECT_PROGRESS,
     VALUE_EFFECT_RETURN,
     VALUE_EFFECT_BREAK,
     VALUE_EFFECT_CONTINUE,
@@ -87,12 +88,22 @@ outcome_t *execute(string_t *code)
         value_t *result;
         value_effect_t effect;
 
-        effect = VALUE_EFFECT_RETURN;
+        effect = VALUE_EFFECT_PROGRESS;
         result = apply_expression(expressions->items[index], variables, &effect);
 
-        if (effect == VALUE_EFFECT_RETURN)
+        if (effect == VALUE_EFFECT_PROGRESS)
         {
             dereference_value(result);
+        }
+        else if (effect == VALUE_EFFECT_RETURN)
+        {
+            dereference_value(result);
+            result = steal_string(cstring_to_string("lost return"));
+            outcome->errorMessage = cstring_to_string("failed to execute code");
+            outcome->hintMessage = represent_value(result);
+            dereference_value(result);
+
+            break;
         }
         else if (effect == VALUE_EFFECT_BREAK)
         {
@@ -202,7 +213,7 @@ static value_t *apply_expression(expression_t *expression, map_t *variables, val
             data = expression->data;
             value = apply_expression(data->value, variables, effect);
 
-            if ((*effect) == VALUE_EFFECT_BREAK || (*effect) == VALUE_EFFECT_CONTINUE || (*effect) == VALUE_EFFECT_THROW)
+            if ((*effect) == VALUE_EFFECT_RETURN || (*effect) == VALUE_EFFECT_BREAK || (*effect) == VALUE_EFFECT_CONTINUE || (*effect) == VALUE_EFFECT_THROW)
             {
                 return value;
             }
@@ -376,7 +387,12 @@ static value_t *apply_expression(expression_t *expression, map_t *variables, val
 
                             last = apply_expression(expressions->items[index], variables, effect);
 
-                            if ((*effect) == VALUE_EFFECT_BREAK || (*effect) == VALUE_EFFECT_CONTINUE || (*effect) == VALUE_EFFECT_THROW)
+                            if ((*effect) == VALUE_EFFECT_RETURN)
+                            {
+                                (*effect) = VALUE_EFFECT_PROGRESS;
+                                break;
+                            }
+                            else if ((*effect) == VALUE_EFFECT_BREAK || (*effect) == VALUE_EFFECT_CONTINUE || (*effect) == VALUE_EFFECT_THROW)
                             {
                                 break;
                             }
@@ -439,7 +455,7 @@ static value_t *apply_expression(expression_t *expression, map_t *variables, val
                 branch = branches->items[index];
                 test = apply_expression(branch->condition, variables, effect);
 
-                if ((*effect) == VALUE_EFFECT_BREAK || (*effect) == VALUE_EFFECT_CONTINUE || (*effect) == VALUE_EFFECT_THROW)
+                if ((*effect) == VALUE_EFFECT_RETURN || (*effect) == VALUE_EFFECT_BREAK || (*effect) == VALUE_EFFECT_CONTINUE || (*effect) == VALUE_EFFECT_THROW)
                 {
                     return test;
                 }
@@ -488,7 +504,7 @@ static value_t *apply_expression(expression_t *expression, map_t *variables, val
 
                 test = apply_expression(data->condition, variables, effect);
 
-                if ((*effect) == VALUE_EFFECT_BREAK || (*effect) == VALUE_EFFECT_CONTINUE || (*effect) == VALUE_EFFECT_THROW)
+                if ((*effect) == VALUE_EFFECT_RETURN || (*effect) == VALUE_EFFECT_BREAK || (*effect) == VALUE_EFFECT_CONTINUE || (*effect) == VALUE_EFFECT_THROW)
                 {
                     return test;
                 }
@@ -512,12 +528,12 @@ static value_t *apply_expression(expression_t *expression, map_t *variables, val
 
                     if ((*effect) == VALUE_EFFECT_BREAK)
                     {
-                        (*effect) = VALUE_EFFECT_RETURN;
+                        (*effect) = VALUE_EFFECT_PROGRESS;
                         break;
                     }
                     else if ((*effect) == VALUE_EFFECT_CONTINUE)
                     {
-                        (*effect) = VALUE_EFFECT_RETURN;
+                        (*effect) = VALUE_EFFECT_PROGRESS;
                         continue;
                     }
                     else if ((*effect) == VALUE_EFFECT_THROW)
@@ -549,13 +565,13 @@ static value_t *apply_expression(expression_t *expression, map_t *variables, val
             data = expression->data;
             last = apply_expression(data->action, variables, effect);
 
-            if ((*effect) == VALUE_EFFECT_BREAK || (*effect) == VALUE_EFFECT_CONTINUE)
+            if ((*effect) == VALUE_EFFECT_RETURN || (*effect) == VALUE_EFFECT_BREAK || (*effect) == VALUE_EFFECT_CONTINUE)
             {
                 return last;
             }
             else if ((*effect) == VALUE_EFFECT_THROW)
             {
-                (*effect) = VALUE_EFFECT_RETURN;
+                (*effect) = VALUE_EFFECT_PROGRESS;
 
                 return last;
             }
@@ -567,6 +583,24 @@ static value_t *apply_expression(expression_t *expression, map_t *variables, val
             return new_null();
         }
 
+        case EXPRESSION_TYPE_RETURN:
+        {
+            return_expression_data_t *data;
+            value_t *test;
+
+            data = expression->data;
+            test = apply_expression(data->pick, variables, effect);
+
+            if ((*effect) == VALUE_EFFECT_RETURN || (*effect) == VALUE_EFFECT_BREAK || (*effect) == VALUE_EFFECT_CONTINUE || (*effect) == VALUE_EFFECT_THROW)
+            {
+                return test;
+            }
+
+            (*effect) = VALUE_EFFECT_RETURN;
+
+            return test;
+        }
+
         case EXPRESSION_TYPE_BREAK:
         {
             break_expression_data_t *data;
@@ -575,7 +609,7 @@ static value_t *apply_expression(expression_t *expression, map_t *variables, val
             data = expression->data;
             test = apply_expression(data->pick, variables, effect);
 
-            if ((*effect) == VALUE_EFFECT_BREAK || (*effect) == VALUE_EFFECT_CONTINUE || (*effect) == VALUE_EFFECT_THROW)
+            if ((*effect) == VALUE_EFFECT_RETURN || (*effect) == VALUE_EFFECT_BREAK || (*effect) == VALUE_EFFECT_CONTINUE || (*effect) == VALUE_EFFECT_THROW)
             {
                 return test;
             }
@@ -593,7 +627,7 @@ static value_t *apply_expression(expression_t *expression, map_t *variables, val
             data = expression->data;
             test = apply_expression(data->pick, variables, effect);
 
-            if ((*effect) == VALUE_EFFECT_BREAK || (*effect) == VALUE_EFFECT_CONTINUE || (*effect) == VALUE_EFFECT_THROW)
+            if ((*effect) == VALUE_EFFECT_RETURN || (*effect) == VALUE_EFFECT_BREAK || (*effect) == VALUE_EFFECT_CONTINUE || (*effect) == VALUE_EFFECT_THROW)
             {
                 return test;
             }
@@ -611,7 +645,7 @@ static value_t *apply_expression(expression_t *expression, map_t *variables, val
             data = expression->data;
             test = apply_expression(data->error, variables, effect);
 
-            if ((*effect) == VALUE_EFFECT_BREAK || (*effect) == VALUE_EFFECT_CONTINUE || (*effect) == VALUE_EFFECT_THROW)
+            if ((*effect) == VALUE_EFFECT_RETURN || (*effect) == VALUE_EFFECT_BREAK || (*effect) == VALUE_EFFECT_CONTINUE || (*effect) == VALUE_EFFECT_THROW)
             {
                 return test;
             }
@@ -641,7 +675,7 @@ static value_t *apply_expression(expression_t *expression, map_t *variables, val
 
                 last = apply_expression(expressions->items[index], variables, effect);
 
-                if ((*effect) == VALUE_EFFECT_BREAK || (*effect) == VALUE_EFFECT_CONTINUE || (*effect) == VALUE_EFFECT_THROW)
+                if ((*effect) == VALUE_EFFECT_RETURN || (*effect) == VALUE_EFFECT_BREAK || (*effect) == VALUE_EFFECT_CONTINUE || (*effect) == VALUE_EFFECT_THROW)
                 {
                     break;
                 }
@@ -2069,7 +2103,7 @@ static int next_argument(argument_iterator_t *arguments, map_t *variables, int t
     arguments->evaluated[arguments->index] = result;
     arguments->index += 1;
 
-    if ((*effect) == VALUE_EFFECT_BREAK || (*effect) == VALUE_EFFECT_CONTINUE || (*effect) == VALUE_EFFECT_THROW)
+    if ((*effect) == VALUE_EFFECT_RETURN || (*effect) == VALUE_EFFECT_BREAK || (*effect) == VALUE_EFFECT_CONTINUE || (*effect) == VALUE_EFFECT_THROW)
     {
         result->owners += 1;
         (*out) = result;

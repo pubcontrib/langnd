@@ -43,6 +43,7 @@ introduce
 . suite/expression/loop.sh
 . suite/expression/catch.sh
 . suite/expression/throw.sh
+. suite/expression/return.sh
 . suite/expression/break.sh
 . suite/expression/continue.sh
 . suite/expression/snippet.sh

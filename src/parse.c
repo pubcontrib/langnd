@@ -23,6 +23,7 @@ static expression_t *read_invoke_expression(capsule_t *capsule, identifier_t *id
 static expression_t *read_branch_expression(capsule_t *capsule);
 static expression_t *read_loop_expression(capsule_t *capsule);
 static expression_t *read_catch_expression(capsule_t *capsule);
+static expression_t *read_return_expression(capsule_t *capsule);
 static expression_t *read_break_expression(capsule_t *capsule);
 static expression_t *read_continue_expression(capsule_t *capsule);
 static expression_t *read_throw_expression(capsule_t *capsule);
@@ -44,6 +45,7 @@ static expression_t *create_invoke_expression(identifier_t *identifier, list_t *
 static expression_t *create_branch_expression(list_t *branches);
 static expression_t *create_loop_expression(expression_t *condition, expression_t *action);
 static expression_t *create_catch_expression(expression_t *action);
+static expression_t *create_return_expression(expression_t *pick);
 static expression_t *create_break_expression(expression_t *pick);
 static expression_t *create_continue_expression(expression_t *pick);
 static expression_t *create_throw_expression(expression_t *error);
@@ -253,6 +255,21 @@ void destroy_expression(expression_t *expression)
                 break;
             }
 
+            case EXPRESSION_TYPE_RETURN:
+            {
+                return_expression_data_t *data;
+
+                data = expression->data;
+
+                if (data->pick)
+                {
+                    destroy_expression(data->pick);
+                }
+
+                free(data);
+                break;
+            }
+
             case EXPRESSION_TYPE_BREAK:
             {
                 break_expression_data_t *data;
@@ -430,6 +447,10 @@ static expression_t *read_any_expression(capsule_t *capsule)
         else if (is_keyword_match(keyword, "catch"))
         {
             expression = read_catch_expression(capsule);
+        }
+        else if (is_keyword_match(keyword, "return"))
+        {
+            expression = read_return_expression(capsule);
         }
         else if (is_keyword_match(keyword, "break"))
         {
@@ -932,6 +953,20 @@ static expression_t *read_catch_expression(capsule_t *capsule)
     return create_catch_expression(action);
 }
 
+static expression_t *read_return_expression(capsule_t *capsule)
+{
+    expression_t *pick;
+
+    pick = read_any_expression(capsule);
+
+    if (!pick || pick->type == EXPRESSION_TYPE_UNKNOWN)
+    {
+        return pick != NULL ? pick : create_unknown_expression();
+    }
+
+    return create_return_expression(pick);
+}
+
 static expression_t *read_break_expression(capsule_t *capsule)
 {
     expression_t *pick;
@@ -1411,6 +1446,16 @@ static expression_t *create_catch_expression(expression_t *action)
     data->action = action;
 
     return create_expression(EXPRESSION_TYPE_CATCH, data);
+}
+
+static expression_t *create_return_expression(expression_t *pick)
+{
+    return_expression_data_t *data;
+
+    data = allocate(sizeof(return_expression_data_t));
+    data->pick = pick;
+
+    return create_expression(EXPRESSION_TYPE_RETURN, data);
 }
 
 static expression_t *create_break_expression(expression_t *pick)

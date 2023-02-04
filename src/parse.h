@@ -13,6 +13,7 @@ typedef enum
     EXPRESSION_TYPE_BRANCH,
     EXPRESSION_TYPE_LOOP,
     EXPRESSION_TYPE_CATCH,
+    EXPRESSION_TYPE_RETURN,
     EXPRESSION_TYPE_BREAK,
     EXPRESSION_TYPE_CONTINUE,
     EXPRESSION_TYPE_THROW,
@@ -80,6 +81,11 @@ typedef struct
 {
     expression_t *action;
 } catch_expression_data_t;
+
+typedef struct
+{
+    expression_t *pick;
+} return_expression_data_t;
 
 typedef struct
 {
