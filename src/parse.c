@@ -45,6 +45,7 @@ static expression_t *create_invoke_expression(identifier_t *identifier, list_t *
 static expression_t *create_branch_expression(list_t *branches);
 static expression_t *create_loop_expression(expression_t *condition, expression_t *action);
 static expression_t *create_catch_expression(expression_t *action);
+static expression_t *create_argument_expression();
 static expression_t *create_return_expression(expression_t *pick);
 static expression_t *create_break_expression(expression_t *pick);
 static expression_t *create_continue_expression(expression_t *pick);
@@ -447,6 +448,10 @@ static expression_t *read_any_expression(capsule_t *capsule)
         else if (is_keyword_match(keyword, "catch"))
         {
             expression = read_catch_expression(capsule);
+        }
+        else if (is_keyword_match(keyword, "argument"))
+        {
+            expression = create_argument_expression();
         }
         else if (is_keyword_match(keyword, "return"))
         {
@@ -1446,6 +1451,11 @@ static expression_t *create_catch_expression(expression_t *action)
     data->action = action;
 
     return create_expression(EXPRESSION_TYPE_CATCH, data);
+}
+
+static expression_t *create_argument_expression()
+{
+    return create_expression(EXPRESSION_TYPE_ARGUMENT, NULL);
 }
 
 static expression_t *create_return_expression(expression_t *pick)

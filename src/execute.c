@@ -597,6 +597,18 @@ static value_t *apply_expression(expression_t *expression, invoke_frame_t *frame
             return new_null();
         }
 
+        case EXPRESSION_TYPE_ARGUMENT:
+        {
+            value_t *argument;
+
+            if (next_argument(VALUE_TYPE_NULL | VALUE_TYPE_BOOLEAN | VALUE_TYPE_NUMBER | VALUE_TYPE_STRING | VALUE_TYPE_LIST | VALUE_TYPE_MAP | VALUE_TYPE_FUNCTION, &argument, frame))
+            {
+                argument->owners += 1;
+            }
+
+            return argument;
+        }
+
         case EXPRESSION_TYPE_RETURN:
         {
             return_expression_data_t *data;
