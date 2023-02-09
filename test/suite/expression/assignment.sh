@@ -12,7 +12,7 @@ verify '$a=[1, 2, 3]' \
     'prints to stdout' ''
 verify '$a={"a": 1, "b": 2, "c": 3}' \
     'prints to stdout' ''
-verify '$a=<$l=1 $r=2 @add($l, $r)>' \
+verify '$a=<$number=argument return @multiply($number, $number)>' \
     'prints to stdout' ''
 verify '$A="val"' \
     'prints to stdout' ''
@@ -42,6 +42,8 @@ verify '$a=[1, 2, 3] @write(@freeze($a), 1)' \
     'prints to stdout' '[1, 2, 3]'
 verify '$a={"a": 1, "b": 2, "c": 3} @write(@freeze($a), 1)' \
     'prints to stdout' '{"a": 1, "b": 2, "c": 3}'
+verify '$a=<$number=argument return @multiply($number, $number)> @write(@freeze($a), 1)' \
+    'prints to stdout' '<$number=argument return @multiply($number, $number)>'
 verify '$a=100 $a=200 $a=300 @write(@freeze($a), 1)' \
     'prints to stdout' '300'
 verify '$a=100 $b=$a @write(@freeze($b), 1)' \

@@ -112,6 +112,8 @@ verify 'if [1, 2, 3] \ /' \
     'errors with execute message' '"branch with non-boolean condition"'
 verify 'if {"a": 1, "b": 2, "c": 3} \ /' \
     'errors with execute message' '"branch with non-boolean condition"'
+verify 'if <$number=argument return @multiply($number, $number)> \ /' \
+    'errors with execute message' '"branch with non-boolean condition"'
 verify 'if false \ / else if null \ /' \
     'errors with execute message' '"branch with non-boolean condition"'
 verify 'if false \ / else if 100 \ /' \
@@ -121,6 +123,8 @@ verify 'if false \ / else if "text" \ /' \
 verify 'if false \ / else if [1, 2, 3] \ /' \
     'errors with execute message' '"branch with non-boolean condition"'
 verify 'if false \ / else if {"a": 1, "b": 2, "c": 3} \ /' \
+    'errors with execute message' '"branch with non-boolean condition"'
+verify 'if false \ / else if <$number=argument return @multiply($number, $number)> \ /' \
     'errors with execute message' '"branch with non-boolean condition"'
 
 verify 'if true \ "before" @divide(100, 0) "after" /' \

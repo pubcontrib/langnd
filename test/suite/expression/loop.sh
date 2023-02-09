@@ -36,6 +36,8 @@ verify 'while [1, 2, 3] \ /' \
     'errors with execute message' '"loop with non-boolean condition"'
 verify 'while {"a": 1, "b": 2, "c": 3} \ /' \
     'errors with execute message' '"loop with non-boolean condition"'
+verify 'while <$number=argument return @multiply($number, $number)> \ /' \
+    'errors with execute message' '"loop with non-boolean condition"'
 
 verify 'while true \ "before" @divide(100, 0) "after" /' \
     'errors with execute message' '"arithmetic error"'

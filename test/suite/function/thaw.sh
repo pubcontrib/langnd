@@ -12,6 +12,8 @@ verify '@write(@freeze(@thaw("[1, 2, 3]")), 1)' \
     'prints to stdout' '[1, 2, 3]'
 verify '@write(@freeze(@thaw("{\"a\": 1, \"b\": 2, \"c\": 3}")), 1)' \
     'prints to stdout' '{"a": 1, "b": 2, "c": 3}'
+verify '@write(@freeze(@thaw("<$number=argument return @multiply($number, $number)>")), 1)' \
+    'prints to stdout' '<$number=argument return @multiply($number, $number)>'
 
 verify '@write(@freeze(@thaw(" \t\n100")), 1)' \
     'prints to stdout' '100'

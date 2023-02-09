@@ -24,10 +24,14 @@ verify '@write(@freeze(@sort([{"A": null}, {"B": null}, {"C": null}], "+")), 1)'
     'prints to stdout' '[{"A": null}, {"B": null}, {"C": null}]'
 verify '@write(@freeze(@sort([{"C": null}, {"B": null}, {"A": null}], "+")), 1)' \
     'prints to stdout' '[{"A": null}, {"B": null}, {"C": null}]'
-verify '@write(@freeze(@sort([null, false, 0, "", [], {}], "+")), 1)' \
-    'prints to stdout' '[null, false, 0, "", [], {}]'
-verify '@write(@freeze(@sort([{}, [], "", 0, false, null], "+")), 1)' \
-    'prints to stdout' '[null, false, 0, "", [], {}]'
+verify '@write(@freeze(@sort([<1>, <2>, <3>], "+")), 1)' \
+    'prints to stdout' '[<1>, <2>, <3>]'
+verify '@write(@freeze(@sort([<3>, <2>, <1>], "+")), 1)' \
+    'prints to stdout' '[<1>, <2>, <3>]'
+verify '@write(@freeze(@sort([null, false, 0, "", [], {}, <>], "+")), 1)' \
+    'prints to stdout' '[null, false, 0, "", [], {}, <>]'
+verify '@write(@freeze(@sort([<>, {}, [], "", 0, false, null], "+")), 1)' \
+    'prints to stdout' '[null, false, 0, "", [], {}, <>]'
 
 verify '@write(@freeze(@sort([], "-")), 1)' \
     'prints to stdout' '[]'
@@ -53,10 +57,14 @@ verify '@write(@freeze(@sort([{"A": null}, {"B": null}, {"C": null}], "-")), 1)'
     'prints to stdout' '[{"C": null}, {"B": null}, {"A": null}]'
 verify '@write(@freeze(@sort([{"C": null}, {"B": null}, {"A": null}], "-")), 1)' \
     'prints to stdout' '[{"C": null}, {"B": null}, {"A": null}]'
-verify '@write(@freeze(@sort([null, false, 0, "", [], {}], "-")), 1)' \
-    'prints to stdout' '[{}, [], "", 0, false, null]'
-verify '@write(@freeze(@sort([{}, [], "", 0, false, null], "-")), 1)' \
-    'prints to stdout' '[{}, [], "", 0, false, null]'
+verify '@write(@freeze(@sort([<1>, <2>, <3>], "-")), 1)' \
+    'prints to stdout' '[<3>, <2>, <1>]'
+verify '@write(@freeze(@sort([<3>, <2>, <1>], "-")), 1)' \
+    'prints to stdout' '[<3>, <2>, <1>]'
+verify '@write(@freeze(@sort([null, false, 0, "", [], {}, <>], "-")), 1)' \
+    'prints to stdout' '[<>, {}, [], "", 0, false, null]'
+verify '@write(@freeze(@sort([<>, {}, [], "", 0, false, null], "-")), 1)' \
+    'prints to stdout' '[<>, {}, [], "", 0, false, null]'
 
 verify '@sort([3, 2, 1], "?")' \
     'errors with execute message' '"invalid direction"'

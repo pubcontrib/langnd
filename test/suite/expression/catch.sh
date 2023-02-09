@@ -42,6 +42,8 @@ verify '@write(@freeze(catch \ throw [1, 2, 3] /), 1)' \
     'prints to stdout' '[1, 2, 3]'
 verify '@write(@freeze(catch \ throw {"a": 1, "b": 2, "c": 3} /), 1)' \
     'prints to stdout' '{"a": 1, "b": 2, "c": 3}'
+verify '@write(@freeze(catch \ throw <$number=argument return @multiply($number, $number)> /), 1)' \
+    'prints to stdout' '<$number=argument return @multiply($number, $number)>'
 verify '$error=catch catch \ throw "custom error" / @write(@freeze($error), 1)' \
     'prints to stdout' 'null'
 

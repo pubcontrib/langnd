@@ -31,6 +31,8 @@ verify '{[]: []}' \
     'errors with parse message' ']: []}'
 verify '{{}: {}}' \
     'errors with parse message' '}: {}}'
+verify '{<>: <>}' \
+    'errors with parse message' '>: <>}'
 verify '$key="k" $value="v" {$key: $value}' \
     'errors with parse message' '$key: $value}'
 verify '{@cast("key", "STRING"): @cast("value", "STRING")}' \

@@ -12,6 +12,8 @@ verify '$print=<@write(@freeze(argument), 1)> $print([])' \
     'prints to stdout' '[]'
 verify '$print=<@write(@freeze(argument), 1)> $print({})' \
     'prints to stdout' '{}'
+verify '$print=<@write(@freeze(argument), 1)> $print(<>)' \
+    'prints to stdout' '<>'
 verify '$square=<$number=argument return @multiply($number, $number)> @write(@freeze($square(4)), 1)' \
     'prints to stdout' '16'
 verify '$print=<@write(argument, 1)> $print("one ") $print("two ") $print("three")' \
