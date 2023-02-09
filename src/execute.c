@@ -1459,15 +1459,42 @@ static value_t *run_cast(invoke_frame_t *frame)
     }
     else if (is_keyword_match(pattern, "LIST"))
     {
-        return throw_error("invalid cast", frame);
+        if (value->type == VALUE_TYPE_LIST)
+        {
+            value->owners += 1;
+
+            return value;
+        }
+        else
+        {
+            return throw_error("invalid cast", frame);
+        }
     }
     else if (is_keyword_match(pattern, "MAP"))
     {
-        return throw_error("invalid cast", frame);
+        if (value->type == VALUE_TYPE_MAP)
+        {
+            value->owners += 1;
+
+            return value;
+        }
+        else
+        {
+            return throw_error("invalid cast", frame);
+        }
     }
     else if (is_keyword_match(pattern, "FUNCTION"))
     {
-        return throw_error("invalid cast", frame);
+        if (value->type == VALUE_TYPE_FUNCTION)
+        {
+            value->owners += 1;
+
+            return value;
+        }
+        else
+        {
+            return throw_error("invalid cast", frame);
+        }
     }
     else
     {
