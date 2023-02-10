@@ -36,6 +36,8 @@ verify '@write(@freeze(@set(["a", "b", "c"], 1, [])), 1)' \
     'prints to stdout' '[[], "b", "c"]'
 verify '@write(@freeze(@set(["a", "b", "c"], 1, {})), 1)' \
     'prints to stdout' '[{}, "b", "c"]'
+verify '@write(@freeze(@set(["a", "b", "c"], 1, <>)), 1)' \
+    'prints to stdout' '[<>, "b", "c"]'
 verify '@write(@freeze(@set({"a": 1, "b": 2, "c": 3}, "a", "x")), 1)' \
     'prints to stdout' '{"a": "x", "b": 2, "c": 3}'
 verify '@write(@freeze(@set({"a": 1, "b": 2, "c": 3}, "b", "x")), 1)' \
@@ -56,6 +58,8 @@ verify '@write(@freeze(@set({"a": 1, "b": 2, "c": 3}, "a", [])), 1)' \
     'prints to stdout' '{"a": [], "b": 2, "c": 3}'
 verify '@write(@freeze(@set({"a": 1, "b": 2, "c": 3}, "a", {})), 1)' \
     'prints to stdout' '{"a": {}, "b": 2, "c": 3}'
+verify '@write(@freeze(@set({"a": 1, "b": 2, "c": 3}, "a", <>)), 1)' \
+    'prints to stdout' '{"a": <>, "b": 2, "c": 3}'
 
 verify '$list1=["x"] $list2=@set($list1, 1, $list1) @write(@freeze($list1), 1) @write(@freeze($list2), 1)' \
     'prints to stdout' '["x"][["x"]]'

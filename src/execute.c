@@ -1682,7 +1682,7 @@ static value_t *run_set(invoke_frame_t *frame)
                 return key;
             }
 
-            if (!next_argument(VALUE_TYPE_NULL | VALUE_TYPE_BOOLEAN | VALUE_TYPE_NUMBER | VALUE_TYPES_COLLECTION, &item, frame))
+            if (!next_argument(VALUE_TYPES_ANY, &item, frame))
             {
                 return item;
             }
@@ -1733,7 +1733,7 @@ static value_t *run_set(invoke_frame_t *frame)
                 return key;
             }
 
-            if (!next_argument(VALUE_TYPE_NULL | VALUE_TYPE_BOOLEAN | VALUE_TYPE_NUMBER | VALUE_TYPES_COLLECTION, &item, frame))
+            if (!next_argument(VALUE_TYPES_ANY, &item, frame))
             {
                 return item;
             }
