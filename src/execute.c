@@ -102,48 +102,48 @@ outcome_t *execute(string_t *code)
 
         result = apply_expression(expressions->items[index], &root);
 
-        if (root.effect == VALUE_EFFECT_PROGRESS)
+        if (has_halting_effect(&root))
         {
-            dereference_value(result);
-        }
-        else if (root.effect == VALUE_EFFECT_RETURN)
-        {
-            dereference_value(result);
-            result = steal_string(cstring_to_string("lost return"));
+            char *message;
+
+            message = NULL;
+
+            switch (root.effect)
+            {
+                case VALUE_EFFECT_RETURN:
+                    message = "lost return";
+                    break;
+
+                case VALUE_EFFECT_BREAK:
+                    message = "lost break";
+                    break;
+
+                case VALUE_EFFECT_CONTINUE:
+                    message = "lost continue";
+                    break;
+
+                case VALUE_EFFECT_THROW:
+                    break;
+
+                default:
+                    crash_with_message("unsupported branch invoked");
+                    break;
+            }
+
+            if (message)
+            {
+                dereference_value(result);
+                result = steal_string(cstring_to_string(message));
+            }
+
             outcome->errorMessage = cstring_to_string("failed to execute code");
             outcome->hintMessage = represent_value(result);
             dereference_value(result);
 
             break;
         }
-        else if (root.effect == VALUE_EFFECT_BREAK)
-        {
-            dereference_value(result);
-            result = steal_string(cstring_to_string("lost break"));
-            outcome->errorMessage = cstring_to_string("failed to execute code");
-            outcome->hintMessage = represent_value(result);
-            dereference_value(result);
 
-            break;
-        }
-        else if (root.effect == VALUE_EFFECT_CONTINUE)
-        {
-            dereference_value(result);
-            result = steal_string(cstring_to_string("lost continue"));
-            outcome->errorMessage = cstring_to_string("failed to execute code");
-            outcome->hintMessage = represent_value(result);
-            dereference_value(result);
-
-            break;
-        }
-        else if (root.effect == VALUE_EFFECT_THROW)
-        {
-            outcome->errorMessage = cstring_to_string("failed to execute code");
-            outcome->hintMessage = represent_value(result);
-            dereference_value(result);
-
-            break;
-        }
+        dereference_value(result);
     }
 
     destroy_map(root.variables);
