@@ -64,6 +64,7 @@ static int compare_values_ascending(const void *left, const void *right);
 static int compare_values_descending(const void *left, const void *right);
 static value_t *throw_error(const char *message, invoke_frame_t *frame);
 static void dereference_value_unsafe(void *value);
+static int has_halting_effect(invoke_frame_t *frame);
 
 outcome_t *execute(string_t *code)
 {
@@ -220,7 +221,7 @@ static value_t *apply_expression(expression_t *expression, invoke_frame_t *frame
             data = expression->data;
             value = apply_expression(data->value, frame);
 
-            if (frame->effect == VALUE_EFFECT_RETURN || frame->effect == VALUE_EFFECT_BREAK || frame->effect == VALUE_EFFECT_CONTINUE || frame->effect == VALUE_EFFECT_THROW)
+            if (has_halting_effect(frame))
             {
                 return value;
             }
@@ -469,7 +470,7 @@ static value_t *apply_expression(expression_t *expression, invoke_frame_t *frame
                 branch = branches->items[index];
                 test = apply_expression(branch->condition, frame);
 
-                if (frame->effect == VALUE_EFFECT_RETURN || frame->effect == VALUE_EFFECT_BREAK || frame->effect == VALUE_EFFECT_CONTINUE || frame->effect == VALUE_EFFECT_THROW)
+                if (has_halting_effect(frame))
                 {
                     return test;
                 }
@@ -518,7 +519,7 @@ static value_t *apply_expression(expression_t *expression, invoke_frame_t *frame
 
                 test = apply_expression(data->condition, frame);
 
-                if (frame->effect == VALUE_EFFECT_RETURN || frame->effect == VALUE_EFFECT_BREAK || frame->effect == VALUE_EFFECT_CONTINUE || frame->effect == VALUE_EFFECT_THROW)
+                if (has_halting_effect(frame))
                 {
                     return test;
                 }
@@ -617,7 +618,7 @@ static value_t *apply_expression(expression_t *expression, invoke_frame_t *frame
             data = expression->data;
             test = apply_expression(data->pick, frame);
 
-            if (frame->effect == VALUE_EFFECT_RETURN || frame->effect == VALUE_EFFECT_BREAK || frame->effect == VALUE_EFFECT_CONTINUE || frame->effect == VALUE_EFFECT_THROW)
+            if (has_halting_effect(frame))
             {
                 return test;
             }
@@ -635,7 +636,7 @@ static value_t *apply_expression(expression_t *expression, invoke_frame_t *frame
             data = expression->data;
             test = apply_expression(data->pick, frame);
 
-            if (frame->effect == VALUE_EFFECT_RETURN || frame->effect == VALUE_EFFECT_BREAK || frame->effect == VALUE_EFFECT_CONTINUE || frame->effect == VALUE_EFFECT_THROW)
+            if (has_halting_effect(frame))
             {
                 return test;
             }
@@ -653,7 +654,7 @@ static value_t *apply_expression(expression_t *expression, invoke_frame_t *frame
             data = expression->data;
             test = apply_expression(data->pick, frame);
 
-            if (frame->effect == VALUE_EFFECT_RETURN || frame->effect == VALUE_EFFECT_BREAK || frame->effect == VALUE_EFFECT_CONTINUE || frame->effect == VALUE_EFFECT_THROW)
+            if (has_halting_effect(frame))
             {
                 return test;
             }
@@ -671,7 +672,7 @@ static value_t *apply_expression(expression_t *expression, invoke_frame_t *frame
             data = expression->data;
             test = apply_expression(data->error, frame);
 
-            if (frame->effect == VALUE_EFFECT_RETURN || frame->effect == VALUE_EFFECT_BREAK || frame->effect == VALUE_EFFECT_CONTINUE || frame->effect == VALUE_EFFECT_THROW)
+            if (has_halting_effect(frame))
             {
                 return test;
             }
@@ -701,7 +702,7 @@ static value_t *apply_expression(expression_t *expression, invoke_frame_t *frame
 
                 last = apply_expression(expressions->items[index], frame);
 
-                if (frame->effect == VALUE_EFFECT_RETURN || frame->effect == VALUE_EFFECT_BREAK || frame->effect == VALUE_EFFECT_CONTINUE || frame->effect == VALUE_EFFECT_THROW)
+                if (has_halting_effect(frame))
                 {
                     break;
                 }
@@ -2158,7 +2159,7 @@ static int next_argument(int types, value_t **out, invoke_frame_t *frame)
     frame->effect = frame->parent->effect;
     frame->parent->effect = VALUE_EFFECT_PROGRESS;
 
-    if (frame->effect == VALUE_EFFECT_RETURN || frame->effect == VALUE_EFFECT_BREAK || frame->effect == VALUE_EFFECT_CONTINUE || frame->effect == VALUE_EFFECT_THROW)
+    if (has_halting_effect(frame))
     {
         result->owners += 1;
         (*out) = result;
@@ -2222,4 +2223,16 @@ static value_t *throw_error(const char *message, invoke_frame_t *frame)
 static void dereference_value_unsafe(void *value)
 {
     dereference_value(value);
+}
+
+static int has_halting_effect(invoke_frame_t *frame)
+{
+    value_effect_t effect;
+
+    effect = frame->effect;
+
+    return effect == VALUE_EFFECT_RETURN
+        || effect == VALUE_EFFECT_BREAK
+        || effect == VALUE_EFFECT_CONTINUE
+        || effect == VALUE_EFFECT_THROW;
 }
