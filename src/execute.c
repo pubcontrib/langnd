@@ -5,6 +5,9 @@
 #include "parse.h"
 #include "utility.h"
 
+#define VALUE_TYPES_ANY (VALUE_TYPE_NULL | VALUE_TYPE_BOOLEAN | VALUE_TYPE_NUMBER | VALUE_TYPES_COLLECTION | VALUE_TYPE_FUNCTION)
+#define VALUE_TYPES_COLLECTION (VALUE_TYPE_STRING | VALUE_TYPE_LIST | VALUE_TYPE_MAP)
+
 typedef struct
 {
     list_t *expressions;
@@ -602,7 +605,7 @@ static value_t *apply_expression(expression_t *expression, invoke_frame_t *frame
         {
             value_t *argument;
 
-            if (next_argument(VALUE_TYPE_NULL | VALUE_TYPE_BOOLEAN | VALUE_TYPE_NUMBER | VALUE_TYPE_STRING | VALUE_TYPE_LIST | VALUE_TYPE_MAP | VALUE_TYPE_FUNCTION, &argument, frame))
+            if (next_argument(VALUE_TYPES_ANY, &argument, frame))
             {
                 argument->owners += 1;
             }
@@ -900,12 +903,12 @@ static value_t *run_precedes(invoke_frame_t *frame)
 {
     value_t *left, *right;
 
-    if (!next_argument(VALUE_TYPE_NULL | VALUE_TYPE_BOOLEAN | VALUE_TYPE_NUMBER | VALUE_TYPE_STRING | VALUE_TYPE_LIST | VALUE_TYPE_MAP | VALUE_TYPE_FUNCTION, &left, frame))
+    if (!next_argument(VALUE_TYPES_ANY, &left, frame))
     {
         return left;
     }
 
-    if (!next_argument(VALUE_TYPE_NULL | VALUE_TYPE_BOOLEAN | VALUE_TYPE_NUMBER | VALUE_TYPE_STRING | VALUE_TYPE_LIST | VALUE_TYPE_MAP | VALUE_TYPE_FUNCTION, &right, frame))
+    if (!next_argument(VALUE_TYPES_ANY, &right, frame))
     {
         return right;
     }
@@ -917,12 +920,12 @@ static value_t *run_succeeds(invoke_frame_t *frame)
 {
     value_t *left, *right;
 
-    if (!next_argument(VALUE_TYPE_NULL | VALUE_TYPE_BOOLEAN | VALUE_TYPE_NUMBER | VALUE_TYPE_STRING | VALUE_TYPE_LIST | VALUE_TYPE_MAP | VALUE_TYPE_FUNCTION, &left, frame))
+    if (!next_argument(VALUE_TYPES_ANY, &left, frame))
     {
         return left;
     }
 
-    if (!next_argument(VALUE_TYPE_NULL | VALUE_TYPE_BOOLEAN | VALUE_TYPE_NUMBER | VALUE_TYPE_STRING | VALUE_TYPE_LIST | VALUE_TYPE_MAP | VALUE_TYPE_FUNCTION, &right, frame))
+    if (!next_argument(VALUE_TYPES_ANY, &right, frame))
     {
         return right;
     }
@@ -934,12 +937,12 @@ static value_t *run_equals(invoke_frame_t *frame)
 {
     value_t *left, *right;
 
-    if (!next_argument(VALUE_TYPE_NULL | VALUE_TYPE_BOOLEAN | VALUE_TYPE_NUMBER | VALUE_TYPE_STRING | VALUE_TYPE_LIST | VALUE_TYPE_MAP | VALUE_TYPE_FUNCTION, &left, frame))
+    if (!next_argument(VALUE_TYPES_ANY, &left, frame))
     {
         return left;
     }
 
-    if (!next_argument(VALUE_TYPE_NULL | VALUE_TYPE_BOOLEAN | VALUE_TYPE_NUMBER | VALUE_TYPE_STRING | VALUE_TYPE_LIST | VALUE_TYPE_MAP | VALUE_TYPE_FUNCTION, &right, frame))
+    if (!next_argument(VALUE_TYPES_ANY, &right, frame))
     {
         return right;
     }
@@ -1248,7 +1251,7 @@ static value_t *run_freeze(invoke_frame_t *frame)
 {
     value_t *value;
 
-    if (!next_argument(VALUE_TYPE_NULL | VALUE_TYPE_BOOLEAN | VALUE_TYPE_NUMBER | VALUE_TYPE_STRING | VALUE_TYPE_LIST | VALUE_TYPE_MAP | VALUE_TYPE_FUNCTION, &value, frame))
+    if (!next_argument(VALUE_TYPES_ANY, &value, frame))
     {
         return value;
     }
@@ -1298,7 +1301,7 @@ static value_t *run_type(invoke_frame_t *frame)
 {
     value_t *value;
 
-    if (!next_argument(VALUE_TYPE_NULL | VALUE_TYPE_BOOLEAN | VALUE_TYPE_NUMBER | VALUE_TYPE_STRING | VALUE_TYPE_LIST | VALUE_TYPE_MAP | VALUE_TYPE_FUNCTION, &value, frame))
+    if (!next_argument(VALUE_TYPES_ANY, &value, frame))
     {
         return value;
     }
@@ -1337,7 +1340,7 @@ static value_t *run_cast(invoke_frame_t *frame)
     value_t *value, *type;
     string_t *pattern;
 
-    if (!next_argument(VALUE_TYPE_NULL | VALUE_TYPE_BOOLEAN | VALUE_TYPE_NUMBER | VALUE_TYPE_STRING | VALUE_TYPE_LIST | VALUE_TYPE_MAP | VALUE_TYPE_FUNCTION, &value, frame))
+    if (!next_argument(VALUE_TYPES_ANY, &value, frame))
     {
         return value;
     }
@@ -1507,7 +1510,7 @@ static value_t *run_get(invoke_frame_t *frame)
 {
     value_t *collection, *key;
 
-    if (!next_argument(VALUE_TYPE_STRING | VALUE_TYPE_LIST | VALUE_TYPE_MAP, &collection, frame))
+    if (!next_argument(VALUE_TYPES_COLLECTION, &collection, frame))
     {
         return collection;
     }
@@ -1619,7 +1622,7 @@ static value_t *run_set(invoke_frame_t *frame)
 {
     value_t *collection, *key, *item;
 
-    if (!next_argument(VALUE_TYPE_STRING | VALUE_TYPE_LIST | VALUE_TYPE_MAP, &collection, frame))
+    if (!next_argument(VALUE_TYPES_COLLECTION, &collection, frame))
     {
         return collection;
     }
@@ -1679,7 +1682,7 @@ static value_t *run_set(invoke_frame_t *frame)
                 return key;
             }
 
-            if (!next_argument(VALUE_TYPE_NULL | VALUE_TYPE_BOOLEAN | VALUE_TYPE_NUMBER | VALUE_TYPE_STRING | VALUE_TYPE_LIST | VALUE_TYPE_MAP, &item, frame))
+            if (!next_argument(VALUE_TYPE_NULL | VALUE_TYPE_BOOLEAN | VALUE_TYPE_NUMBER | VALUE_TYPES_COLLECTION, &item, frame))
             {
                 return item;
             }
@@ -1730,7 +1733,7 @@ static value_t *run_set(invoke_frame_t *frame)
                 return key;
             }
 
-            if (!next_argument(VALUE_TYPE_NULL | VALUE_TYPE_BOOLEAN | VALUE_TYPE_NUMBER | VALUE_TYPE_STRING | VALUE_TYPE_LIST | VALUE_TYPE_MAP, &item, frame))
+            if (!next_argument(VALUE_TYPE_NULL | VALUE_TYPE_BOOLEAN | VALUE_TYPE_NUMBER | VALUE_TYPES_COLLECTION, &item, frame))
             {
                 return item;
             }
@@ -1756,7 +1759,7 @@ static value_t *run_unset(invoke_frame_t *frame)
 {
     value_t *collection, *key;
 
-    if (!next_argument(VALUE_TYPE_STRING | VALUE_TYPE_LIST | VALUE_TYPE_MAP, &collection, frame))
+    if (!next_argument(VALUE_TYPES_COLLECTION, &collection, frame))
     {
         return collection;
     }
@@ -1871,7 +1874,7 @@ static value_t *run_merge(invoke_frame_t *frame)
 {
     value_t *left, *right;
 
-    if (!next_argument(VALUE_TYPE_STRING | VALUE_TYPE_LIST | VALUE_TYPE_MAP, &left, frame))
+    if (!next_argument(VALUE_TYPES_COLLECTION, &left, frame))
     {
         return left;
     }
@@ -1959,7 +1962,7 @@ static value_t *run_length(invoke_frame_t *frame)
     size_t length;
     number_t number;
 
-    if (!next_argument(VALUE_TYPE_STRING | VALUE_TYPE_LIST | VALUE_TYPE_MAP, &collection, frame))
+    if (!next_argument(VALUE_TYPES_COLLECTION, &collection, frame))
     {
         return collection;
     }
@@ -1995,7 +1998,7 @@ static value_t *run_keys(invoke_frame_t *frame)
 {
     value_t *collection;
 
-    if (!next_argument(VALUE_TYPE_STRING | VALUE_TYPE_LIST | VALUE_TYPE_MAP, &collection, frame))
+    if (!next_argument(VALUE_TYPES_COLLECTION, &collection, frame))
     {
         return collection;
     }
