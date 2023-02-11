@@ -42,11 +42,11 @@ introduce
 . suite/expression/branch.sh
 . suite/expression/loop.sh
 . suite/expression/catch.sh
-. suite/expression/throw.sh
 . suite/expression/argument.sh
 . suite/expression/return.sh
 . suite/expression/break.sh
 . suite/expression/continue.sh
+. suite/expression/throw.sh
 . suite/expression/snippet.sh
 
 . suite/function/add.sh
