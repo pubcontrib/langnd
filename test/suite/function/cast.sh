@@ -4,6 +4,10 @@ verify '@write(@freeze(@cast(null, "NULL")), 1)' \
     'prints to stdout' 'null'
 verify '@write(@freeze(@cast(true, "BOOLEAN")), 1)' \
     'prints to stdout' 'true'
+verify '@write(@freeze(@cast("false", "BOOLEAN")), 1)' \
+    'prints to stdout' 'false'
+verify '@write(@freeze(@cast("true", "BOOLEAN")), 1)' \
+    'prints to stdout' 'true'
 verify '@write(@freeze(@cast(100, "NUMBER")), 1)' \
     'prints to stdout' '100'
 verify '@write(@cast(@cast(null, "NULL"), "STRING"), 1)' \
@@ -20,6 +24,8 @@ verify '@write(@cast(@cast("123.456", "NUMBER"), "STRING"), 1)' \
     'prints to stdout' '123.455993'
 verify '@write(@cast(null, "STRING"), 1)' \
     'prints to stdout' 'null'
+verify '@write(@cast(false, "STRING"), 1)' \
+    'prints to stdout' 'false'
 verify '@write(@cast(true, "STRING"), 1)' \
     'prints to stdout' 'true'
 verify '@write(@cast(123.456, "STRING"), 1)' \
