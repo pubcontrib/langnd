@@ -73,7 +73,7 @@ typedef struct
 {
     value_type_t type;
     void *data;
-    int owners;
+    size_t owners;
 } value_t;
 
 void ensure_portable_environment();

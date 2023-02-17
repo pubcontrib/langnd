@@ -659,7 +659,7 @@ void dereference_value(value_t *value)
 {
     value->owners -= 1;
 
-    if (value->owners < 1)
+    if (value->owners == 0)
     {
         destroy_value(value);
     }
