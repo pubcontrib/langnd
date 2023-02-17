@@ -1031,7 +1031,7 @@ int compare_strings(const string_t *left, const string_t *right)
 
         if (x != y)
         {
-            return x == y ? 0 : (x < y ? -1 : 1);
+            return x < y ? -1 : 1;
         }
     }
 
