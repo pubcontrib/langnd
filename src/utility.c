@@ -11,7 +11,7 @@ static map_chain_t *create_map_chain(string_t *key, void *value, map_chain_t *ne
 static void destroy_map_chain(map_chain_t *chain, void (*destroy)(void *));
 static list_t *create_list(void (*destroy)(void *), size_t capacity, size_t length, void **items);
 static int compare_strings_unsafe(const void *left, const void *right);
-static int integer_digits(int integer);
+static unsigned int integer_digits(int integer);
 static int integer_power(int a, int b);
 static void crash(void);
 
@@ -1596,9 +1596,9 @@ static int compare_strings_unsafe(const void *left, const void *right)
     return compare_strings(*(string_t **) left, *(string_t **) right);
 }
 
-static int integer_digits(int integer)
+static unsigned int integer_digits(int integer)
 {
-    int digits;
+    unsigned int digits;
 
     if (integer < 0)
     {
