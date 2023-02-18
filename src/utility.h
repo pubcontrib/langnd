@@ -131,7 +131,7 @@ number_t truncate_number(number_t number);
 int add_with_overflow(int left, int right);
 void *allocate(size_t number, size_t size);
 void *allocate_with_zeros(size_t number, size_t size);
-void *reallocate(void *memory, size_t size);
+void *reallocate(void *memory, size_t number, size_t size);
 void crash_with_message(const char *format, ...);
 
 #endif

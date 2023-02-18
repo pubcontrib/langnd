@@ -855,7 +855,7 @@ void add_list_item(list_t *list, void *value)
     if (list->length == list->capacity)
     {
         list->capacity *= 2;
-        list->items = reallocate(list->items, sizeof(void *) * list->capacity);
+        list->items = reallocate(list->items, list->capacity, sizeof(void *));
     }
 
     list->items[list->length++] = value;
@@ -980,7 +980,7 @@ void extend_string_by_cstring(string_t *origin, const char *extension)
 
     if (length > 0)
     {
-        bytes = reallocate(origin->bytes, sizeof(char) * length);
+        bytes = reallocate(origin->bytes, length, sizeof(char));
         memcpy(bytes + origin->length, extension, strlen(extension));
     }
     else
@@ -1001,7 +1001,7 @@ void extend_string_by_string(string_t *origin, const string_t *extension)
 
     if (length > 0)
     {
-        bytes = reallocate(origin->bytes, sizeof(char) * length);
+        bytes = reallocate(origin->bytes, length, sizeof(char));
         memcpy(bytes + origin->length, extension->bytes, extension->length);
     }
     else
@@ -1462,14 +1462,14 @@ void *allocate_with_zeros(size_t number, size_t size)
     return memory;
 }
 
-void *reallocate(void *memory, size_t size)
+void *reallocate(void *memory, size_t number, size_t size)
 {
-    if (size == 0)
+    if (number == 0 || size == 0)
     {
         crash_with_message("zero memory requested");
     }
 
-    memory = realloc(memory, size);
+    memory = realloc(memory, number * size);
 
     if (!memory)
     {
