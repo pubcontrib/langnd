@@ -130,6 +130,7 @@ int number_to_integer(number_t number, int *out);
 string_t *represent_number(number_t number);
 number_t truncate_number(number_t number);
 int add_with_overflow(int left, int right);
+int can_fit_both(size_t left, size_t right);
 void *allocate(size_t number, size_t size);
 void *allocate_with_zeros(size_t number, size_t size);
 void *reallocate(void *memory, size_t number, size_t size);

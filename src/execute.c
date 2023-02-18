@@ -1166,6 +1166,11 @@ static value_t *run_read(invoke_frame_t *frame)
         {
             char *swap;
 
+            if (!can_fit_both(length, length))
+            {
+                crash_with_message("oversized memory requested");
+            }
+
             length *= 2;
             swap = allocate(length, sizeof(char));
             memcpy(swap, bytes, fill);
@@ -1661,7 +1666,20 @@ static value_t *run_set(invoke_frame_t *frame)
 
             beforeLength = index - 1;
             afterLength = source->length - beforeLength - 1;
-            destinationLength = beforeLength + middle->length + afterLength;
+
+            if (!can_fit_both(beforeLength, middle->length))
+            {
+                crash_with_message("oversized memory requested");
+            }
+
+            destinationLength = beforeLength + middle->length;
+
+            if (!can_fit_both(destinationLength, afterLength))
+            {
+                crash_with_message("oversized memory requested");
+            }
+
+            destinationLength += afterLength;
 
             destination = allocate(destinationLength, sizeof(char));
             memcpy(destination, source->bytes, beforeLength);

@@ -242,6 +242,11 @@ string_t *represent_value(const value_t *value)
             {
                 char *destination;
 
+                if (!can_fit_both(source->length, 2))
+                {
+                    crash_with_message("oversized memory requested");
+                }
+
                 destination = allocate(source->length + 2, sizeof(char));
                 destination[0] = '"';
                 memcpy(destination + 1, source->bytes, source->length);
@@ -253,6 +258,16 @@ string_t *represent_value(const value_t *value)
             {
                 char *destination;
                 size_t placement;
+
+                if (!can_fit_both(source->length, escapeCount))
+                {
+                    crash_with_message("oversized memory requested");
+                }
+
+                if (!can_fit_both(source->length + escapeCount, 2))
+                {
+                    crash_with_message("oversized memory requested");
+                }
 
                 destination = allocate(source->length + escapeCount + 2, sizeof(char));
                 placement = 0;
@@ -854,6 +869,11 @@ void add_list_item(list_t *list, void *value)
 {
     if (list->length == list->capacity)
     {
+        if (!can_fit_both(list->capacity, list->capacity))
+        {
+            crash_with_message("oversized memory requested");
+        }
+
         list->capacity *= 2;
         list->items = reallocate(list->items, list->capacity, sizeof(void *));
     }
@@ -902,6 +922,11 @@ string_t *cstring_to_string(const char *cstring)
 char *string_to_cstring(const string_t *string)
 {
     char *cstring;
+
+    if (!can_fit_both(string->length, 1))
+    {
+        crash_with_message("oversized memory requested");
+    }
 
     cstring = allocate(string->length + 1, sizeof(char));
 
@@ -955,6 +980,11 @@ string_t *merge_strings(const string_t *left, const string_t *right)
     char *sum;
     size_t length;
 
+    if (!can_fit_both(left->length, right->length))
+    {
+        crash_with_message("oversized memory requested");
+    }
+
     length = left->length + right->length;
 
     if (length > 0)
@@ -976,6 +1006,11 @@ void extend_string_by_cstring(string_t *origin, const char *extension)
     char *bytes;
     size_t length;
 
+    if (!can_fit_both(origin->length, strlen(extension)))
+    {
+        crash_with_message("oversized memory requested");
+    }
+
     length = origin->length + strlen(extension);
 
     if (length > 0)
@@ -996,6 +1031,11 @@ void extend_string_by_string(string_t *origin, const string_t *extension)
 {
     char *bytes;
     size_t length;
+
+    if (!can_fit_both(origin->length, extension->length))
+    {
+        crash_with_message("oversized memory requested");
+    }
 
     length = origin->length + extension->length;
 
@@ -1424,6 +1464,11 @@ int add_with_overflow(int left, int right)
     }
 }
 
+int can_fit_both(size_t left, size_t right)
+{
+    return (left + right) >= left;
+}
+
 void *allocate(size_t number, size_t size)
 {
     void *memory;
@@ -1512,6 +1557,11 @@ static void resize_map(map_t *map)
     map_chain_t **existing, **chains;
     map_chain_t *chain;
     size_t expand, fill, index;
+
+    if (!can_fit_both(map->capacity, map->capacity))
+    {
+        crash_with_message("oversized memory requested");
+    }
 
     existing = map->chains;
     expand = map->capacity * 2;
