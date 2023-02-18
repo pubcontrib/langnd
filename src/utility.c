@@ -242,7 +242,7 @@ string_t *represent_value(const value_t *value)
             {
                 char *destination;
 
-                destination = allocate(sizeof(char) * (source->length + 2));
+                destination = allocate(source->length + 2, sizeof(char));
                 destination[0] = '"';
                 memcpy(destination + 1, source->bytes, source->length);
                 destination[source->length + 1] = '"';
@@ -254,7 +254,7 @@ string_t *represent_value(const value_t *value)
                 char *destination;
                 size_t placement;
 
-                destination = allocate(sizeof(char) * (source->length + escapeCount + 2));
+                destination = allocate(source->length + escapeCount + 2, sizeof(char));
                 placement = 0;
                 destination[placement++] = '"';
 
@@ -532,7 +532,7 @@ value_t *new_null()
 {
     value_t *value;
 
-    value = allocate(sizeof(value_t));
+    value = allocate(1, sizeof(value_t));
     value->type = VALUE_TYPE_NULL;
     value->data = NULL;
     value->owners = 1;
@@ -545,9 +545,9 @@ value_t *new_boolean(boolean_t boolean)
     value_t *value;
     boolean_t *data;
 
-    data = allocate(sizeof(boolean_t));
+    data = allocate(1, sizeof(boolean_t));
     data[0] = boolean;
-    value = allocate(sizeof(value_t));
+    value = allocate(1, sizeof(value_t));
     value->type = VALUE_TYPE_BOOLEAN;
     value->data = data;
     value->owners = 1;
@@ -560,9 +560,9 @@ value_t *new_number(number_t number)
     value_t *value;
     number_t *data;
 
-    data = allocate(sizeof(number_t));
+    data = allocate(1, sizeof(number_t));
     data[0] = number;
-    value = allocate(sizeof(value_t));
+    value = allocate(1, sizeof(value_t));
     value->type = VALUE_TYPE_NUMBER;
     value->data = data;
     value->owners = 1;
@@ -574,7 +574,7 @@ value_t *steal_string(string_t *string)
 {
     value_t *value;
 
-    value = allocate(sizeof(value_t));
+    value = allocate(1, sizeof(value_t));
     value->type = VALUE_TYPE_STRING;
     value->data = string;
     value->owners = 1;
@@ -586,7 +586,7 @@ value_t *steal_list(list_t *list)
 {
     value_t *value;
 
-    value = allocate(sizeof(value_t));
+    value = allocate(1, sizeof(value_t));
     value->type = VALUE_TYPE_LIST;
     value->data = list;
     value->owners = 1;
@@ -598,7 +598,7 @@ value_t *steal_map(map_t *map)
 {
     value_t *value;
 
-    value = allocate(sizeof(value_t));
+    value = allocate(1, sizeof(value_t));
     value->type = VALUE_TYPE_MAP;
     value->data = map;
     value->owners = 1;
@@ -610,7 +610,7 @@ value_t *steal_function(function_t *function)
 {
     value_t *value;
 
-    value = allocate(sizeof(value_t));
+    value = allocate(1, sizeof(value_t));
     value->type = VALUE_TYPE_FUNCTION;
     value->data = function;
     value->owners = 1;
@@ -701,7 +701,7 @@ string_t **list_map_keys(const map_t *map)
         return NULL;
     }
 
-    keys = allocate(sizeof(string_t *) * map->length);
+    keys = allocate(map->length, sizeof(string_t *));
 
     for (index = 0, placement = 0; index < map->capacity; index++)
     {
@@ -863,7 +863,7 @@ void add_list_item(list_t *list, void *value)
 
 list_t *empty_list(void (*destroy)(void *), size_t capacity)
 {
-    return create_list(destroy, capacity, 0, allocate(sizeof(void *) * capacity));
+    return create_list(destroy, capacity, 0, allocate(capacity, sizeof(void *)));
 }
 
 void destroy_list(list_t *list)
@@ -888,7 +888,7 @@ string_t *cstring_to_string(const char *cstring)
 
     if (length > 0)
     {
-        bytes = allocate(sizeof(char) * length);
+        bytes = allocate(length, sizeof(char));
         memcpy(bytes, cstring, length);
     }
     else
@@ -903,7 +903,7 @@ char *string_to_cstring(const string_t *string)
 {
     char *cstring;
 
-    cstring = allocate(sizeof(char) * (string->length + 1));
+    cstring = allocate(string->length + 1, sizeof(char));
 
     if (string->length > 0)
     {
@@ -939,7 +939,7 @@ string_t *copy_string(const string_t *string)
 
     if (length > 0)
     {
-        bytes = allocate(sizeof(char) * length);
+        bytes = allocate(length, sizeof(char));
         memcpy(bytes, string->bytes, length);
     }
     else
@@ -959,7 +959,7 @@ string_t *merge_strings(const string_t *left, const string_t *right)
 
     if (length > 0)
     {
-        sum = allocate(sizeof(char) * length);
+        sum = allocate(length, sizeof(char));
         memcpy(sum, left->bytes, left->length);
         memcpy(sum + left->length, right->bytes, right->length);
     }
@@ -1076,7 +1076,7 @@ string_t *create_string(char *bytes, size_t length)
 {
     string_t *string;
 
-    string = allocate(sizeof(string_t));
+    string = allocate(1, sizeof(string_t));
     string->bytes = bytes;
     string->length = length;
 
@@ -1347,7 +1347,7 @@ string_t *represent_number(number_t number)
     decimal = fraction > 0;
     decimalWidth = 6;
     length = (negative ? 1 : 0) + wholeDigits + (decimal ? (decimalWidth + 1) : 0);
-    bytes = allocate(sizeof(char) * length);
+    bytes = allocate(length, sizeof(char));
     index = (negative ? 1 : 0) + wholeDigits - 1;
 
     if (negative)
@@ -1424,16 +1424,16 @@ int add_with_overflow(int left, int right)
     }
 }
 
-void *allocate(size_t size)
+void *allocate(size_t number, size_t size)
 {
     void *memory;
 
-    if (size == 0)
+    if (number == 0 || size == 0)
     {
         crash_with_message("zero memory requested");
     }
 
-    memory = malloc(size);
+    memory = malloc(number * size);
 
     if (!memory)
     {
@@ -1536,7 +1536,7 @@ static map_t *create_map(int (*hash)(const string_t *), void (*destroy)(void *),
 {
     map_t *map;
 
-    map = allocate(sizeof(map_t));
+    map = allocate(1, sizeof(map_t));
     map->hash = hash;
     map->destroy = destroy;
     map->length = length;
@@ -1550,7 +1550,7 @@ static map_chain_t *create_map_chain(string_t *key, void *value, map_chain_t *ne
 {
     map_chain_t *chain;
 
-    chain = allocate(sizeof(map_chain_t));
+    chain = allocate(1, sizeof(map_chain_t));
     chain->key = key;
     chain->value = value;
     chain->next = next;
@@ -1582,7 +1582,7 @@ static list_t *create_list(void (*destroy)(void *), size_t capacity, size_t leng
 {
     list_t *list;
 
-    list = allocate(sizeof(list_t));
+    list = allocate(1, sizeof(list_t));
     list->destroy = destroy;
     list->capacity = capacity;
     list->length = length;

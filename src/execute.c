@@ -77,7 +77,7 @@ outcome_t *execute(string_t *code)
     list_t *expressions;
     size_t index;
 
-    outcome = allocate(sizeof(outcome_t));
+    outcome = allocate(1, sizeof(outcome_t));
     outcome->errorMessage = NULL;
     outcome->hintMessage = NULL;
     script = parse_script(code);
@@ -1135,7 +1135,7 @@ static value_t *run_read(invoke_frame_t *frame)
 
     fill = 0;
     length = 256;
-    bytes = allocate(sizeof(char) * length);
+    bytes = allocate(length, sizeof(char));
 
     while (1)
     {
@@ -1167,7 +1167,7 @@ static value_t *run_read(invoke_frame_t *frame)
             char *swap;
 
             length *= 2;
-            swap = allocate(sizeof(char) * length);
+            swap = allocate(length, sizeof(char));
             memcpy(swap, bytes, fill);
             free(bytes);
             bytes = swap;
@@ -1540,7 +1540,7 @@ static value_t *run_get(invoke_frame_t *frame)
                 return throw_error("absent key", frame);
             }
 
-            bytes = allocate(sizeof(char));
+            bytes = allocate(1, sizeof(char));
             bytes[0] = string->bytes[number - 1];
 
             return steal_string(create_string(bytes, 1));
@@ -1663,7 +1663,7 @@ static value_t *run_set(invoke_frame_t *frame)
             afterLength = source->length - beforeLength - 1;
             destinationLength = beforeLength + middle->length + afterLength;
 
-            destination = allocate(sizeof(char) * destinationLength);
+            destination = allocate(destinationLength, sizeof(char));
             memcpy(destination, source->bytes, beforeLength);
             memcpy(destination + beforeLength, middle->bytes, middle->length);
             memcpy(destination + beforeLength + middle->length, source->bytes + beforeLength + 1, afterLength);
@@ -1792,7 +1792,7 @@ static value_t *run_unset(invoke_frame_t *frame)
             {
                 char *bytes;
 
-                bytes = allocate(sizeof(char) * source->length);
+                bytes = allocate(source->length, sizeof(char));
                 memcpy(bytes, source->bytes, number - 1);
                 memcpy(bytes + number - 1, source->bytes + number, source->length - number);
 

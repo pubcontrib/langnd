@@ -173,7 +173,7 @@ static int run_file(char *file)
     length = ftell(handle);
     fseek(handle, 0, SEEK_SET);
 
-    bytes = allocate(sizeof(char) * length);
+    bytes = allocate(length, sizeof(char));
     fread(bytes, 1, length, handle);
 
     if (ferror(handle))

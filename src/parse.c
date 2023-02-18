@@ -102,7 +102,7 @@ script_t *parse_script(string_t *code)
         hintMessage = substring_to_newline(capsule.scanner.code, capsule.scanner.token.start, 50);
     }
 
-    script = allocate(sizeof(script_t));
+    script = allocate(1, sizeof(script_t));
     script->expressions = expressions;
     script->errorMessage = errorMessage;
     script->hintMessage = hintMessage;
@@ -729,7 +729,7 @@ static expression_t *read_function_expression(capsule_t *capsule)
 
     end = capsule->present.end;
     length = end - start;
-    bytes = allocate(sizeof(char) * length);
+    bytes = allocate(length, sizeof(char));
     memcpy(bytes, capsule->scanner.code->bytes + start, length);
     function = create_function(expressions, create_string(bytes, length));
 
@@ -898,7 +898,7 @@ static expression_t *read_branch_expression(capsule_t *capsule)
                     return action != NULL ? action : create_unknown_expression();
                 }
 
-                branch = allocate(sizeof(conditional_branch_t));
+                branch = allocate(1, sizeof(conditional_branch_t));
                 branch->condition = create_literal_expression(new_boolean(BOOLEAN_TRUE));
                 branch->action = action;
                 add_list_item(branches, branch);
@@ -1080,7 +1080,7 @@ static conditional_branch_t *read_conditional_branch(capsule_t *capsule)
         return NULL;
     }
 
-    branch = allocate(sizeof(conditional_branch_t));
+    branch = allocate(1, sizeof(conditional_branch_t));
     branch->condition = condition;
     branch->action = action;
 
@@ -1170,7 +1170,7 @@ static string_t *substring_using_token(const string_t *code, const token_t *toke
     size_t length;
 
     length = token->end - token->start;
-    bytes = allocate(sizeof(char) * length);
+    bytes = allocate(length, sizeof(char));
     memcpy(bytes, code->bytes + token->start, length);
 
     return create_string(bytes, length);
@@ -1193,7 +1193,7 @@ static string_t *substring_to_newline(const string_t *code, size_t start, size_t
         }
     }
 
-    bytes = allocate(sizeof(char) * length);
+    bytes = allocate(length, sizeof(char));
     memcpy(bytes, code->bytes + start, length);
 
     return create_string(bytes, length);
@@ -1237,7 +1237,7 @@ static identifier_t *parse_identifier(const string_t *code, const token_t *token
         }
     }
 
-    identifier = allocate(sizeof(identifier_t));
+    identifier = allocate(1, sizeof(identifier_t));
     identifier->type = type;
     identifier->name = name;
 
@@ -1273,7 +1273,7 @@ static string_t *unescape_string(const string_t *code, const token_t *token)
         return empty_string();
     }
 
-    bytes = allocate(sizeof(char) * length);
+    bytes = allocate(length, sizeof(char));
 
     for (index = token->start + 1, placement = 0; index < token->end - 1; index++)
     {
@@ -1384,7 +1384,7 @@ static expression_t *create_literal_expression(value_t *value)
 {
     literal_expression_data_t *data;
 
-    data = allocate(sizeof(literal_expression_data_t));
+    data = allocate(1, sizeof(literal_expression_data_t));
     data->value = value;
 
     return create_expression(EXPRESSION_TYPE_LITERAL, data);
@@ -1394,7 +1394,7 @@ static expression_t *create_reference_expression(identifier_t *identifier)
 {
     reference_expression_data_t *data;
 
-    data = allocate(sizeof(reference_expression_data_t));
+    data = allocate(1, sizeof(reference_expression_data_t));
     data->identifier = identifier;
 
     return create_expression(EXPRESSION_TYPE_REFERENCE, data);
@@ -1404,7 +1404,7 @@ static expression_t *create_assignment_expression(identifier_t *identifier, expr
 {
     assignment_expression_data_t *data;
 
-    data = allocate(sizeof(assignment_expression_data_t));
+    data = allocate(1, sizeof(assignment_expression_data_t));
     data->identifier = identifier;
     data->value = value;
 
@@ -1415,7 +1415,7 @@ static expression_t *create_invoke_expression(identifier_t *identifier, list_t *
 {
     invoke_expression_data_t *data;
 
-    data = allocate(sizeof(invoke_expression_data_t));
+    data = allocate(1, sizeof(invoke_expression_data_t));
     data->identifier = identifier;
     data->arguments = arguments;
 
@@ -1426,7 +1426,7 @@ static expression_t *create_branch_expression(list_t *branches)
 {
     branch_expression_data_t *data;
 
-    data = allocate(sizeof(branch_expression_data_t));
+    data = allocate(1, sizeof(branch_expression_data_t));
     data->branches = branches;
 
     return create_expression(EXPRESSION_TYPE_BRANCH, data);
@@ -1436,7 +1436,7 @@ static expression_t *create_loop_expression(expression_t *condition, expression_
 {
     loop_expression_data_t *data;
 
-    data = allocate(sizeof(loop_expression_data_t));
+    data = allocate(1, sizeof(loop_expression_data_t));
     data->condition = condition;
     data->action = action;
 
@@ -1447,7 +1447,7 @@ static expression_t *create_catch_expression(expression_t *action)
 {
     catch_expression_data_t *data;
 
-    data = allocate(sizeof(catch_expression_data_t));
+    data = allocate(1, sizeof(catch_expression_data_t));
     data->action = action;
 
     return create_expression(EXPRESSION_TYPE_CATCH, data);
@@ -1462,7 +1462,7 @@ static expression_t *create_return_expression(expression_t *pick)
 {
     return_expression_data_t *data;
 
-    data = allocate(sizeof(return_expression_data_t));
+    data = allocate(1, sizeof(return_expression_data_t));
     data->pick = pick;
 
     return create_expression(EXPRESSION_TYPE_RETURN, data);
@@ -1472,7 +1472,7 @@ static expression_t *create_break_expression(expression_t *pick)
 {
     break_expression_data_t *data;
 
-    data = allocate(sizeof(break_expression_data_t));
+    data = allocate(1, sizeof(break_expression_data_t));
     data->pick = pick;
 
     return create_expression(EXPRESSION_TYPE_BREAK, data);
@@ -1482,7 +1482,7 @@ static expression_t *create_continue_expression(expression_t *pick)
 {
     continue_expression_data_t *data;
 
-    data = allocate(sizeof(continue_expression_data_t));
+    data = allocate(1, sizeof(continue_expression_data_t));
     data->pick = pick;
 
     return create_expression(EXPRESSION_TYPE_CONTINUE, data);
@@ -1492,7 +1492,7 @@ static expression_t *create_throw_expression(expression_t *error)
 {
     throw_expression_data_t *data;
 
-    data = allocate(sizeof(throw_expression_data_t));
+    data = allocate(1, sizeof(throw_expression_data_t));
     data->error = error;
 
     return create_expression(EXPRESSION_TYPE_THROW, data);
@@ -1502,7 +1502,7 @@ static expression_t *create_snippet_expression(list_t *expressions)
 {
     snippet_expression_data_t *data;
 
-    data = allocate(sizeof(snippet_expression_data_t));
+    data = allocate(1, sizeof(snippet_expression_data_t));
     data->expressions = expressions;
 
     return create_expression(EXPRESSION_TYPE_SNIPPET, data);
@@ -1512,7 +1512,7 @@ static expression_t *create_expression(expression_type_t type, void *data)
 {
     expression_t *expression;
 
-    expression = allocate(sizeof(expression_t));
+    expression = allocate(1, sizeof(expression_t));
     expression->type = type;
     expression->data = data;
 
