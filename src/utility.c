@@ -1433,6 +1433,11 @@ void *allocate(size_t number, size_t size)
         crash_with_message("zero memory requested");
     }
 
+    if (number > SIZE_LIMIT / size)
+    {
+        crash_with_message("oversized memory requested");
+    }
+
     memory = malloc(number * size);
 
     if (!memory)
@@ -1452,6 +1457,11 @@ void *allocate_with_zeros(size_t number, size_t size)
         crash_with_message("zero memory requested");
     }
 
+    if (number > SIZE_LIMIT / size)
+    {
+        crash_with_message("oversized memory requested");
+    }
+
     memory = calloc(number, size);
 
     if (!memory)
@@ -1467,6 +1477,11 @@ void *reallocate(void *memory, size_t number, size_t size)
     if (number == 0 || size == 0)
     {
         crash_with_message("zero memory requested");
+    }
+
+    if (number > SIZE_LIMIT / size)
+    {
+        crash_with_message("oversized memory requested");
     }
 
     memory = realloc(memory, number * size);
