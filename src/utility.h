@@ -10,6 +10,7 @@
 
 #define PORTABLE_INT_LIMIT 2147483647
 #define PORTABLE_LONG_LIMIT 9223372036854775807
+#define SIZE_LIMIT (size_t) -1
 
 typedef enum
 {

@@ -27,7 +27,7 @@ void ensure_portable_environment()
         crash_with_message("missing portable requirement LONG_LIMIT");
     }
 
-    if (((size_t) -1) < PORTABLE_INT_LIMIT)
+    if (SIZE_LIMIT < PORTABLE_INT_LIMIT)
     {
         crash_with_message("missing portable requirement POINTER_LIMIT");
     }
