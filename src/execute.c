@@ -60,12 +60,15 @@ static value_t *run_merge(invoke_frame_t *frame);
 static value_t *run_length(invoke_frame_t *frame);
 static value_t *run_keys(invoke_frame_t *frame);
 static value_t *run_sort(invoke_frame_t *frame);
+static value_t *create_core_function(string_t *name);
+static int has_core_function(string_t *name);
 static int next_argument(int types, value_t **out, invoke_frame_t *frame);
 static int has_next_argument(const invoke_frame_t *frame);
 static void copy_map_items(const map_t *source, map_t *destination);
 static int compare_values_ascending(const void *left, const void *right);
 static int compare_values_descending(const void *left, const void *right);
 static value_t *throw_error(const char *message, invoke_frame_t *frame);
+static void destroy_expression_unsafe(void *expression);
 static void dereference_value_unsafe(void *value);
 static int has_halting_effect(invoke_frame_t *frame);
 
@@ -685,6 +688,48 @@ static value_t *apply_expression(expression_t *expression, invoke_frame_t *frame
             return test;
         }
 
+        case EXPRESSION_TYPE_IMPORT:
+        {
+            import_expression_data_t *data;
+            value_t *test;
+
+            data = expression->data;
+            test = apply_expression(data->pick, frame);
+
+            if (has_halting_effect(frame))
+            {
+                return test;
+            }
+
+            if (test->type == VALUE_TYPE_STRING)
+            {
+                string_t *name;
+                value_t *function;
+
+                name = copy_string(view_string(test));
+                dereference_value(test);
+
+                if (!has_core_function(name))
+                {
+                    destroy_string(name);
+
+                    return throw_error("absent function", frame);
+                }
+
+                function = create_core_function(name);
+                set_map_item(frame->variables, copy_string(name), function);
+                function->owners += 1;
+
+                return function;
+            }
+            else
+            {
+                dereference_value(test);
+
+                return throw_error("alien argument", frame);
+            }
+        }
+
         case EXPRESSION_TYPE_SNIPPET:
         {
             snippet_expression_data_t *data;
@@ -717,6 +762,128 @@ static value_t *apply_expression(expression_t *expression, invoke_frame_t *frame
             }
 
             return last;
+        }
+
+        case EXPRESSION_TYPE_ELEMENT:
+        {
+            element_expression_data_t *data;
+            string_t *name;
+
+            data = expression->data;
+            name = data->name;
+
+            if (is_keyword_match(name, "add"))
+            {
+                return run_add(frame);
+            }
+            else if (is_keyword_match(name, "subtract"))
+            {
+                return run_subtract(frame);
+            }
+            else if (is_keyword_match(name, "multiply"))
+            {
+                return run_multiply(frame);
+            }
+            else if (is_keyword_match(name, "divide"))
+            {
+                return run_divide(frame);
+            }
+            else if (is_keyword_match(name, "modulo"))
+            {
+                return run_modulo(frame);
+            }
+            else if (is_keyword_match(name, "truncate"))
+            {
+                return run_truncate(frame);
+            }
+            else if (is_keyword_match(name, "and"))
+            {
+                return run_and(frame);
+            }
+            else if (is_keyword_match(name, "or"))
+            {
+                return run_or(frame);
+            }
+            else if (is_keyword_match(name, "not"))
+            {
+                return run_not(frame);
+            }
+            else if (is_keyword_match(name, "precedes"))
+            {
+                return run_precedes(frame);
+            }
+            else if (is_keyword_match(name, "succeeds"))
+            {
+                return run_succeeds(frame);
+            }
+            else if (is_keyword_match(name, "equals"))
+            {
+                return run_equals(frame);
+            }
+            else if (is_keyword_match(name, "write"))
+            {
+                return run_write(frame);
+            }
+            else if (is_keyword_match(name, "read"))
+            {
+                return run_read(frame);
+            }
+            else if (is_keyword_match(name, "delete"))
+            {
+                return run_delete(frame);
+            }
+            else if (is_keyword_match(name, "query"))
+            {
+                return run_query(frame);
+            }
+            else if (is_keyword_match(name, "freeze"))
+            {
+                return run_freeze(frame);
+            }
+            else if (is_keyword_match(name, "thaw"))
+            {
+                return run_thaw(frame);
+            }
+            else if (is_keyword_match(name, "type"))
+            {
+                return run_type(frame);
+            }
+            else if (is_keyword_match(name, "cast"))
+            {
+                return run_cast(frame);
+            }
+            else if (is_keyword_match(name, "get"))
+            {
+                return run_get(frame);
+            }
+            else if (is_keyword_match(name, "set"))
+            {
+                return run_set(frame);
+            }
+            else if (is_keyword_match(name, "unset"))
+            {
+                return run_unset(frame);
+            }
+            else if (is_keyword_match(name, "merge"))
+            {
+                return run_merge(frame);
+            }
+            else if (is_keyword_match(name, "length"))
+            {
+                return run_length(frame);
+            }
+            else if (is_keyword_match(name, "keys"))
+            {
+                return run_keys(frame);
+            }
+            else if (is_keyword_match(name, "sort"))
+            {
+                return run_sort(frame);
+            }
+            else
+            {
+                crash_with_message("unsupported branch invoked");
+            }
         }
 
         default:
@@ -2164,6 +2331,59 @@ static value_t *run_sort(invoke_frame_t *frame)
     return steal_list(destination);
 }
 
+static value_t *create_core_function(string_t *name)
+{
+    list_t *expressions;
+    expression_t *expression;
+    element_expression_data_t *data;
+    string_t *source;
+
+    expression = allocate(1, sizeof(expression_t));
+    expression->type = EXPRESSION_TYPE_ELEMENT;
+    data = allocate(1, sizeof(element_expression_data_t));
+    data->name = name;
+    expression->data = data;
+    expressions = empty_list(destroy_expression_unsafe, 1);
+    add_list_item(expressions, expression);
+
+    source = cstring_to_string("<import \"");
+    extend_string_by_string(source, name);
+    extend_string_by_cstring(source, "\" from core>");
+
+    return steal_function(create_function(expressions, source));
+}
+
+static int has_core_function(string_t *name)
+{
+    return is_keyword_match(name, "add")
+        || is_keyword_match(name, "subtract")
+        || is_keyword_match(name, "multiply")
+        || is_keyword_match(name, "divide")
+        || is_keyword_match(name, "modulo")
+        || is_keyword_match(name, "truncate")
+        || is_keyword_match(name, "and")
+        || is_keyword_match(name, "or")
+        || is_keyword_match(name, "not")
+        || is_keyword_match(name, "precedes")
+        || is_keyword_match(name, "succeeds")
+        || is_keyword_match(name, "equals")
+        || is_keyword_match(name, "write")
+        || is_keyword_match(name, "read")
+        || is_keyword_match(name, "delete")
+        || is_keyword_match(name, "query")
+        || is_keyword_match(name, "freeze")
+        || is_keyword_match(name, "thaw")
+        || is_keyword_match(name, "type")
+        || is_keyword_match(name, "cast")
+        || is_keyword_match(name, "get")
+        || is_keyword_match(name, "set")
+        || is_keyword_match(name, "unset")
+        || is_keyword_match(name, "merge")
+        || is_keyword_match(name, "length")
+        || is_keyword_match(name, "keys")
+        || is_keyword_match(name, "sort");
+}
+
 static int next_argument(int types, value_t **out, invoke_frame_t *frame)
 {
     value_t *result;
@@ -2239,6 +2459,11 @@ static value_t *throw_error(const char *message, invoke_frame_t *frame)
 {
     frame->effect = VALUE_EFFECT_THROW;
     return steal_string(cstring_to_string(message));
+}
+
+static void destroy_expression_unsafe(void *expression)
+{
+    destroy_expression((expression_t *) expression);
 }
 
 static void dereference_value_unsafe(void *value)

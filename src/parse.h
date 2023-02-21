@@ -18,7 +18,9 @@ typedef enum
     EXPRESSION_TYPE_BREAK,
     EXPRESSION_TYPE_CONTINUE,
     EXPRESSION_TYPE_THROW,
-    EXPRESSION_TYPE_SNIPPET
+    EXPRESSION_TYPE_IMPORT,
+    EXPRESSION_TYPE_SNIPPET,
+    EXPRESSION_TYPE_ELEMENT
 } expression_type_t;
 
 typedef struct
@@ -105,8 +107,18 @@ typedef struct
 
 typedef struct
 {
+    expression_t *pick;
+} import_expression_data_t;
+
+typedef struct
+{
    list_t *expressions;
 } snippet_expression_data_t;
+
+typedef struct
+{
+   string_t *name;
+} element_expression_data_t;
 
 typedef struct
 {

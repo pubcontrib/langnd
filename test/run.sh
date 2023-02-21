@@ -47,6 +47,7 @@ introduce
 . suite/expression/break.sh
 . suite/expression/continue.sh
 . suite/expression/throw.sh
+. suite/expression/import.sh
 . suite/expression/snippet.sh
 
 . suite/function/add.sh

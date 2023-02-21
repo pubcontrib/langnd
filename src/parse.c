@@ -27,6 +27,7 @@ static expression_t *read_return_expression(capsule_t *capsule);
 static expression_t *read_break_expression(capsule_t *capsule);
 static expression_t *read_continue_expression(capsule_t *capsule);
 static expression_t *read_throw_expression(capsule_t *capsule);
+static expression_t *read_import_expression(capsule_t *capsule);
 static expression_t *read_snippet_expression(capsule_t *capsule);
 static conditional_branch_t *read_conditional_branch(capsule_t *capsule);
 static token_t *peek_token(capsule_t *capsule);
@@ -50,6 +51,7 @@ static expression_t *create_return_expression(expression_t *pick);
 static expression_t *create_break_expression(expression_t *pick);
 static expression_t *create_continue_expression(expression_t *pick);
 static expression_t *create_throw_expression(expression_t *error);
+static expression_t *create_import_expression(expression_t *pick);
 static expression_t *create_snippet_expression(list_t *expressions);
 static expression_t *create_expression(expression_type_t type, void *data);
 static void destroy_expression_unsafe(void *expression);
@@ -316,6 +318,21 @@ void destroy_expression(expression_t *expression)
                 break;
             }
 
+            case EXPRESSION_TYPE_IMPORT:
+            {
+                import_expression_data_t *data;
+
+                data = expression->data;
+
+                if (data->pick)
+                {
+                    destroy_expression(data->pick);
+                }
+
+                free(data);
+                break;
+            }
+
             case EXPRESSION_TYPE_SNIPPET:
             {
                 snippet_expression_data_t *data;
@@ -325,6 +342,21 @@ void destroy_expression(expression_t *expression)
                 if (data->expressions)
                 {
                     destroy_list(data->expressions);
+                }
+
+                free(data);
+                break;
+            }
+
+            case EXPRESSION_TYPE_ELEMENT:
+            {
+                element_expression_data_t *data;
+
+                data = expression->data;
+
+                if (data->name)
+                {
+                    destroy_string(data->name);
                 }
 
                 free(data);
@@ -468,6 +500,10 @@ static expression_t *read_any_expression(capsule_t *capsule)
         else if (is_keyword_match(keyword, "throw"))
         {
             expression = read_throw_expression(capsule);
+        }
+        else if (is_keyword_match(keyword, "import"))
+        {
+            expression = read_import_expression(capsule);
         }
         else
         {
@@ -1014,6 +1050,77 @@ static expression_t *read_throw_expression(capsule_t *capsule)
     return create_throw_expression(error);
 }
 
+static expression_t *read_import_expression(capsule_t *capsule)
+{
+    expression_t *pick;
+    token_t *optional;
+
+    pick = read_any_expression(capsule);
+
+    if (!pick || pick->type == EXPRESSION_TYPE_UNKNOWN)
+    {
+        return pick != NULL ? pick : create_unknown_expression();
+    }
+
+    optional = peek_token(capsule);
+
+    if (optional && optional->type == TOKEN_TYPE_KEYWORD)
+    {
+        string_t *keyword;
+
+        keyword = substring_using_token(capsule->scanner.code, optional);
+
+        if (is_keyword_match(keyword, "from"))
+        {
+            destroy_string(keyword);
+            next_token(capsule);
+
+            optional = peek_token(capsule);
+
+            if (optional && optional->type == TOKEN_TYPE_KEYWORD)
+            {
+                keyword = substring_using_token(capsule->scanner.code, optional);
+
+                if (is_keyword_match(keyword, "core"))
+                {
+                    destroy_string(keyword);
+                    next_token(capsule);
+
+                    return create_import_expression(pick);
+                }
+                else
+                {
+                    destroy_expression(pick);
+                    destroy_string(keyword);
+
+                    return create_unknown_expression();
+                }
+            }
+            else
+            {
+                destroy_expression(pick);
+
+                return create_unknown_expression();
+            }
+        }
+        else
+        {
+            destroy_expression(pick);
+            destroy_string(keyword);
+
+            return create_unknown_expression();
+        }
+    }
+    else
+    {
+        destroy_expression(pick);
+
+        return create_unknown_expression();
+    }
+
+    return create_unknown_expression();
+}
+
 static expression_t *read_snippet_expression(capsule_t *capsule)
 {
     list_t *expressions;
@@ -1496,6 +1603,16 @@ static expression_t *create_throw_expression(expression_t *error)
     data->error = error;
 
     return create_expression(EXPRESSION_TYPE_THROW, data);
+}
+
+static expression_t *create_import_expression(expression_t *pick)
+{
+    import_expression_data_t *data;
+
+    data = allocate(1, sizeof(import_expression_data_t));
+    data->pick = pick;
+
+    return create_expression(EXPRESSION_TYPE_IMPORT, data);
 }
 
 static expression_t *create_snippet_expression(list_t *expressions)
