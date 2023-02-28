@@ -722,6 +722,51 @@ static value_t *apply_expression(expression_t *expression, invoke_frame_t *frame
 
                 return function;
             }
+            else if (test->type == VALUE_TYPE_LIST)
+            {
+                list_t *names, *functions;
+                size_t index;
+
+                names = view_list(test);
+                functions = empty_list(dereference_value_unsafe, 1);
+
+                for (index = 0; index < names->length; index++)
+                {
+                    value_t *item, *function;
+                    string_t *name;
+
+                    item = names->items[index];
+
+                    if (item->type != VALUE_TYPE_STRING)
+                    {
+                        dereference_value(test);
+                        destroy_list(functions);
+
+                        return throw_error("alien argument", frame);
+                    }
+
+                    name = copy_string(view_string(item));
+
+                    if (!has_core_function(name))
+                    {
+                        dereference_value(test);
+                        destroy_list(functions);
+                        destroy_string(name);
+
+                        return throw_error("absent function", frame);
+                    }
+
+                    function = create_core_function(name);
+                    set_map_item(frame->variables, copy_string(name), function);
+                    function->owners += 1;
+
+                    add_list_item(functions, function);
+                }
+
+                dereference_value(test);
+
+                return steal_list(functions);
+            }
             else
             {
                 dereference_value(test);
