@@ -1,59 +1,55 @@
 suite 'expression/invoke'
 
-verify '$function=<> @write(@freeze($function()), 1)' \
+verify 'import ["write", "freeze"] from core $function=<> $write($freeze($function()), 1)' \
     'prints to stdout' 'null'
-verify '$function=<null> @write(@freeze($function()), 1)' \
+verify 'import ["write", "freeze"] from core $function=<null> $write($freeze($function()), 1)' \
     'prints to stdout' 'null'
-verify '$function=<false> @write(@freeze($function()), 1)' \
+verify 'import ["write", "freeze"] from core $function=<false> $write($freeze($function()), 1)' \
     'prints to stdout' 'false'
-verify '$function=<0> @write(@freeze($function()), 1)' \
+verify 'import ["write", "freeze"] from core $function=<0> $write($freeze($function()), 1)' \
     'prints to stdout' '0'
-verify '$function=<""> @write(@freeze($function()), 1)' \
+verify 'import ["write", "freeze"] from core $function=<""> $write($freeze($function()), 1)' \
     'prints to stdout' '""'
-verify '$function=<[]> @write(@freeze($function()), 1)' \
+verify 'import ["write", "freeze"] from core $function=<[]> $write($freeze($function()), 1)' \
     'prints to stdout' '[]'
-verify '$function=<{}> @write(@freeze($function()), 1)' \
+verify 'import ["write", "freeze"] from core $function=<{}> $write($freeze($function()), 1)' \
     'prints to stdout' '{}'
-verify '$function=<<>> @write(@freeze($function()), 1)' \
+verify 'import ["write", "freeze"] from core $function=<<>> $write($freeze($function()), 1)' \
     'prints to stdout' '<>'
-verify '$function=<null false 0 "" [] {} <>> @write(@freeze($function()), 1)' \
+verify 'import ["write", "freeze"] from core $function=<null false 0 "" [] {} <>> $write($freeze($function()), 1)' \
     'prints to stdout' '<>'
-verify '$say=<@write("hey ", 1)> $say() $say() $say()' \
+verify '$say=<import "write" from core $write("hey ", 1)> $say() $say() $say()' \
     'prints to stdout' 'hey hey hey '
-verify '$index=<"first"> $index=<"second"> $index=<"third"> @write($index(), 1)' \
+verify 'import "write" from core $index=<"first"> $index=<"second"> $index=<"third"> $write($index(), 1)' \
     'prints to stdout' 'third'
-verify '$original=<@write("source", 1)> $copy=$original $copy()' \
+verify '$original=<import "write" from core $write("source", 1)> $copy=$original $copy()' \
     'prints to stdout' 'source'
 verify '$function=<$local="value"> $function() $local' \
     'errors with execute message' '"absent variable"'
 verify '$outer="value" $function=<$outer> $function()' \
     'errors with execute message' '"absent variable"'
-verify '$outer="created" $function=<$outer="updated"> $function() @write(@freeze($outer), 1)' \
+verify 'import ["write", "freeze"] from core $outer="created" $function=<$outer="updated"> $function() $write($freeze($outer), 1)' \
     'prints to stdout' '"created"'
 verify '$top=<$bottom=<$local="value"> $bottom() $local> $top()' \
     'errors with execute message' '"absent variable"'
 verify '$top=<$outer="value" $bottom=<$outer> $bottom()> $top()' \
     'errors with execute message' '"absent variable"'
-verify '$top=<$outer="created" $bottom=<$outer="updated"> $bottom() @write(@freeze($outer), 1)> $top()' \
+verify '$top=<import ["write", "freeze"] from core $outer="created" $bottom=<$outer="updated"> $bottom() $write($freeze($outer), 1)> $top()' \
     'prints to stdout' '"created"'
 
-verify '@add(' \
+verify '$add(' \
     'errors with parse message' '('
-verify '@add(,' \
+verify '$add(,' \
     'errors with parse message' ','
-verify '@add(,)' \
+verify '$add(,)' \
     'errors with parse message' ',)'
-verify '@merge("1" "2")' \
+verify '$merge("1" "2")' \
     'errors with parse message' '"1" "2")'
-verify '$x="1" $y="2" @merge($x $y)' \
+verify '$x="1" $y="2" $merge($x $y)' \
     'errors with parse message' '$x $y)'
-verify '@merge(@freeze(1) @freeze(2))' \
-    'errors with parse message' ') @freeze(2))'
+verify '$merge($freeze(1) $freeze(2))' \
+    'errors with parse message' ') $freeze(2))'
 
-verify '@huh()' \
-    'errors with execute message' '"absent function"'
-verify '@add' \
-    'errors with execute message' '"unexpected reference type"'
 verify '$huh()' \
     'errors with execute message' '"absent variable"'
 verify '$value=null $value()' \

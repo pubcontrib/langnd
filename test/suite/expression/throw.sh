@@ -12,15 +12,15 @@ verify 'throw [1, 2, 3]' \
     'errors with execute message' '[1, 2, 3]'
 verify 'throw {"a": 1, "b": 2, "c": 3}' \
     'errors with execute message' '{"a": 1, "b": 2, "c": 3}'
-verify 'throw <$number=argument return @multiply($number, $number)>' \
-    'errors with execute message' '<$number=argument return @multiply($number, $number)>'
+verify 'throw <import "multiply" from core $number=argument return $multiply($number, $number)>' \
+    'errors with execute message' '<import "multiply" from core $number=argument return $multiply($number, $number)>'
 verify '$var="PANIC!" throw $var' \
     'errors with execute message' '"PANIC!"'
-verify 'throw @merge("PANIC", "!")' \
+verify 'import "merge" from core throw $merge("PANIC", "!")' \
     'errors with execute message' '"PANIC!"'
-verify '$error=catch \ @divide(100, 0) / throw $error' \
+verify 'import "divide" from core $error=catch \ $divide(100, 0) / throw $error' \
     'errors with execute message' '"arithmetic error"'
-verify 'throw @merge($missing, "!")' \
+verify 'import "merge" from core throw $merge($missing, "!")' \
     'errors with execute message' '"absent variable"'
 verify 'throw throw "text"' \
     'errors with execute message' '"text"'

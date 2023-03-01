@@ -35,8 +35,8 @@ verify '{<>: <>}' \
     'errors with parse message' '>: <>}'
 verify '$key="k" $value="v" {$key: $value}' \
     'errors with parse message' '$key: $value}'
-verify '{@cast("key", "STRING"): @cast("value", "STRING")}' \
-    'errors with parse message' '): @cast("value", "STRING")}'
+verify 'import "cast" from core {$cast("key", "STRING"): $cast("value", "STRING")}' \
+    'errors with parse message' '): $cast("value", "STRING")}'
 verify '{if true \ "key" /: if true \ "value" /}' \
     'errors with parse message' '/: if true \ "value" /}'
 verify '{catch \ throw "key" /: catch \ throw "value" /}' \

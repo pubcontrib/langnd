@@ -2,11 +2,11 @@ suite 'expression/import'
 
 verify 'import "freeze" from core' \
     'prints to stdout' ''
-verify 'import "freeze" from core @write($freeze("text"), 1)' \
+verify 'import "write" from core import "freeze" from core $write($freeze("text"), 1)' \
     'prints to stdout' '"text"'
-verify 'import "freeze" from core @write($freeze($freeze), 1)' \
+verify 'import "write" from core import "freeze" from core $write($freeze($freeze), 1)' \
     'prints to stdout' '<import "freeze" from core>'
-verify '$return=import "freeze" from core @write($freeze($return), 1)' \
+verify '$return=import "freeze" from core import "write" from core $write($freeze($return), 1)' \
     'prints to stdout' '<import "freeze" from core>'
 verify '$name="freeze" import $name from core' \
     'prints to stdout' ''
