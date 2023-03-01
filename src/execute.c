@@ -767,6 +767,59 @@ static value_t *apply_expression(expression_t *expression, invoke_frame_t *frame
 
                 return steal_list(functions);
             }
+            else if (test->type == VALUE_TYPE_MAP)
+            {
+                map_t *mappings, *functions;
+                size_t index;
+
+                mappings = view_map(test);
+                functions = empty_map(hash_string, dereference_value_unsafe, 1);
+
+                for (index = 0; index < mappings->capacity; index++)
+                {
+                    if (mappings->chains[index])
+                    {
+                        map_chain_t *chain;
+
+                        for (chain = mappings->chains[index]; chain != NULL; chain = chain->next)
+                        {
+                            value_t *item, *function;
+                            string_t *name, *alias;
+
+                            name = chain->key;
+
+                            if (!has_core_function(name))
+                            {
+                                dereference_value(test);
+                                destroy_map(functions);
+
+                                return throw_error("absent function", frame);
+                            }
+
+                            item = chain->value;
+
+                            if (item->type != VALUE_TYPE_STRING)
+                            {
+                                dereference_value(test);
+                                destroy_map(functions);
+
+                                return throw_error("alien argument", frame);
+                            }
+
+                            alias = view_string(item);
+                            function = create_core_function(copy_string(name));
+                            set_map_item(frame->variables, copy_string(alias), function);
+                            function->owners += 1;
+
+                            set_map_item(functions, copy_string(alias), function);
+                        }
+                    }
+                }
+
+                dereference_value(test);
+
+                return steal_map(functions);
+            }
             else
             {
                 dereference_value(test);

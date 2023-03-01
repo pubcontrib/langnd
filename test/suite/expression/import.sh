@@ -28,6 +28,22 @@ verify 'import [] from core' \
     'prints to stdout' ''
 verify 'import ["freeze", "freeze", "freeze"] from core' \
     'prints to stdout' ''
+verify 'import {"write": "W", "freeze": "F"} from core' \
+    'prints to stdout' ''
+verify 'import {"write": "W", "freeze": "F"} from core $W($F("text"), 1)' \
+    'prints to stdout' '"text"'
+verify 'import {"write": "W", "freeze": "F"} from core $W($F($F), 1)' \
+    'prints to stdout' '<import "freeze" from core>'
+verify '$return=import {"write": "W", "freeze": "F"} from core $W($F($return), 1)' \
+    'prints to stdout' '{"F": <import "freeze" from core>, "W": <import "write" from core>}'
+verify '$mappings={"write": "W", "freeze": "F"} import $mappings from core' \
+    'prints to stdout' ''
+verify '$function=<{"write": "W", "freeze": "F"}> import $function() from core' \
+    'prints to stdout' ''
+verify 'import {} from core' \
+    'prints to stdout' ''
+verify 'import {"write": "X", "freeze": "X"} from core' \
+    'prints to stdout' ''
 verify '$print=<import "write" from core $write(argument, 1)> $print("one ") $print("two ") $print("three")' \
     'prints to stdout' 'one two three'
 
@@ -50,14 +66,14 @@ verify 'import "ADD" from core' \
     'errors with execute message' '"absent function"'
 verify 'import ["add", "sub", "mut", "div"] from core' \
     'errors with execute message' '"absent function"'
+verify 'import {"add": "+", "sub": "-", "mut": "*", "div": "/"} from core' \
+    'errors with execute message' '"absent function"'
 
 verify 'import null from core' \
     'errors with execute message' '"alien argument"'
 verify 'import false from core' \
     'errors with execute message' '"alien argument"'
 verify 'import 0 from core' \
-    'errors with execute message' '"alien argument"'
-verify 'import {} from core' \
     'errors with execute message' '"alien argument"'
 verify 'import <> from core' \
     'errors with execute message' '"alien argument"'
@@ -72,4 +88,16 @@ verify 'import [[]] from core' \
 verify 'import [{}] from core' \
     'errors with execute message' '"alien argument"'
 verify 'import [<>] from core' \
+    'errors with execute message' '"alien argument"'
+verify 'import {"add": null} from core' \
+    'errors with execute message' '"alien argument"'
+verify 'import {"add": false} from core' \
+    'errors with execute message' '"alien argument"'
+verify 'import {"add": 0} from core' \
+    'errors with execute message' '"alien argument"'
+verify 'import {"add": []} from core' \
+    'errors with execute message' '"alien argument"'
+verify 'import {"add": {}} from core' \
+    'errors with execute message' '"alien argument"'
+verify 'import {"add": <>} from core' \
     'errors with execute message' '"alien argument"'
