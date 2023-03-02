@@ -64,7 +64,7 @@ void progress_scanner(scanner_t *scanner)
             read_string_token(scanner);
             return;
         }
-        else if (symbol == '$' || symbol == '@')
+        else if (symbol == '$')
         {
             read_identifier_token(scanner);
             return;

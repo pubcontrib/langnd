@@ -189,33 +189,19 @@ static value_t *apply_expression(expression_t *expression, invoke_frame_t *frame
         case EXPRESSION_TYPE_REFERENCE:
         {
             reference_expression_data_t *data;
+            value_t *value;
 
             data = expression->data;
+            value = get_map_item(frame->variables, data->identifier);
 
-            if (data->identifier->type == IDENTIFIER_TYPE_VARIABLE)
+            if (value)
             {
-                value_t *value;
-
-                value = get_map_item(frame->variables, data->identifier->name);
-
-                if (value)
-                {
-                    value->owners += 1;
-                    return value;
-                }
-                else
-                {
-                    return throw_error("absent variable", frame);
-                }
-            }
-            else if (data->identifier->type == IDENTIFIER_TYPE_FUNCTION)
-            {
-                return throw_error("unexpected reference type", frame);
+                value->owners += 1;
+                return value;
             }
             else
             {
-                crash_with_message("unsupported branch invoked");
-                return new_null();
+                return throw_error("absent variable", frame);
             }
         }
 
@@ -232,7 +218,7 @@ static value_t *apply_expression(expression_t *expression, invoke_frame_t *frame
                 return value;
             }
 
-            set_map_item(frame->variables, copy_string(data->identifier->name), value);
+            set_map_item(frame->variables, copy_string(data->identifier), value);
             value->owners += 1;
 
             return value;
@@ -242,7 +228,7 @@ static value_t *apply_expression(expression_t *expression, invoke_frame_t *frame
         {
             invoke_expression_data_t *data;
             invoke_frame_t descendant;
-            value_t *result;
+            value_t *value, *result;
 
             data = expression->data;
             descendant.variables = empty_map(hash_string, dereference_value_unsafe, 8);
@@ -261,181 +247,56 @@ static value_t *apply_expression(expression_t *expression, invoke_frame_t *frame
             descendant.effect = VALUE_EFFECT_PROGRESS;
             descendant.parent = frame;
 
-            if (data->identifier->type == IDENTIFIER_TYPE_FUNCTION)
+            value = get_map_item(frame->variables, data->identifier);
+
+            if (value)
             {
-                if (is_keyword_match(data->identifier->name, "add"))
+                if (value->type == VALUE_TYPE_FUNCTION)
                 {
-                    result = run_add(&descendant);
-                }
-                else if (is_keyword_match(data->identifier->name, "subtract"))
-                {
-                    result = run_subtract(&descendant);
-                }
-                else if (is_keyword_match(data->identifier->name, "multiply"))
-                {
-                    result = run_multiply(&descendant);
-                }
-                else if (is_keyword_match(data->identifier->name, "divide"))
-                {
-                    result = run_divide(&descendant);
-                }
-                else if (is_keyword_match(data->identifier->name, "modulo"))
-                {
-                    result = run_modulo(&descendant);
-                }
-                else if (is_keyword_match(data->identifier->name, "truncate"))
-                {
-                    result = run_truncate(&descendant);
-                }
-                else if (is_keyword_match(data->identifier->name, "and"))
-                {
-                    result = run_and(&descendant);
-                }
-                else if (is_keyword_match(data->identifier->name, "or"))
-                {
-                    result = run_or(&descendant);
-                }
-                else if (is_keyword_match(data->identifier->name, "not"))
-                {
-                    result = run_not(&descendant);
-                }
-                else if (is_keyword_match(data->identifier->name, "precedes"))
-                {
-                    result = run_precedes(&descendant);
-                }
-                else if (is_keyword_match(data->identifier->name, "succeeds"))
-                {
-                    result = run_succeeds(&descendant);
-                }
-                else if (is_keyword_match(data->identifier->name, "equals"))
-                {
-                    result = run_equals(&descendant);
-                }
-                else if (is_keyword_match(data->identifier->name, "write"))
-                {
-                    result = run_write(&descendant);
-                }
-                else if (is_keyword_match(data->identifier->name, "read"))
-                {
-                    result = run_read(&descendant);
-                }
-                else if (is_keyword_match(data->identifier->name, "delete"))
-                {
-                    result = run_delete(&descendant);
-                }
-                else if (is_keyword_match(data->identifier->name, "query"))
-                {
-                    result = run_query(&descendant);
-                }
-                else if (is_keyword_match(data->identifier->name, "freeze"))
-                {
-                    result = run_freeze(&descendant);
-                }
-                else if (is_keyword_match(data->identifier->name, "thaw"))
-                {
-                    result = run_thaw(&descendant);
-                }
-                else if (is_keyword_match(data->identifier->name, "type"))
-                {
-                    result = run_type(&descendant);
-                }
-                else if (is_keyword_match(data->identifier->name, "cast"))
-                {
-                    result = run_cast(&descendant);
-                }
-                else if (is_keyword_match(data->identifier->name, "get"))
-                {
-                    result = run_get(&descendant);
-                }
-                else if (is_keyword_match(data->identifier->name, "set"))
-                {
-                    result = run_set(&descendant);
-                }
-                else if (is_keyword_match(data->identifier->name, "unset"))
-                {
-                    result = run_unset(&descendant);
-                }
-                else if (is_keyword_match(data->identifier->name, "merge"))
-                {
-                    result = run_merge(&descendant);
-                }
-                else if (is_keyword_match(data->identifier->name, "length"))
-                {
-                    result = run_length(&descendant);
-                }
-                else if (is_keyword_match(data->identifier->name, "keys"))
-                {
-                    result = run_keys(&descendant);
-                }
-                else if (is_keyword_match(data->identifier->name, "sort"))
-                {
-                    result = run_sort(&descendant);
+                    function_t *function;
+                    list_t *expressions;
+                    value_t *last;
+                    size_t index;
+
+                    function = view_function(value);
+                    expressions = function->expressions;
+                    last = NULL;
+
+                    for (index = 0; index < expressions->length; index++)
+                    {
+                        if (last)
+                        {
+                            dereference_value(last);
+                        }
+
+                        last = apply_expression(expressions->items[index], &descendant);
+
+                        if (descendant.effect == VALUE_EFFECT_RETURN)
+                        {
+                            descendant.effect = VALUE_EFFECT_PROGRESS;
+                            break;
+                        }
+                        else if (descendant.effect == VALUE_EFFECT_BREAK || descendant.effect == VALUE_EFFECT_CONTINUE || descendant.effect == VALUE_EFFECT_THROW)
+                        {
+                            break;
+                        }
+                    }
+
+                    if (!last)
+                    {
+                        last = new_null();
+                    }
+
+                    result = last;
                 }
                 else
                 {
-                    result = throw_error("absent function", &descendant);
-                }
-            }
-            else if (data->identifier->type == IDENTIFIER_TYPE_VARIABLE)
-            {
-                value_t *value;
-
-                value = get_map_item(frame->variables, data->identifier->name);
-
-                if (value)
-                {
-                    if (value->type == VALUE_TYPE_FUNCTION)
-                    {
-                        function_t *function;
-                        list_t *expressions;
-                        value_t *last;
-                        size_t index;
-
-                        function = view_function(value);
-                        expressions = function->expressions;
-                        last = NULL;
-
-                        for (index = 0; index < expressions->length; index++)
-                        {
-                            if (last)
-                            {
-                                dereference_value(last);
-                            }
-
-                            last = apply_expression(expressions->items[index], &descendant);
-
-                            if (descendant.effect == VALUE_EFFECT_RETURN)
-                            {
-                                descendant.effect = VALUE_EFFECT_PROGRESS;
-                                break;
-                            }
-                            else if (descendant.effect == VALUE_EFFECT_BREAK || descendant.effect == VALUE_EFFECT_CONTINUE || descendant.effect == VALUE_EFFECT_THROW)
-                            {
-                                break;
-                            }
-                        }
-
-                        if (!last)
-                        {
-                            last = new_null();
-                        }
-
-                        result = last;
-                    }
-                    else
-                    {
-                        result = throw_error("invocation error", &descendant);
-                    }
-                }
-                else
-                {
-                    result = throw_error("absent variable", &descendant);
+                    result = throw_error("invocation error", &descendant);
                 }
             }
             else
             {
-                crash_with_message("unsupported branch invoked");
-                return new_null();
+                result = throw_error("absent variable", &descendant);
             }
 
             destroy_map(descendant.variables);

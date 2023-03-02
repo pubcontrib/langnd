@@ -29,18 +29,6 @@ typedef struct
     void *data;
 } expression_t;
 
-typedef enum
-{
-    IDENTIFIER_TYPE_VARIABLE,
-    IDENTIFIER_TYPE_FUNCTION
-} identifier_type_t;
-
-typedef struct
-{
-    identifier_type_t type;
-    string_t *name;
-} identifier_t;
-
 typedef struct
 {
     value_t *value;
@@ -48,18 +36,18 @@ typedef struct
 
 typedef struct
 {
-    identifier_t *identifier;
+    string_t *identifier;
 } reference_expression_data_t;
 
 typedef struct
 {
-    identifier_t *identifier;
+    string_t *identifier;
     expression_t *value;
 } assignment_expression_data_t;
 
 typedef struct
 {
-    identifier_t *identifier;
+    string_t *identifier;
     list_t *arguments;
 } invoke_expression_data_t;
 
@@ -130,6 +118,5 @@ typedef struct
 script_t *parse_script(string_t *code);
 void destroy_script(script_t *script);
 void destroy_expression(expression_t *expression);
-void destroy_identifier(identifier_t *identifier);
 
 #endif

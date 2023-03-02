@@ -18,8 +18,8 @@ static expression_t *read_any_expression(capsule_t *capsule);
 static expression_t *read_list_expression(capsule_t *capsule);
 static expression_t *read_map_expression(capsule_t *capsule);
 static expression_t *read_function_expression(capsule_t *capsule_t);
-static expression_t *read_assignment_expression(capsule_t *capsule, identifier_t *identifier);
-static expression_t *read_invoke_expression(capsule_t *capsule, identifier_t *identifier);
+static expression_t *read_assignment_expression(capsule_t *capsule, string_t *identifier);
+static expression_t *read_invoke_expression(capsule_t *capsule, string_t *identifier);
 static expression_t *read_branch_expression(capsule_t *capsule);
 static expression_t *read_loop_expression(capsule_t *capsule);
 static expression_t *read_catch_expression(capsule_t *capsule);
@@ -35,14 +35,14 @@ static token_t *next_token(capsule_t *capsule);
 static token_t *scan_token(scanner_t *scanner);
 static string_t *substring_using_token(const string_t *code, const token_t *token);
 static string_t *substring_to_newline(const string_t *code, size_t start, size_t limit);
-static identifier_t *parse_identifier(const string_t *code, const token_t *token);
+static string_t *parse_identifier(const string_t *code, const token_t *token);
 static string_t *unescape_string(const string_t *code, const token_t *token);
 static char is_symbol_token(char symbol, const string_t *code, const token_t *token);
 static expression_t *create_unknown_expression();
 static expression_t *create_literal_expression(value_t *value);
-static expression_t *create_reference_expression(identifier_t *identifier);
-static expression_t *create_assignment_expression(identifier_t *identifier, expression_t *value);
-static expression_t *create_invoke_expression(identifier_t *identifier, list_t *arguments);
+static expression_t *create_reference_expression(string_t *identifier);
+static expression_t *create_assignment_expression(string_t *identifier, expression_t *value);
+static expression_t *create_invoke_expression(string_t *identifier, list_t *arguments);
 static expression_t *create_branch_expression(list_t *branches);
 static expression_t *create_loop_expression(expression_t *condition, expression_t *action);
 static expression_t *create_catch_expression(expression_t *action);
@@ -161,7 +161,7 @@ void destroy_expression(expression_t *expression)
 
                 if (data->identifier)
                 {
-                    destroy_identifier(data->identifier);
+                    destroy_string(data->identifier);
                 }
 
                 free(data);
@@ -176,7 +176,7 @@ void destroy_expression(expression_t *expression)
 
                 if (data->identifier)
                 {
-                    destroy_identifier(data->identifier);
+                    destroy_string(data->identifier);
                 }
 
                 if (data->value)
@@ -196,7 +196,7 @@ void destroy_expression(expression_t *expression)
 
                 if (data->identifier)
                 {
-                    destroy_identifier(data->identifier);
+                    destroy_string(data->identifier);
                 }
 
                 if (data->arguments)
@@ -372,16 +372,6 @@ void destroy_expression(expression_t *expression)
     free(expression);
 }
 
-void destroy_identifier(identifier_t *identifier)
-{
-    if (identifier->name)
-    {
-        destroy_string(identifier->name);
-    }
-
-    free(identifier);
-}
-
 static expression_t *read_any_expression(capsule_t *capsule)
 {
     token_t *token;
@@ -421,7 +411,7 @@ static expression_t *read_any_expression(capsule_t *capsule)
     }
     else if (token->type == TOKEN_TYPE_IDENTIFIER)
     {
-        identifier_t *identifier;
+        string_t *identifier;
         token_t *optional;
 
         identifier = parse_identifier(capsule->scanner.code, token);
@@ -772,7 +762,7 @@ static expression_t *read_function_expression(capsule_t *capsule)
     return create_literal_expression(steal_function(function));
 }
 
-static expression_t *read_assignment_expression(capsule_t *capsule, identifier_t *identifier)
+static expression_t *read_assignment_expression(capsule_t *capsule, string_t *identifier)
 {
     expression_t *value;
 
@@ -780,7 +770,7 @@ static expression_t *read_assignment_expression(capsule_t *capsule, identifier_t
 
     if (!value || value->type == EXPRESSION_TYPE_UNKNOWN)
     {
-        destroy_identifier(identifier);
+        destroy_string(identifier);
 
         return value != NULL ? value : create_unknown_expression();
     }
@@ -788,7 +778,7 @@ static expression_t *read_assignment_expression(capsule_t *capsule, identifier_t
     return create_assignment_expression(identifier, value);
 }
 
-static expression_t *read_invoke_expression(capsule_t *capsule, identifier_t *identifier)
+static expression_t *read_invoke_expression(capsule_t *capsule, string_t *identifier)
 {
     list_t *arguments;
     int ready;
@@ -813,7 +803,7 @@ static expression_t *read_invoke_expression(capsule_t *capsule, identifier_t *id
 
             if (ready)
             {
-                destroy_identifier(identifier);
+                destroy_string(identifier);
                 destroy_list(arguments);
 
                 return create_unknown_expression();
@@ -827,7 +817,7 @@ static expression_t *read_invoke_expression(capsule_t *capsule, identifier_t *id
 
             if (!ready)
             {
-                destroy_identifier(identifier);
+                destroy_string(identifier);
                 destroy_list(arguments);
 
                 return create_unknown_expression();
@@ -837,7 +827,7 @@ static expression_t *read_invoke_expression(capsule_t *capsule, identifier_t *id
 
             if (!argument || argument->type == EXPRESSION_TYPE_UNKNOWN)
             {
-                destroy_identifier(identifier);
+                destroy_string(identifier);
                 destroy_list(arguments);
 
                 return argument != NULL ? argument : create_unknown_expression();
@@ -1306,49 +1296,21 @@ static string_t *substring_to_newline(const string_t *code, size_t start, size_t
     return create_string(bytes, length);
 }
 
-static identifier_t *parse_identifier(const string_t *code, const token_t *token)
+static string_t *parse_identifier(const string_t *code, const token_t *token)
 {
-    identifier_t *identifier;
-    identifier_type_t type;
-    string_t *name;
     token_t offset;
-
-    if (code->bytes[token->start] == '$')
-    {
-        type = IDENTIFIER_TYPE_VARIABLE;
-    }
-    else if (code->bytes[token->start] == '@')
-    {
-        type = IDENTIFIER_TYPE_FUNCTION;
-    }
-    else
-    {
-        crash_with_message("unsupported branch invoked");
-        return NULL;
-    }
 
     offset.start = token->start + 1;
     offset.end = token->end;
 
     if (code->bytes[offset.start] != '"')
     {
-        name = substring_using_token(code, &offset);
+        return substring_using_token(code, &offset);
     }
     else
     {
-        name = unescape_string(code, &offset);
-
-        if (!name)
-        {
-            return NULL;
-        }
+        return unescape_string(code, &offset);
     }
-
-    identifier = allocate(1, sizeof(identifier_t));
-    identifier->type = type;
-    identifier->name = name;
-
-    return identifier;
 }
 
 static string_t *unescape_string(const string_t *code, const token_t *token)
@@ -1497,7 +1459,7 @@ static expression_t *create_literal_expression(value_t *value)
     return create_expression(EXPRESSION_TYPE_LITERAL, data);
 }
 
-static expression_t *create_reference_expression(identifier_t *identifier)
+static expression_t *create_reference_expression(string_t *identifier)
 {
     reference_expression_data_t *data;
 
@@ -1507,7 +1469,7 @@ static expression_t *create_reference_expression(identifier_t *identifier)
     return create_expression(EXPRESSION_TYPE_REFERENCE, data);
 }
 
-static expression_t *create_assignment_expression(identifier_t *identifier, expression_t *value)
+static expression_t *create_assignment_expression(string_t *identifier, expression_t *value)
 {
     assignment_expression_data_t *data;
 
@@ -1518,7 +1480,7 @@ static expression_t *create_assignment_expression(identifier_t *identifier, expr
     return create_expression(EXPRESSION_TYPE_ASSIGNMENT, data);
 }
 
-static expression_t *create_invoke_expression(identifier_t *identifier, list_t *arguments)
+static expression_t *create_invoke_expression(string_t *identifier, list_t *arguments)
 {
     invoke_expression_data_t *data;
 
