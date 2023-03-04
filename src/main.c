@@ -160,7 +160,7 @@ static int run_file(char *file)
     FILE *handle;
     int status;
     char *bytes;
-    size_t length;
+    size_t length, read;
 
     handle = fopen(file, "rb");
 
@@ -174,9 +174,9 @@ static int run_file(char *file)
     fseek(handle, 0, SEEK_SET);
 
     bytes = allocate(length, sizeof(char));
-    fread(bytes, 1, length, handle);
+    read = fread(bytes, 1, length, handle);
 
-    if (ferror(handle))
+    if (ferror(handle) || read != length)
     {
         free(bytes);
         fclose(handle);
