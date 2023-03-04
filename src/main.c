@@ -160,7 +160,8 @@ static int run_file(char *file)
     FILE *handle;
     int status;
     char *bytes;
-    size_t length, read;
+    long length;
+    size_t read;
 
     handle = fopen(file, "rb");
 
@@ -172,6 +173,13 @@ static int run_file(char *file)
     fseek(handle, 0, SEEK_END);
     length = ftell(handle);
     fseek(handle, 0, SEEK_SET);
+
+    if (length < 0L || length > SIZE_LIMIT)
+    {
+        fclose(handle);
+
+        crash_with_message("script file read failed %s", file);
+    }
 
     bytes = allocate(length, sizeof(char));
     read = fread(bytes, 1, length, handle);
