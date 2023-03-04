@@ -567,17 +567,15 @@ static value_t *apply_expression(expression_t *expression, invoke_frame_t *frame
                 string_t *name;
                 value_t *function;
 
-                name = copy_string(view_string(test));
+                name = view_string(test);
                 dereference_value(test);
 
                 if (!has_core_function(name))
                 {
-                    destroy_string(name);
-
                     return throw_error("absent function", frame);
                 }
 
-                function = create_core_function(name);
+                function = create_core_function(copy_string(name));
                 set_map_item(frame->variables, copy_string(name), function);
                 function->owners += 1;
 
@@ -589,6 +587,7 @@ static value_t *apply_expression(expression_t *expression, invoke_frame_t *frame
                 size_t index;
 
                 names = view_list(test);
+                dereference_value(test);
                 functions = empty_list(dereference_value_unsafe, 1);
 
                 for (index = 0; index < names->length; index++)
@@ -600,31 +599,26 @@ static value_t *apply_expression(expression_t *expression, invoke_frame_t *frame
 
                     if (item->type != VALUE_TYPE_STRING)
                     {
-                        dereference_value(test);
                         destroy_list(functions);
 
                         return throw_error("alien argument", frame);
                     }
 
-                    name = copy_string(view_string(item));
+                    name = view_string(item);
 
                     if (!has_core_function(name))
                     {
-                        dereference_value(test);
                         destroy_list(functions);
-                        destroy_string(name);
 
                         return throw_error("absent function", frame);
                     }
 
-                    function = create_core_function(name);
+                    function = create_core_function(copy_string(name));
                     set_map_item(frame->variables, copy_string(name), function);
                     function->owners += 1;
 
                     add_list_item(functions, function);
                 }
-
-                dereference_value(test);
 
                 return steal_list(functions);
             }
@@ -634,6 +628,7 @@ static value_t *apply_expression(expression_t *expression, invoke_frame_t *frame
                 size_t index;
 
                 mappings = view_map(test);
+                dereference_value(test);
                 functions = empty_map(hash_string, dereference_value_unsafe, 1);
 
                 for (index = 0; index < mappings->capacity; index++)
@@ -651,7 +646,6 @@ static value_t *apply_expression(expression_t *expression, invoke_frame_t *frame
 
                             if (!has_core_function(name))
                             {
-                                dereference_value(test);
                                 destroy_map(functions);
 
                                 return throw_error("absent function", frame);
@@ -661,7 +655,6 @@ static value_t *apply_expression(expression_t *expression, invoke_frame_t *frame
 
                             if (item->type != VALUE_TYPE_STRING)
                             {
-                                dereference_value(test);
                                 destroy_map(functions);
 
                                 return throw_error("alien argument", frame);
@@ -676,8 +669,6 @@ static value_t *apply_expression(expression_t *expression, invoke_frame_t *frame
                         }
                     }
                 }
-
-                dereference_value(test);
 
                 return steal_map(functions);
             }
