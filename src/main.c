@@ -161,7 +161,6 @@ static int run_file(char *file)
     int status;
     char *bytes;
     long length;
-    size_t read;
 
     handle = fopen(file, "rb");
 
@@ -179,22 +178,38 @@ static int run_file(char *file)
         fclose(handle);
 
         crash_with_message("script file read failed %s", file);
+
+        return PROGRAM_FAILURE;
     }
-
-    bytes = allocate(length, sizeof(char));
-    read = fread(bytes, 1, length, handle);
-
-    if (ferror(handle) || read != length)
+    else if (length > 0L)
     {
-        free(bytes);
-        fclose(handle);
+        size_t read;
 
-        crash_with_message("script file read failed %s", file);
+        bytes = allocate(length, sizeof(char));
+        read = fread(bytes, 1, length, handle);
+
+        if (ferror(handle) || read != length)
+        {
+            free(bytes);
+            fclose(handle);
+
+            crash_with_message("script file read failed %s", file);
+
+            return PROGRAM_FAILURE;
+        }
+    }
+    else
+    {
+        bytes = NULL;
     }
 
     fclose(handle);
     status = run_text(create_string(bytes, length));
-    free(bytes);
+
+    if (bytes)
+    {
+        free(bytes);
+    }
 
     return status;
 }
