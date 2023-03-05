@@ -173,7 +173,7 @@ static int run_file(char *file)
     length = ftell(handle);
     fseek(handle, 0, SEEK_SET);
 
-    if (length < 0L || length > SIZE_LIMIT)
+    if (length < 0L || (unsigned long) length > SIZE_LIMIT)
     {
         fclose(handle);
 
@@ -188,7 +188,7 @@ static int run_file(char *file)
         bytes = allocate(length, sizeof(char));
         read = fread(bytes, 1, length, handle);
 
-        if (ferror(handle) || read != length)
+        if (ferror(handle) || read != (unsigned long) length)
         {
             free(bytes);
             fclose(handle);
