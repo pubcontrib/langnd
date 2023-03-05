@@ -103,29 +103,29 @@ verify 'if true \ 100 / otherwise \ 200' \
     'errors with parse message' '200'
 
 verify 'if null \ /' \
-    'errors with execute message' '"branch with non-boolean condition"'
+    'errors with execute message' '"alien argument"'
 verify 'if 100 \ /' \
-    'errors with execute message' '"branch with non-boolean condition"'
+    'errors with execute message' '"alien argument"'
 verify 'if "text" \ /' \
-    'errors with execute message' '"branch with non-boolean condition"'
+    'errors with execute message' '"alien argument"'
 verify 'if [1, 2, 3] \ /' \
-    'errors with execute message' '"branch with non-boolean condition"'
+    'errors with execute message' '"alien argument"'
 verify 'if {"a": 1, "b": 2, "c": 3} \ /' \
-    'errors with execute message' '"branch with non-boolean condition"'
+    'errors with execute message' '"alien argument"'
 verify 'if <import "multiply" from core $number=argument return $multiply($number, $number)> \ /' \
-    'errors with execute message' '"branch with non-boolean condition"'
+    'errors with execute message' '"alien argument"'
 verify 'if false \ / else if null \ /' \
-    'errors with execute message' '"branch with non-boolean condition"'
+    'errors with execute message' '"alien argument"'
 verify 'if false \ / else if 100 \ /' \
-    'errors with execute message' '"branch with non-boolean condition"'
+    'errors with execute message' '"alien argument"'
 verify 'if false \ / else if "text" \ /' \
-    'errors with execute message' '"branch with non-boolean condition"'
+    'errors with execute message' '"alien argument"'
 verify 'if false \ / else if [1, 2, 3] \ /' \
-    'errors with execute message' '"branch with non-boolean condition"'
+    'errors with execute message' '"alien argument"'
 verify 'if false \ / else if {"a": 1, "b": 2, "c": 3} \ /' \
-    'errors with execute message' '"branch with non-boolean condition"'
+    'errors with execute message' '"alien argument"'
 verify 'if false \ / else if <import "multiply" from core $number=argument return $multiply($number, $number)> \ /' \
-    'errors with execute message' '"branch with non-boolean condition"'
+    'errors with execute message' '"alien argument"'
 
 verify 'import "divide" from core if true \ "before" $divide(100, 0) "after" /' \
     'errors with execute message' '"arithmetic error"'

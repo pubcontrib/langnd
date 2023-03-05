@@ -17,7 +17,7 @@ verify 'import ["write", "freeze"] from core $error=catch \ "not an error" / $wr
 verify 'import ["write", "freeze"] from core $value=100 $error=catch \ $value / $write($freeze($error), 1)' \
     'prints to stdout' 'null'
 verify 'import ["divide", "write", "freeze"] from core $error=catch \ import "missing" from core $divide(100, 0) $missing / $write($freeze($error), 1)' \
-    'prints to stdout' '"absent function"'
+    'prints to stdout' '"absent import"'
 verify 'import ["divide", "write"] from core $error=catch \ $divide(100, 0) / $error=$error $write($error, 1)' \
     'prints to stdout' 'arithmetic error'
 verify 'import ["write", "merge", "divide"] from core $write($merge(catch \ $divide(100, 0) /, "!"), 1)' \

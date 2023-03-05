@@ -67,4 +67,4 @@ verify 'import ["write", "freeze", "sort"] from core $write($freeze($sort([<>, {
     'prints to stdout' '[<>, {}, [], "", 0, false, null]'
 
 verify 'import "sort" from core $sort([3, 2, 1], "?")' \
-    'errors with execute message' '"invalid direction"'
+    'errors with execute message' '"damaged argument"'

@@ -27,17 +27,17 @@ verify 'while false \ 100' \
     'errors with parse message' '100'
 
 verify 'while null \ /' \
-    'errors with execute message' '"loop with non-boolean condition"'
+    'errors with execute message' '"alien argument"'
 verify 'while 100 \ /' \
-    'errors with execute message' '"loop with non-boolean condition"'
+    'errors with execute message' '"alien argument"'
 verify 'while "text" \ /' \
-    'errors with execute message' '"loop with non-boolean condition"'
+    'errors with execute message' '"alien argument"'
 verify 'while [1, 2, 3] \ /' \
-    'errors with execute message' '"loop with non-boolean condition"'
+    'errors with execute message' '"alien argument"'
 verify 'while {"a": 1, "b": 2, "c": 3} \ /' \
-    'errors with execute message' '"loop with non-boolean condition"'
+    'errors with execute message' '"alien argument"'
 verify 'while <import "multiply" from core $number=argument return $multiply($number, $number)> \ /' \
-    'errors with execute message' '"loop with non-boolean condition"'
+    'errors with execute message' '"alien argument"'
 
 verify 'import "divide" from core while true \ "before" $divide(100, 0) "after" /' \
     'errors with execute message' '"arithmetic error"'

@@ -61,13 +61,13 @@ verify 'import "freeze" from otherwise' \
 verify 'import throw "error" from core' \
     'errors with execute message' '"error"'
 verify 'import "nope" from core' \
-    'errors with execute message' '"absent function"'
+    'errors with execute message' '"absent import"'
 verify 'import "ADD" from core' \
-    'errors with execute message' '"absent function"'
+    'errors with execute message' '"absent import"'
 verify 'import ["add", "sub", "mut", "div"] from core' \
-    'errors with execute message' '"absent function"'
+    'errors with execute message' '"absent import"'
 verify 'import {"add": "+", "sub": "-", "mut": "*", "div": "/"} from core' \
-    'errors with execute message' '"absent function"'
+    'errors with execute message' '"absent import"'
 
 verify 'import null from core' \
     'errors with execute message' '"alien argument"'

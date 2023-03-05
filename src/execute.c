@@ -360,7 +360,7 @@ static value_t *apply_expression(expression_t *expression, invoke_frame_t *frame
                 {
                     dereference_value(test);
 
-                    return throw_error("branch with non-boolean condition", frame);
+                    return throw_error("alien argument", frame);
                 }
             }
 
@@ -427,7 +427,7 @@ static value_t *apply_expression(expression_t *expression, invoke_frame_t *frame
                 {
                     dereference_value(test);
 
-                    return throw_error("loop with non-boolean condition", frame);
+                    return throw_error("alien argument", frame);
                 }
             }
 
@@ -572,7 +572,7 @@ static value_t *apply_expression(expression_t *expression, invoke_frame_t *frame
 
                 if (!has_core_function(name))
                 {
-                    return throw_error("absent function", frame);
+                    return throw_error("absent import", frame);
                 }
 
                 function = create_core_function(copy_string(name));
@@ -610,7 +610,7 @@ static value_t *apply_expression(expression_t *expression, invoke_frame_t *frame
                     {
                         destroy_list(functions);
 
-                        return throw_error("absent function", frame);
+                        return throw_error("absent import", frame);
                     }
 
                     function = create_core_function(copy_string(name));
@@ -648,7 +648,7 @@ static value_t *apply_expression(expression_t *expression, invoke_frame_t *frame
                             {
                                 destroy_map(functions);
 
-                                return throw_error("absent function", frame);
+                                return throw_error("absent import", frame);
                             }
 
                             item = chain->value;
@@ -1192,7 +1192,7 @@ static value_t *run_read(invoke_frame_t *frame)
 
     if (terminated && terminator->length != 1)
     {
-        return throw_error("invalid terminator", frame);
+        return throw_error("damaged argument", frame);
     }
 
     closable = 0;
@@ -1399,7 +1399,7 @@ static value_t *run_thaw(invoke_frame_t *frame)
     {
         destroy_script(script);
 
-        return throw_error("melting error", frame);
+        return throw_error("cast error", frame);
     }
 
     expression = script->expressions->items[0];
@@ -1408,7 +1408,7 @@ static value_t *run_thaw(invoke_frame_t *frame)
     {
         destroy_script(script);
 
-        return throw_error("melting error", frame);
+        return throw_error("cast error", frame);
     }
 
     data = expression->data;
@@ -1494,12 +1494,12 @@ static value_t *run_cast(invoke_frame_t *frame)
             }
             else
             {
-                return throw_error("invalid cast", frame);
+                return throw_error("cast error", frame);
             }
         }
         else
         {
-            return throw_error("invalid cast", frame);
+            return throw_error("cast error", frame);
         }
     }
     else if (is_keyword_match(pattern, "BOOLEAN"))
@@ -1526,12 +1526,12 @@ static value_t *run_cast(invoke_frame_t *frame)
             }
             else
             {
-                return throw_error("invalid cast", frame);
+                return throw_error("cast error", frame);
             }
         }
         else
         {
-            return throw_error("invalid cast", frame);
+            return throw_error("cast error", frame);
         }
     }
     else if (is_keyword_match(pattern, "NUMBER"))
@@ -1548,14 +1548,14 @@ static value_t *run_cast(invoke_frame_t *frame)
 
             if (string_to_number(value->data, &number) != 0)
             {
-                return throw_error("invalid cast", frame);
+                return throw_error("cast error", frame);
             }
 
             return new_number(number);
         }
         else
         {
-            return throw_error("invalid cast", frame);
+            return throw_error("cast error", frame);
         }
     }
     else if (is_keyword_match(pattern, "STRING"))
@@ -1580,7 +1580,7 @@ static value_t *run_cast(invoke_frame_t *frame)
         }
         else
         {
-            return throw_error("invalid cast", frame);
+            return throw_error("cast error", frame);
         }
     }
     else if (is_keyword_match(pattern, "LIST"))
@@ -1593,7 +1593,7 @@ static value_t *run_cast(invoke_frame_t *frame)
         }
         else
         {
-            return throw_error("invalid cast", frame);
+            return throw_error("cast error", frame);
         }
     }
     else if (is_keyword_match(pattern, "MAP"))
@@ -1606,7 +1606,7 @@ static value_t *run_cast(invoke_frame_t *frame)
         }
         else
         {
-            return throw_error("invalid cast", frame);
+            return throw_error("cast error", frame);
         }
     }
     else if (is_keyword_match(pattern, "FUNCTION"))
@@ -1619,12 +1619,12 @@ static value_t *run_cast(invoke_frame_t *frame)
         }
         else
         {
-            return throw_error("invalid cast", frame);
+            return throw_error("cast error", frame);
         }
     }
     else
     {
-        return throw_error("unknown type", frame);
+        return throw_error("damaged argument", frame);
     }
 }
 
@@ -2260,7 +2260,7 @@ static value_t *run_sort(invoke_frame_t *frame)
     }
     else
     {
-        return throw_error("invalid direction", frame);
+        return throw_error("damaged argument", frame);
     }
 
     source = view_list(collection);
@@ -2359,7 +2359,7 @@ static int next_argument(int types, value_t **out, invoke_frame_t *frame)
 
     if (!(types & result->type))
     {
-        (*out) = throw_error("wrong argument type", frame);
+        (*out) = throw_error("alien argument", frame);
         return 0;
     }
 

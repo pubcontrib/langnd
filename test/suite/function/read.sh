@@ -71,6 +71,6 @@ LINE 3'
 fi
 
 verify 'import "read" from core $read(0, "")' \
-    'errors with execute message' '"invalid terminator"'
+    'errors with execute message' '"damaged argument"'
 verify 'import "read" from core $read(0, "END")' \
-    'errors with execute message' '"invalid terminator"'
+    'errors with execute message' '"damaged argument"'
