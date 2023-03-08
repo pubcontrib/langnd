@@ -50,6 +50,10 @@ verify '$x="1" $y="2" $merge($x $y)' \
 verify '$merge($freeze(1) $freeze(2))' \
     'errors with parse message' ') $freeze(2))'
 
+verify 'import "add" from core $add()' \
+    'errors with execute message' '"absent argument"'
+verify 'import "add" from core $add(1)' \
+    'errors with execute message' '"absent argument"'
 verify '$huh()' \
     'errors with execute message' '"absent variable"'
 verify '$value=null $value()' \
