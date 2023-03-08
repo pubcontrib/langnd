@@ -54,6 +54,10 @@ verify 'import "add" from core $add()' \
     'errors with execute message' '"absent argument"'
 verify 'import "add" from core $add(1)' \
     'errors with execute message' '"absent argument"'
+verify 'import "add" from core $add(null, 2)' \
+    'errors with execute message' '"alien argument"'
+verify 'import "add" from core $add(1, null)' \
+    'errors with execute message' '"alien argument"'
 verify '$huh()' \
     'errors with execute message' '"absent variable"'
 verify '$value=null $value()' \
