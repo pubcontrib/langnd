@@ -22,6 +22,10 @@ verify '$_="val"' \
     'prints to stdout' ''
 verify '$""="val"' \
     'prints to stdout' ''
+verify '$"\t\r\n"="val"' \
+    'prints to stdout' ''
+verify '$"\a001\a002\a003"="val"' \
+    'prints to stdout' ''
 verify '$Text_100="val"' \
     'prints to stdout' ''
 verify '$"(long) & [special] --> ID"="val"' \
