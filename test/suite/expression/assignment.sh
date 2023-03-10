@@ -20,6 +20,8 @@ verify '$0="val"' \
     'prints to stdout' ''
 verify '$_="val"' \
     'prints to stdout' ''
+verify '$""="val"' \
+    'prints to stdout' ''
 verify '$Text_100="val"' \
     'prints to stdout' ''
 verify '$"(long) & [special] --> ID"="val"' \
@@ -66,6 +68,9 @@ verify 'import "write" from core $"id"="found" $write($id, 1)' \
     'prints to stdout' 'found'
 verify 'import "write" from core $copy=$new="found" $write($copy, 1)' \
     'prints to stdout' 'found'
+
+verify '$="val"' \
+    'errors with lex message' '$="val"'
 
 verify '$a=' \
     'errors with parse message' '='
