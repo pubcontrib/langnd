@@ -15,7 +15,7 @@ and the implementation of the language are a work in progress.
       import "write" from core
       $write("\a027[7;33m WARN \a027[0m ", 1)
       $write($message, 1)
-      $write("\a027[0m\n", 1)
+      $write("\n", 1)
     >
 
     $warn("writing langnd code is addictive!")
