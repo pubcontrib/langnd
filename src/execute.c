@@ -1143,7 +1143,10 @@ static value_t *run_write(invoke_frame_t *frame)
         return throw_error("absent file", frame);
     }
 
-    fwrite(string->bytes, sizeof(char), string->length, handle);
+    if (string->length > 0)
+    {
+        fwrite(string->bytes, sizeof(char), string->length, handle);
+    }
 
     if (ferror(handle))
     {
