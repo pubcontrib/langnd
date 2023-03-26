@@ -15,20 +15,10 @@ typedef struct
     size_t index;
 } argument_iterator_t;
 
-typedef enum
-{
-    VALUE_EFFECT_PROGRESS,
-    VALUE_EFFECT_RETURN,
-    VALUE_EFFECT_BREAK,
-    VALUE_EFFECT_CONTINUE,
-    VALUE_EFFECT_THROW
-} value_effect_t;
-
 typedef struct invoke_frame_t
 {
     map_t *variables;
     argument_iterator_t arguments;
-    value_effect_t effect;
     struct invoke_frame_t *parent;
 } invoke_frame_t;
 
@@ -73,17 +63,18 @@ static int has_next_argument(const invoke_frame_t *frame);
 static void copy_map_items(const map_t *source, map_t *destination);
 static int compare_values_ascending(const void *left, const void *right);
 static int compare_values_descending(const void *left, const void *right);
-static value_t *throw_error(const char *message, invoke_frame_t *frame);
+static value_t *throw_error(const char *message, machine_t *machine);
 static void destroy_expression_unsafe(void *expression);
 static void destroy_element_wrapper_unsafe(void *wrapper);
 static void dereference_value_unsafe(void *value);
-static int has_halting_effect(invoke_frame_t *frame);
+static int has_halting_effect(machine_t *machine);
 
 machine_t *empty_machine()
 {
     machine_t *machine;
 
     machine = allocate(1, sizeof(machine_t));
+    machine->effect = VALUE_EFFECT_PROGRESS;
     machine->elements = create_core_elements();
 
     return machine;
@@ -113,7 +104,6 @@ outcome_t *execute(string_t *code, machine_t *machine)
     }
 
     root.variables = empty_map(hash_string, dereference_value_unsafe, 8);
-    root.effect = VALUE_EFFECT_PROGRESS;
     expressions = script->expressions;
 
     for (index = 0; index < expressions->length; index++)
@@ -122,13 +112,13 @@ outcome_t *execute(string_t *code, machine_t *machine)
 
         result = apply_expression(expressions->items[index], &root, machine);
 
-        if (has_halting_effect(&root))
+        if (has_halting_effect(machine))
         {
             char *message;
 
             message = NULL;
 
-            switch (root.effect)
+            switch (machine->effect)
             {
                 case VALUE_EFFECT_RETURN:
                     message = "lost return";
@@ -228,7 +218,7 @@ static value_t *apply_expression(expression_t *expression, invoke_frame_t *frame
             }
             else
             {
-                return throw_error("absent variable", frame);
+                return throw_error("absent variable", machine);
             }
         }
 
@@ -240,7 +230,7 @@ static value_t *apply_expression(expression_t *expression, invoke_frame_t *frame
             data = expression->data;
             value = apply_expression(data->value, frame, machine);
 
-            if (has_halting_effect(frame))
+            if (has_halting_effect(machine))
             {
                 return value;
             }
@@ -271,7 +261,6 @@ static value_t *apply_expression(expression_t *expression, invoke_frame_t *frame
             }
 
             descendant.arguments.index = 0;
-            descendant.effect = VALUE_EFFECT_PROGRESS;
             descendant.parent = frame;
 
             value = get_map_item(frame->variables, data->identifier);
@@ -298,12 +287,12 @@ static value_t *apply_expression(expression_t *expression, invoke_frame_t *frame
 
                         last = apply_expression(expressions->items[index], &descendant, machine);
 
-                        if (descendant.effect == VALUE_EFFECT_RETURN)
+                        if (machine->effect == VALUE_EFFECT_RETURN)
                         {
-                            descendant.effect = VALUE_EFFECT_PROGRESS;
+                            machine->effect = VALUE_EFFECT_PROGRESS;
                             break;
                         }
-                        else if (descendant.effect == VALUE_EFFECT_BREAK || descendant.effect == VALUE_EFFECT_CONTINUE || descendant.effect == VALUE_EFFECT_THROW)
+                        else if (machine->effect == VALUE_EFFECT_BREAK || machine->effect == VALUE_EFFECT_CONTINUE || machine->effect == VALUE_EFFECT_THROW)
                         {
                             break;
                         }
@@ -318,12 +307,12 @@ static value_t *apply_expression(expression_t *expression, invoke_frame_t *frame
                 }
                 else
                 {
-                    result = throw_error("invocation error", &descendant);
+                    result = throw_error("invocation error", machine);
                 }
             }
             else
             {
-                result = throw_error("absent variable", &descendant);
+                result = throw_error("absent variable", machine);
             }
 
             destroy_map(descendant.variables);
@@ -339,8 +328,6 @@ static value_t *apply_expression(expression_t *expression, invoke_frame_t *frame
 
                 free(descendant.arguments.evaluated);
             }
-
-            frame->effect = descendant.effect;
 
             return result;
         }
@@ -364,7 +351,7 @@ static value_t *apply_expression(expression_t *expression, invoke_frame_t *frame
                 branch = branches->items[index];
                 test = apply_expression(branch->condition, frame, machine);
 
-                if (has_halting_effect(frame))
+                if (has_halting_effect(machine))
                 {
                     return test;
                 }
@@ -387,7 +374,7 @@ static value_t *apply_expression(expression_t *expression, invoke_frame_t *frame
                 {
                     dereference_value(test);
 
-                    return throw_error("alien argument", frame);
+                    return throw_error("alien argument", machine);
                 }
             }
 
@@ -413,7 +400,7 @@ static value_t *apply_expression(expression_t *expression, invoke_frame_t *frame
 
                 test = apply_expression(data->condition, frame, machine);
 
-                if (has_halting_effect(frame))
+                if (has_halting_effect(machine))
                 {
                     return test;
                 }
@@ -435,17 +422,17 @@ static value_t *apply_expression(expression_t *expression, invoke_frame_t *frame
 
                     last = apply_expression(data->action, frame, machine);
 
-                    if (frame->effect == VALUE_EFFECT_BREAK)
+                    if (machine->effect == VALUE_EFFECT_BREAK)
                     {
-                        frame->effect = VALUE_EFFECT_PROGRESS;
+                        machine->effect = VALUE_EFFECT_PROGRESS;
                         break;
                     }
-                    else if (frame->effect == VALUE_EFFECT_CONTINUE)
+                    else if (machine->effect == VALUE_EFFECT_CONTINUE)
                     {
-                        frame->effect = VALUE_EFFECT_PROGRESS;
+                        machine->effect = VALUE_EFFECT_PROGRESS;
                         continue;
                     }
-                    else if (frame->effect == VALUE_EFFECT_THROW)
+                    else if (machine->effect == VALUE_EFFECT_THROW)
                     {
                         break;
                     }
@@ -454,7 +441,7 @@ static value_t *apply_expression(expression_t *expression, invoke_frame_t *frame
                 {
                     dereference_value(test);
 
-                    return throw_error("alien argument", frame);
+                    return throw_error("alien argument", machine);
                 }
             }
 
@@ -474,13 +461,13 @@ static value_t *apply_expression(expression_t *expression, invoke_frame_t *frame
             data = expression->data;
             last = apply_expression(data->action, frame, machine);
 
-            if (frame->effect == VALUE_EFFECT_RETURN || frame->effect == VALUE_EFFECT_BREAK || frame->effect == VALUE_EFFECT_CONTINUE)
+            if (machine->effect == VALUE_EFFECT_RETURN || machine->effect == VALUE_EFFECT_BREAK || machine->effect == VALUE_EFFECT_CONTINUE)
             {
                 return last;
             }
-            else if (frame->effect == VALUE_EFFECT_THROW)
+            else if (machine->effect == VALUE_EFFECT_THROW)
             {
-                frame->effect = VALUE_EFFECT_PROGRESS;
+                machine->effect = VALUE_EFFECT_PROGRESS;
 
                 return last;
             }
@@ -512,12 +499,12 @@ static value_t *apply_expression(expression_t *expression, invoke_frame_t *frame
             data = expression->data;
             test = apply_expression(data->pick, frame, machine);
 
-            if (has_halting_effect(frame))
+            if (has_halting_effect(machine))
             {
                 return test;
             }
 
-            frame->effect = VALUE_EFFECT_RETURN;
+            machine->effect = VALUE_EFFECT_RETURN;
 
             return test;
         }
@@ -530,12 +517,12 @@ static value_t *apply_expression(expression_t *expression, invoke_frame_t *frame
             data = expression->data;
             test = apply_expression(data->pick, frame, machine);
 
-            if (has_halting_effect(frame))
+            if (has_halting_effect(machine))
             {
                 return test;
             }
 
-            frame->effect = VALUE_EFFECT_BREAK;
+            machine->effect = VALUE_EFFECT_BREAK;
 
             return test;
         }
@@ -548,12 +535,12 @@ static value_t *apply_expression(expression_t *expression, invoke_frame_t *frame
             data = expression->data;
             test = apply_expression(data->pick, frame, machine);
 
-            if (has_halting_effect(frame))
+            if (has_halting_effect(machine))
             {
                 return test;
             }
 
-            frame->effect = VALUE_EFFECT_CONTINUE;
+            machine->effect = VALUE_EFFECT_CONTINUE;
 
             return test;
         }
@@ -566,12 +553,12 @@ static value_t *apply_expression(expression_t *expression, invoke_frame_t *frame
             data = expression->data;
             test = apply_expression(data->error, frame, machine);
 
-            if (has_halting_effect(frame))
+            if (has_halting_effect(machine))
             {
                 return test;
             }
 
-            frame->effect = VALUE_EFFECT_THROW;
+            machine->effect = VALUE_EFFECT_THROW;
 
             return test;
         }
@@ -584,7 +571,7 @@ static value_t *apply_expression(expression_t *expression, invoke_frame_t *frame
             data = expression->data;
             test = apply_expression(data->pick, frame, machine);
 
-            if (has_halting_effect(frame))
+            if (has_halting_effect(machine))
             {
                 return test;
             }
@@ -599,7 +586,7 @@ static value_t *apply_expression(expression_t *expression, invoke_frame_t *frame
 
                 if (!has_map_item(machine->elements, name))
                 {
-                    return throw_error("absent import", frame);
+                    return throw_error("absent import", machine);
                 }
 
                 function = create_element_function(copy_string(name));
@@ -628,7 +615,7 @@ static value_t *apply_expression(expression_t *expression, invoke_frame_t *frame
                     {
                         destroy_list(functions);
 
-                        return throw_error("alien argument", frame);
+                        return throw_error("alien argument", machine);
                     }
 
                     name = view_string(item);
@@ -637,7 +624,7 @@ static value_t *apply_expression(expression_t *expression, invoke_frame_t *frame
                     {
                         destroy_list(functions);
 
-                        return throw_error("absent import", frame);
+                        return throw_error("absent import", machine);
                     }
 
                     function = create_element_function(copy_string(name));
@@ -675,7 +662,7 @@ static value_t *apply_expression(expression_t *expression, invoke_frame_t *frame
                             {
                                 destroy_map(functions);
 
-                                return throw_error("absent import", frame);
+                                return throw_error("absent import", machine);
                             }
 
                             item = chain->value;
@@ -684,7 +671,7 @@ static value_t *apply_expression(expression_t *expression, invoke_frame_t *frame
                             {
                                 destroy_map(functions);
 
-                                return throw_error("alien argument", frame);
+                                return throw_error("alien argument", machine);
                             }
 
                             alias = view_string(item);
@@ -703,7 +690,7 @@ static value_t *apply_expression(expression_t *expression, invoke_frame_t *frame
             {
                 dereference_value(test);
 
-                return throw_error("alien argument", frame);
+                return throw_error("alien argument", machine);
             }
         }
 
@@ -727,7 +714,7 @@ static value_t *apply_expression(expression_t *expression, invoke_frame_t *frame
 
                 last = apply_expression(expressions->items[index], frame, machine);
 
-                if (has_halting_effect(frame))
+                if (has_halting_effect(machine))
                 {
                     break;
                 }
@@ -785,7 +772,7 @@ static value_t *run_add(invoke_frame_t *frame, machine_t *machine)
 
     if (add_numbers(view_number(left), view_number(right), &sum) != 0)
     {
-        return throw_error("arithmetic error", frame);
+        return throw_error("arithmetic error", machine);
     }
 
     return new_number(sum);
@@ -808,7 +795,7 @@ static value_t *run_subtract(invoke_frame_t *frame, machine_t *machine)
 
     if (subtract_numbers(view_number(left), view_number(right), &difference) != 0)
     {
-        return throw_error("arithmetic error", frame);
+        return throw_error("arithmetic error", machine);
     }
 
     return new_number(difference);
@@ -831,7 +818,7 @@ static value_t *run_multiply(invoke_frame_t *frame, machine_t *machine)
 
     if (multiply_numbers(view_number(left), view_number(right), &product) != 0)
     {
-        return throw_error("arithmetic error", frame);
+        return throw_error("arithmetic error", machine);
     }
 
     return new_number(product);
@@ -854,7 +841,7 @@ static value_t *run_divide(invoke_frame_t *frame, machine_t *machine)
 
     if (divide_numbers(view_number(left), view_number(right), &quotient) != 0)
     {
-        return throw_error("arithmetic error", frame);
+        return throw_error("arithmetic error", machine);
     }
 
     return new_number(quotient);
@@ -877,7 +864,7 @@ static value_t *run_modulo(invoke_frame_t *frame, machine_t *machine)
 
     if (modulo_numbers(view_number(left), view_number(right), &remainder) != 0)
     {
-        return throw_error("arithmetic error", frame);
+        return throw_error("arithmetic error", machine);
     }
 
     return new_number(remainder);
@@ -1065,7 +1052,7 @@ static value_t *run_write(invoke_frame_t *frame, machine_t *machine)
 
     if (!handle)
     {
-        return throw_error("absent file", frame);
+        return throw_error("absent file", machine);
     }
 
     if (string->length > 0)
@@ -1080,7 +1067,7 @@ static value_t *run_write(invoke_frame_t *frame, machine_t *machine)
             fclose(handle);
         }
 
-        return throw_error("io error", frame);
+        return throw_error("io error", machine);
     }
 
     if (flushable)
@@ -1120,7 +1107,7 @@ static value_t *run_read(invoke_frame_t *frame, machine_t *machine)
 
     if (terminated && terminator->length != 1)
     {
-        return throw_error("damaged argument", frame);
+        return throw_error("damaged argument", machine);
     }
 
     closable = 0;
@@ -1175,7 +1162,7 @@ static value_t *run_read(invoke_frame_t *frame, machine_t *machine)
 
     if (!handle)
     {
-        return throw_error("absent file", frame);
+        return throw_error("absent file", machine);
     }
 
     fill = 0;
@@ -1197,7 +1184,7 @@ static value_t *run_read(invoke_frame_t *frame, machine_t *machine)
 
             free(bytes);
 
-            return throw_error("io error", frame);
+            return throw_error("io error", machine);
         }
 
         if (symbol == EOF || (terminated && terminator->bytes[0] == symbol))
@@ -1245,7 +1232,7 @@ static value_t *run_delete(invoke_frame_t *frame, machine_t *machine)
     {
         case VALUE_TYPE_NUMBER:
         {
-            return throw_error("io error", frame);
+            return throw_error("io error", machine);
         }
 
         case VALUE_TYPE_STRING:
@@ -1263,7 +1250,7 @@ static value_t *run_delete(invoke_frame_t *frame, machine_t *machine)
             }
             else
             {
-                return throw_error("io error", frame);
+                return throw_error("io error", machine);
             }
         }
 
@@ -1293,7 +1280,7 @@ static value_t *run_query(invoke_frame_t *frame, machine_t *machine)
     }
     else
     {
-        return throw_error("absent environment variable", frame);
+        return throw_error("absent environment variable", machine);
     }
 }
 
@@ -1327,7 +1314,7 @@ static value_t *run_thaw(invoke_frame_t *frame, machine_t *machine)
     {
         destroy_script(script);
 
-        return throw_error("cast error", frame);
+        return throw_error("cast error", machine);
     }
 
     expression = script->expressions->items[0];
@@ -1336,7 +1323,7 @@ static value_t *run_thaw(invoke_frame_t *frame, machine_t *machine)
     {
         destroy_script(script);
 
-        return throw_error("cast error", frame);
+        return throw_error("cast error", machine);
     }
 
     data = expression->data;
@@ -1422,12 +1409,12 @@ static value_t *run_cast(invoke_frame_t *frame, machine_t *machine)
             }
             else
             {
-                return throw_error("cast error", frame);
+                return throw_error("cast error", machine);
             }
         }
         else
         {
-            return throw_error("cast error", frame);
+            return throw_error("cast error", machine);
         }
     }
     else if (is_keyword_match(pattern, "BOOLEAN"))
@@ -1454,12 +1441,12 @@ static value_t *run_cast(invoke_frame_t *frame, machine_t *machine)
             }
             else
             {
-                return throw_error("cast error", frame);
+                return throw_error("cast error", machine);
             }
         }
         else
         {
-            return throw_error("cast error", frame);
+            return throw_error("cast error", machine);
         }
     }
     else if (is_keyword_match(pattern, "NUMBER"))
@@ -1476,14 +1463,14 @@ static value_t *run_cast(invoke_frame_t *frame, machine_t *machine)
 
             if (string_to_number(value->data, &number) != 0)
             {
-                return throw_error("cast error", frame);
+                return throw_error("cast error", machine);
             }
 
             return new_number(number);
         }
         else
         {
-            return throw_error("cast error", frame);
+            return throw_error("cast error", machine);
         }
     }
     else if (is_keyword_match(pattern, "STRING"))
@@ -1508,7 +1495,7 @@ static value_t *run_cast(invoke_frame_t *frame, machine_t *machine)
         }
         else
         {
-            return throw_error("cast error", frame);
+            return throw_error("cast error", machine);
         }
     }
     else if (is_keyword_match(pattern, "LIST"))
@@ -1521,7 +1508,7 @@ static value_t *run_cast(invoke_frame_t *frame, machine_t *machine)
         }
         else
         {
-            return throw_error("cast error", frame);
+            return throw_error("cast error", machine);
         }
     }
     else if (is_keyword_match(pattern, "MAP"))
@@ -1534,7 +1521,7 @@ static value_t *run_cast(invoke_frame_t *frame, machine_t *machine)
         }
         else
         {
-            return throw_error("cast error", frame);
+            return throw_error("cast error", machine);
         }
     }
     else if (is_keyword_match(pattern, "FUNCTION"))
@@ -1547,12 +1534,12 @@ static value_t *run_cast(invoke_frame_t *frame, machine_t *machine)
         }
         else
         {
-            return throw_error("cast error", frame);
+            return throw_error("cast error", machine);
         }
     }
     else
     {
-        return throw_error("damaged argument", frame);
+        return throw_error("damaged argument", machine);
     }
 }
 
@@ -1587,7 +1574,7 @@ static value_t *run_get(invoke_frame_t *frame, machine_t *machine)
 
             if (number < 1 || (size_t) number > string->length)
             {
-                return throw_error("absent key", frame);
+                return throw_error("absent key", machine);
             }
 
             bytes = allocate(1, sizeof(char));
@@ -1616,7 +1603,7 @@ static value_t *run_get(invoke_frame_t *frame, machine_t *machine)
 
             if (number < 1 || (size_t) number > list->length)
             {
-                return throw_error("absent key", frame);
+                return throw_error("absent key", machine);
             }
 
             index = number - 1;
@@ -1658,7 +1645,7 @@ static value_t *run_get(invoke_frame_t *frame, machine_t *machine)
             }
             else
             {
-                return throw_error("absent key", frame);
+                return throw_error("absent key", machine);
             }
         }
 
@@ -1706,7 +1693,7 @@ static value_t *run_set(invoke_frame_t *frame, machine_t *machine)
 
             if (index < 1 || (size_t) index > source->length)
             {
-                return throw_error("absent key", frame);
+                return throw_error("absent key", machine);
             }
 
             beforeLength = index - 1;
@@ -1759,7 +1746,7 @@ static value_t *run_set(invoke_frame_t *frame, machine_t *machine)
 
             if (number < 1 || (size_t) number > source->length)
             {
-                return throw_error("absent key", frame);
+                return throw_error("absent key", machine);
             }
 
             index = number - 1;
@@ -1848,7 +1835,7 @@ static value_t *run_unset(invoke_frame_t *frame, machine_t *machine)
 
             if (number < 1 || (size_t) number > source->length)
             {
-                return throw_error("absent key", frame);
+                return throw_error("absent key", machine);
             }
 
             if (source->length > 1)
@@ -1887,7 +1874,7 @@ static value_t *run_unset(invoke_frame_t *frame, machine_t *machine)
 
             if (number < 1 || (size_t) number > source->length)
             {
-                return throw_error("absent key", frame);
+                return throw_error("absent key", machine);
             }
 
             index = number - 1;
@@ -2051,7 +2038,7 @@ static value_t *run_length(invoke_frame_t *frame, machine_t *machine)
 
     if (length >= PORTABLE_INT_LIMIT || integer_to_number(length, &number) != 0)
     {
-        return throw_error("constraint error", frame);
+        return throw_error("constraint error", machine);
     }
 
     return new_number(number);
@@ -2079,7 +2066,7 @@ static value_t *run_keys(invoke_frame_t *frame, machine_t *machine)
 
             if (string->length >= PORTABLE_INT_LIMIT || integer_to_number(string->length, &number) != 0)
             {
-                return throw_error("constraint error", frame);
+                return throw_error("constraint error", machine);
             }
 
             keys = empty_list(dereference_value_unsafe, 1);
@@ -2092,7 +2079,7 @@ static value_t *run_keys(invoke_frame_t *frame, machine_t *machine)
                 {
                     destroy_list(keys);
 
-                    return throw_error("constraint error", frame);
+                    return throw_error("constraint error", machine);
                 }
 
                 add_list_item(keys, new_number(key));
@@ -2112,7 +2099,7 @@ static value_t *run_keys(invoke_frame_t *frame, machine_t *machine)
 
             if (length >= PORTABLE_INT_LIMIT || integer_to_number(length, &number) != 0)
             {
-                return throw_error("constraint error", frame);
+                return throw_error("constraint error", machine);
             }
 
             keys = empty_list(dereference_value_unsafe, 1);
@@ -2125,7 +2112,7 @@ static value_t *run_keys(invoke_frame_t *frame, machine_t *machine)
                 {
                     destroy_list(keys);
 
-                    return throw_error("constraint error", frame);
+                    return throw_error("constraint error", machine);
                 }
 
                 add_list_item(keys, new_number(key));
@@ -2188,7 +2175,7 @@ static value_t *run_sort(invoke_frame_t *frame, machine_t *machine)
     }
     else
     {
-        return throw_error("damaged argument", frame);
+        return throw_error("damaged argument", machine);
     }
 
     source = view_list(collection);
@@ -2284,17 +2271,15 @@ static int next_argument(int types, value_t **out, invoke_frame_t *frame, machin
 
     if (!has_next_argument(frame))
     {
-        (*out) = throw_error("absent argument", frame);
+        (*out) = throw_error("absent argument", machine);
         return 0;
     }
 
     result = apply_expression(frame->arguments.expressions->items[frame->arguments.index], frame->parent, machine);
     frame->arguments.evaluated[frame->arguments.index] = result;
     frame->arguments.index += 1;
-    frame->effect = frame->parent->effect;
-    frame->parent->effect = VALUE_EFFECT_PROGRESS;
 
-    if (has_halting_effect(frame))
+    if (has_halting_effect(machine))
     {
         result->owners += 1;
         (*out) = result;
@@ -2303,7 +2288,7 @@ static int next_argument(int types, value_t **out, invoke_frame_t *frame, machin
 
     if (!(types & result->type))
     {
-        (*out) = throw_error("alien argument", frame);
+        (*out) = throw_error("alien argument", machine);
         return 0;
     }
 
@@ -2349,9 +2334,9 @@ static int compare_values_descending(const void *left, const void *right)
     return compare_values(*(value_t **) left, *(value_t **) right) * -1;
 }
 
-static value_t *throw_error(const char *message, invoke_frame_t *frame)
+static value_t *throw_error(const char *message, machine_t *machine)
 {
-    frame->effect = VALUE_EFFECT_THROW;
+    machine->effect = VALUE_EFFECT_THROW;
     return steal_string(cstring_to_string(message));
 }
 
@@ -2370,11 +2355,11 @@ static void dereference_value_unsafe(void *value)
     dereference_value(value);
 }
 
-static int has_halting_effect(invoke_frame_t *frame)
+static int has_halting_effect(machine_t *machine)
 {
     value_effect_t effect;
 
-    effect = frame->effect;
+    effect = machine->effect;
 
     return effect == VALUE_EFFECT_RETURN
         || effect == VALUE_EFFECT_BREAK

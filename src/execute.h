@@ -3,9 +3,19 @@
 
 #include "utility.h"
 
+typedef enum
+{
+    VALUE_EFFECT_PROGRESS,
+    VALUE_EFFECT_RETURN,
+    VALUE_EFFECT_BREAK,
+    VALUE_EFFECT_CONTINUE,
+    VALUE_EFFECT_THROW
+} value_effect_t;
+
 typedef struct
 {
     map_t *elements;
+    value_effect_t effect;
 } machine_t;
 
 typedef struct
