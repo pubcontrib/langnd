@@ -15,51 +15,51 @@ typedef struct
     size_t index;
 } argument_iterator_t;
 
-typedef struct invoke_frame_t
+typedef struct frame_t
 {
     map_t *variables;
     argument_iterator_t arguments;
-    struct invoke_frame_t *parent;
-} invoke_frame_t;
+    struct frame_t *parent;
+} frame_t;
 
 typedef struct
 {
-    value_t *(*run)(invoke_frame_t *, machine_t *);
+    value_t *(*run)(frame_t *, machine_t *);
 } element_wrapper_t;
 
-static value_t *apply_expression(expression_t *expression, invoke_frame_t *frame, machine_t *machine);
-static value_t *run_add(invoke_frame_t *frame, machine_t *machine);
-static value_t *run_subtract(invoke_frame_t *frame, machine_t *machine);
-static value_t *run_multiply(invoke_frame_t *frame, machine_t *machine);
-static value_t *run_divide(invoke_frame_t *frame, machine_t *machine);
-static value_t *run_modulo(invoke_frame_t *frame, machine_t *machine);
-static value_t *run_truncate(invoke_frame_t *frame, machine_t *machine);
-static value_t *run_and(invoke_frame_t *frame, machine_t *machine);
-static value_t *run_or(invoke_frame_t *frame, machine_t *machine);
-static value_t *run_not(invoke_frame_t *frame, machine_t *machine);
-static value_t *run_precedes(invoke_frame_t *frame, machine_t *machine);
-static value_t *run_succeeds(invoke_frame_t *frame, machine_t *machine);
-static value_t *run_equals(invoke_frame_t *frame, machine_t *machine);
-static value_t *run_write(invoke_frame_t *frame, machine_t *machine);
-static value_t *run_read(invoke_frame_t *frame, machine_t *machine);
-static value_t *run_delete(invoke_frame_t *frame, machine_t *machine);
-static value_t *run_query(invoke_frame_t *frame, machine_t *machine);
-static value_t *run_freeze(invoke_frame_t *frame, machine_t *machine);
-static value_t *run_thaw(invoke_frame_t *frame, machine_t *machine);
-static value_t *run_type(invoke_frame_t *frame, machine_t *machine);
-static value_t *run_cast(invoke_frame_t *frame, machine_t *machine);
-static value_t *run_get(invoke_frame_t *frame, machine_t *machine);
-static value_t *run_set(invoke_frame_t *frame, machine_t *machine);
-static value_t *run_unset(invoke_frame_t *frame, machine_t *machine);
-static value_t *run_merge(invoke_frame_t *frame, machine_t *machine);
-static value_t *run_length(invoke_frame_t *frame, machine_t *machine);
-static value_t *run_keys(invoke_frame_t *frame, machine_t *machine);
-static value_t *run_sort(invoke_frame_t *frame, machine_t *machine);
+static value_t *apply_expression(expression_t *expression, frame_t *frame, machine_t *machine);
+static value_t *run_add(frame_t *frame, machine_t *machine);
+static value_t *run_subtract(frame_t *frame, machine_t *machine);
+static value_t *run_multiply(frame_t *frame, machine_t *machine);
+static value_t *run_divide(frame_t *frame, machine_t *machine);
+static value_t *run_modulo(frame_t *frame, machine_t *machine);
+static value_t *run_truncate(frame_t *frame, machine_t *machine);
+static value_t *run_and(frame_t *frame, machine_t *machine);
+static value_t *run_or(frame_t *frame, machine_t *machine);
+static value_t *run_not(frame_t *frame, machine_t *machine);
+static value_t *run_precedes(frame_t *frame, machine_t *machine);
+static value_t *run_succeeds(frame_t *frame, machine_t *machine);
+static value_t *run_equals(frame_t *frame, machine_t *machine);
+static value_t *run_write(frame_t *frame, machine_t *machine);
+static value_t *run_read(frame_t *frame, machine_t *machine);
+static value_t *run_delete(frame_t *frame, machine_t *machine);
+static value_t *run_query(frame_t *frame, machine_t *machine);
+static value_t *run_freeze(frame_t *frame, machine_t *machine);
+static value_t *run_thaw(frame_t *frame, machine_t *machine);
+static value_t *run_type(frame_t *frame, machine_t *machine);
+static value_t *run_cast(frame_t *frame, machine_t *machine);
+static value_t *run_get(frame_t *frame, machine_t *machine);
+static value_t *run_set(frame_t *frame, machine_t *machine);
+static value_t *run_unset(frame_t *frame, machine_t *machine);
+static value_t *run_merge(frame_t *frame, machine_t *machine);
+static value_t *run_length(frame_t *frame, machine_t *machine);
+static value_t *run_keys(frame_t *frame, machine_t *machine);
+static value_t *run_sort(frame_t *frame, machine_t *machine);
 static map_t *create_core_elements();
 static value_t *create_element_function(string_t *name);
-static element_wrapper_t *create_element_wrapper(value_t *(*run)(invoke_frame_t *, machine_t *));
-static int next_argument(int types, value_t **out, invoke_frame_t *frame, machine_t *machine);
-static int has_next_argument(const invoke_frame_t *frame);
+static element_wrapper_t *create_element_wrapper(value_t *(*run)(frame_t *, machine_t *));
+static int next_argument(int types, value_t **out, frame_t *frame, machine_t *machine);
+static int has_next_argument(const frame_t *frame);
 static void copy_map_items(const map_t *source, map_t *destination);
 static int compare_values_ascending(const void *left, const void *right);
 static int compare_values_descending(const void *left, const void *right);
@@ -84,7 +84,7 @@ outcome_t *execute(string_t *code, machine_t *machine)
 {
     outcome_t *outcome;
     script_t *script;
-    invoke_frame_t root;
+    frame_t root;
     list_t *expressions;
     size_t index;
 
@@ -187,7 +187,7 @@ void destroy_outcome(outcome_t *outcome)
     free(outcome);
 }
 
-static value_t *apply_expression(expression_t *expression, invoke_frame_t *frame, machine_t *machine)
+static value_t *apply_expression(expression_t *expression, frame_t *frame, machine_t *machine)
 {
     switch (expression->type)
     {
@@ -244,7 +244,7 @@ static value_t *apply_expression(expression_t *expression, invoke_frame_t *frame
         case EXPRESSION_TYPE_INVOKE:
         {
             invoke_expression_data_t *data;
-            invoke_frame_t descendant;
+            frame_t descendant;
             value_t *value, *result;
 
             data = expression->data;
@@ -755,7 +755,7 @@ static value_t *apply_expression(expression_t *expression, invoke_frame_t *frame
     return new_null();
 }
 
-static value_t *run_add(invoke_frame_t *frame, machine_t *machine)
+static value_t *run_add(frame_t *frame, machine_t *machine)
 {
     value_t *left, *right;
     number_t sum;
@@ -778,7 +778,7 @@ static value_t *run_add(invoke_frame_t *frame, machine_t *machine)
     return new_number(sum);
 }
 
-static value_t *run_subtract(invoke_frame_t *frame, machine_t *machine)
+static value_t *run_subtract(frame_t *frame, machine_t *machine)
 {
     value_t *left, *right;
     number_t difference;
@@ -801,7 +801,7 @@ static value_t *run_subtract(invoke_frame_t *frame, machine_t *machine)
     return new_number(difference);
 }
 
-static value_t *run_multiply(invoke_frame_t *frame, machine_t *machine)
+static value_t *run_multiply(frame_t *frame, machine_t *machine)
 {
     value_t *left, *right;
     number_t product;
@@ -824,7 +824,7 @@ static value_t *run_multiply(invoke_frame_t *frame, machine_t *machine)
     return new_number(product);
 }
 
-static value_t *run_divide(invoke_frame_t *frame, machine_t *machine)
+static value_t *run_divide(frame_t *frame, machine_t *machine)
 {
     value_t *left, *right;
     number_t quotient;
@@ -847,7 +847,7 @@ static value_t *run_divide(invoke_frame_t *frame, machine_t *machine)
     return new_number(quotient);
 }
 
-static value_t *run_modulo(invoke_frame_t *frame, machine_t *machine)
+static value_t *run_modulo(frame_t *frame, machine_t *machine)
 {
     value_t *left, *right;
     number_t remainder;
@@ -870,7 +870,7 @@ static value_t *run_modulo(invoke_frame_t *frame, machine_t *machine)
     return new_number(remainder);
 }
 
-static value_t *run_truncate(invoke_frame_t *frame, machine_t *machine)
+static value_t *run_truncate(frame_t *frame, machine_t *machine)
 {
     value_t *value;
 
@@ -882,7 +882,7 @@ static value_t *run_truncate(invoke_frame_t *frame, machine_t *machine)
     return new_number(truncate_number(view_number(value)));
 }
 
-static value_t *run_and(invoke_frame_t *frame, machine_t *machine)
+static value_t *run_and(frame_t *frame, machine_t *machine)
 {
     value_t *left, *right;
 
@@ -899,7 +899,7 @@ static value_t *run_and(invoke_frame_t *frame, machine_t *machine)
     return new_boolean(view_boolean(left) && view_boolean(right) ? BOOLEAN_TRUE : BOOLEAN_FALSE);
 }
 
-static value_t *run_or(invoke_frame_t *frame, machine_t *machine)
+static value_t *run_or(frame_t *frame, machine_t *machine)
 {
     value_t *left, *right;
 
@@ -916,7 +916,7 @@ static value_t *run_or(invoke_frame_t *frame, machine_t *machine)
     return new_boolean(view_boolean(left) || view_boolean(right) ? BOOLEAN_TRUE : BOOLEAN_FALSE);
 }
 
-static value_t *run_not(invoke_frame_t *frame, machine_t *machine)
+static value_t *run_not(frame_t *frame, machine_t *machine)
 {
     value_t *value;
 
@@ -928,7 +928,7 @@ static value_t *run_not(invoke_frame_t *frame, machine_t *machine)
     return new_boolean(!view_boolean(value) ? BOOLEAN_TRUE : BOOLEAN_FALSE);
 }
 
-static value_t *run_precedes(invoke_frame_t *frame, machine_t *machine)
+static value_t *run_precedes(frame_t *frame, machine_t *machine)
 {
     value_t *left, *right;
 
@@ -945,7 +945,7 @@ static value_t *run_precedes(invoke_frame_t *frame, machine_t *machine)
     return new_boolean(compare_values(left, right) < 0 ? BOOLEAN_TRUE : BOOLEAN_FALSE);
 }
 
-static value_t *run_succeeds(invoke_frame_t *frame, machine_t *machine)
+static value_t *run_succeeds(frame_t *frame, machine_t *machine)
 {
     value_t *left, *right;
 
@@ -962,7 +962,7 @@ static value_t *run_succeeds(invoke_frame_t *frame, machine_t *machine)
     return new_boolean(compare_values(left, right) > 0 ? BOOLEAN_TRUE : BOOLEAN_FALSE);
 }
 
-static value_t *run_equals(invoke_frame_t *frame, machine_t *machine)
+static value_t *run_equals(frame_t *frame, machine_t *machine)
 {
     value_t *left, *right;
 
@@ -979,7 +979,7 @@ static value_t *run_equals(invoke_frame_t *frame, machine_t *machine)
     return new_boolean(compare_values(left, right) == 0 ? BOOLEAN_TRUE : BOOLEAN_FALSE);
 }
 
-static value_t *run_write(invoke_frame_t *frame, machine_t *machine)
+static value_t *run_write(frame_t *frame, machine_t *machine)
 {
     value_t *message, *file;
     FILE *handle;
@@ -1083,7 +1083,7 @@ static value_t *run_write(invoke_frame_t *frame, machine_t *machine)
     return new_null();
 }
 
-static value_t *run_read(invoke_frame_t *frame, machine_t *machine)
+static value_t *run_read(frame_t *frame, machine_t *machine)
 {
     value_t *file, *until;
     FILE *handle;
@@ -1219,7 +1219,7 @@ static value_t *run_read(invoke_frame_t *frame, machine_t *machine)
     return steal_string(create_string(bytes, fill));
 }
 
-static value_t *run_delete(invoke_frame_t *frame, machine_t *machine)
+static value_t *run_delete(frame_t *frame, machine_t *machine)
 {
     value_t *file;
 
@@ -1260,7 +1260,7 @@ static value_t *run_delete(invoke_frame_t *frame, machine_t *machine)
     }
 }
 
-static value_t *run_query(invoke_frame_t *frame, machine_t *machine)
+static value_t *run_query(frame_t *frame, machine_t *machine)
 {
     value_t *key;
     char *value, *cstring;
@@ -1284,7 +1284,7 @@ static value_t *run_query(invoke_frame_t *frame, machine_t *machine)
     }
 }
 
-static value_t *run_freeze(invoke_frame_t *frame, machine_t *machine)
+static value_t *run_freeze(frame_t *frame, machine_t *machine)
 {
     value_t *value;
 
@@ -1296,7 +1296,7 @@ static value_t *run_freeze(invoke_frame_t *frame, machine_t *machine)
     return steal_string(represent_value(value));
 }
 
-static value_t *run_thaw(invoke_frame_t *frame, machine_t *machine)
+static value_t *run_thaw(frame_t *frame, machine_t *machine)
 {
     value_t *code, *value;
     script_t *script;
@@ -1334,7 +1334,7 @@ static value_t *run_thaw(invoke_frame_t *frame, machine_t *machine)
     return value;
 }
 
-static value_t *run_type(invoke_frame_t *frame, machine_t *machine)
+static value_t *run_type(frame_t *frame, machine_t *machine)
 {
     value_t *value;
 
@@ -1372,7 +1372,7 @@ static value_t *run_type(invoke_frame_t *frame, machine_t *machine)
     }
 }
 
-static value_t *run_cast(invoke_frame_t *frame, machine_t *machine)
+static value_t *run_cast(frame_t *frame, machine_t *machine)
 {
     value_t *value, *type;
     string_t *pattern;
@@ -1543,7 +1543,7 @@ static value_t *run_cast(invoke_frame_t *frame, machine_t *machine)
     }
 }
 
-static value_t *run_get(invoke_frame_t *frame, machine_t *machine)
+static value_t *run_get(frame_t *frame, machine_t *machine)
 {
     value_t *collection, *key;
 
@@ -1655,7 +1655,7 @@ static value_t *run_get(invoke_frame_t *frame, machine_t *machine)
     }
 }
 
-static value_t *run_set(invoke_frame_t *frame, machine_t *machine)
+static value_t *run_set(frame_t *frame, machine_t *machine)
 {
     value_t *collection, *key, *item;
 
@@ -1805,7 +1805,7 @@ static value_t *run_set(invoke_frame_t *frame, machine_t *machine)
     }
 }
 
-static value_t *run_unset(invoke_frame_t *frame, machine_t *machine)
+static value_t *run_unset(frame_t *frame, machine_t *machine)
 {
     value_t *collection, *key;
 
@@ -1920,7 +1920,7 @@ static value_t *run_unset(invoke_frame_t *frame, machine_t *machine)
     }
 }
 
-static value_t *run_merge(invoke_frame_t *frame, machine_t *machine)
+static value_t *run_merge(frame_t *frame, machine_t *machine)
 {
     value_t *left, *right;
 
@@ -2006,7 +2006,7 @@ static value_t *run_merge(invoke_frame_t *frame, machine_t *machine)
     }
 }
 
-static value_t *run_length(invoke_frame_t *frame, machine_t *machine)
+static value_t *run_length(frame_t *frame, machine_t *machine)
 {
     value_t *collection;
     size_t length;
@@ -2044,7 +2044,7 @@ static value_t *run_length(invoke_frame_t *frame, machine_t *machine)
     return new_number(number);
 }
 
-static value_t *run_keys(invoke_frame_t *frame, machine_t *machine)
+static value_t *run_keys(frame_t *frame, machine_t *machine)
 {
     value_t *collection;
 
@@ -2148,7 +2148,7 @@ static value_t *run_keys(invoke_frame_t *frame, machine_t *machine)
     }
 }
 
-static value_t *run_sort(invoke_frame_t *frame, machine_t *machine)
+static value_t *run_sort(frame_t *frame, machine_t *machine)
 {
     value_t *collection, *direction;
     list_t *source, *destination;
@@ -2255,7 +2255,7 @@ static value_t *create_element_function(string_t *name)
     return steal_function(create_function(expressions, source));
 }
 
-static element_wrapper_t *create_element_wrapper(value_t *(*run)(invoke_frame_t *, machine_t *))
+static element_wrapper_t *create_element_wrapper(value_t *(*run)(frame_t *, machine_t *))
 {
     element_wrapper_t *wrapper;
 
@@ -2265,7 +2265,7 @@ static element_wrapper_t *create_element_wrapper(value_t *(*run)(invoke_frame_t 
     return wrapper;
 }
 
-static int next_argument(int types, value_t **out, invoke_frame_t *frame, machine_t *machine)
+static int next_argument(int types, value_t **out, frame_t *frame, machine_t *machine)
 {
     value_t *result;
 
@@ -2296,7 +2296,7 @@ static int next_argument(int types, value_t **out, invoke_frame_t *frame, machin
     return 1;
 }
 
-static int has_next_argument(const invoke_frame_t *frame)
+static int has_next_argument(const frame_t *frame)
 {
     return frame->arguments.index < frame->arguments.expressions->length;
 }
