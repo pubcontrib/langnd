@@ -30,46 +30,45 @@ typedef struct invoke_frame_t
     argument_iterator_t arguments;
     value_effect_t effect;
     struct invoke_frame_t *parent;
-    map_t *elements;
 } invoke_frame_t;
 
 typedef struct
 {
-    value_t *(*run)(invoke_frame_t *);
+    value_t *(*run)(invoke_frame_t *, machine_t *);
 } element_wrapper_t;
 
-static value_t *apply_expression(expression_t *expression, invoke_frame_t *frame);
-static value_t *run_add(invoke_frame_t *frame);
-static value_t *run_subtract(invoke_frame_t *frame);
-static value_t *run_multiply(invoke_frame_t *frame);
-static value_t *run_divide(invoke_frame_t *frame);
-static value_t *run_modulo(invoke_frame_t *frame);
-static value_t *run_truncate(invoke_frame_t *frame);
-static value_t *run_and(invoke_frame_t *frame);
-static value_t *run_or(invoke_frame_t *frame);
-static value_t *run_not(invoke_frame_t *frame);
-static value_t *run_precedes(invoke_frame_t *frame);
-static value_t *run_succeeds(invoke_frame_t *frame);
-static value_t *run_equals(invoke_frame_t *frame);
-static value_t *run_write(invoke_frame_t *frame);
-static value_t *run_read(invoke_frame_t *frame);
-static value_t *run_delete(invoke_frame_t *frame);
-static value_t *run_query(invoke_frame_t *frame);
-static value_t *run_freeze(invoke_frame_t *frame);
-static value_t *run_thaw(invoke_frame_t *frame);
-static value_t *run_type(invoke_frame_t *frame);
-static value_t *run_cast(invoke_frame_t *frame);
-static value_t *run_get(invoke_frame_t *frame);
-static value_t *run_set(invoke_frame_t *frame);
-static value_t *run_unset(invoke_frame_t *frame);
-static value_t *run_merge(invoke_frame_t *frame);
-static value_t *run_length(invoke_frame_t *frame);
-static value_t *run_keys(invoke_frame_t *frame);
-static value_t *run_sort(invoke_frame_t *frame);
+static value_t *apply_expression(expression_t *expression, invoke_frame_t *frame, machine_t *machine);
+static value_t *run_add(invoke_frame_t *frame, machine_t *machine);
+static value_t *run_subtract(invoke_frame_t *frame, machine_t *machine);
+static value_t *run_multiply(invoke_frame_t *frame, machine_t *machine);
+static value_t *run_divide(invoke_frame_t *frame, machine_t *machine);
+static value_t *run_modulo(invoke_frame_t *frame, machine_t *machine);
+static value_t *run_truncate(invoke_frame_t *frame, machine_t *machine);
+static value_t *run_and(invoke_frame_t *frame, machine_t *machine);
+static value_t *run_or(invoke_frame_t *frame, machine_t *machine);
+static value_t *run_not(invoke_frame_t *frame, machine_t *machine);
+static value_t *run_precedes(invoke_frame_t *frame, machine_t *machine);
+static value_t *run_succeeds(invoke_frame_t *frame, machine_t *machine);
+static value_t *run_equals(invoke_frame_t *frame, machine_t *machine);
+static value_t *run_write(invoke_frame_t *frame, machine_t *machine);
+static value_t *run_read(invoke_frame_t *frame, machine_t *machine);
+static value_t *run_delete(invoke_frame_t *frame, machine_t *machine);
+static value_t *run_query(invoke_frame_t *frame, machine_t *machine);
+static value_t *run_freeze(invoke_frame_t *frame, machine_t *machine);
+static value_t *run_thaw(invoke_frame_t *frame, machine_t *machine);
+static value_t *run_type(invoke_frame_t *frame, machine_t *machine);
+static value_t *run_cast(invoke_frame_t *frame, machine_t *machine);
+static value_t *run_get(invoke_frame_t *frame, machine_t *machine);
+static value_t *run_set(invoke_frame_t *frame, machine_t *machine);
+static value_t *run_unset(invoke_frame_t *frame, machine_t *machine);
+static value_t *run_merge(invoke_frame_t *frame, machine_t *machine);
+static value_t *run_length(invoke_frame_t *frame, machine_t *machine);
+static value_t *run_keys(invoke_frame_t *frame, machine_t *machine);
+static value_t *run_sort(invoke_frame_t *frame, machine_t *machine);
 static map_t *create_core_elements();
 static value_t *create_element_function(string_t *name);
-static element_wrapper_t *create_element_wrapper(value_t *(*run)(invoke_frame_t *));
-static int next_argument(int types, value_t **out, invoke_frame_t *frame);
+static element_wrapper_t *create_element_wrapper(value_t *(*run)(invoke_frame_t *, machine_t *));
+static int next_argument(int types, value_t **out, invoke_frame_t *frame, machine_t *machine);
 static int has_next_argument(const invoke_frame_t *frame);
 static void copy_map_items(const map_t *source, map_t *destination);
 static int compare_values_ascending(const void *left, const void *right);
@@ -80,7 +79,17 @@ static void destroy_element_wrapper_unsafe(void *wrapper);
 static void dereference_value_unsafe(void *value);
 static int has_halting_effect(invoke_frame_t *frame);
 
-outcome_t *execute(string_t *code)
+machine_t *empty_machine()
+{
+    machine_t *machine;
+
+    machine = allocate(1, sizeof(machine_t));
+    machine->elements = create_core_elements();
+
+    return machine;
+}
+
+outcome_t *execute(string_t *code, machine_t *machine)
 {
     outcome_t *outcome;
     script_t *script;
@@ -105,14 +114,13 @@ outcome_t *execute(string_t *code)
 
     root.variables = empty_map(hash_string, dereference_value_unsafe, 8);
     root.effect = VALUE_EFFECT_PROGRESS;
-    root.elements = create_core_elements();
     expressions = script->expressions;
 
     for (index = 0; index < expressions->length; index++)
     {
         value_t *result;
 
-        result = apply_expression(expressions->items[index], &root);
+        result = apply_expression(expressions->items[index], &root, machine);
 
         if (has_halting_effect(&root))
         {
@@ -159,10 +167,19 @@ outcome_t *execute(string_t *code)
     }
 
     destroy_map(root.variables);
-    destroy_map(root.elements);
     destroy_script(script);
 
     return outcome;
+}
+
+void destroy_machine(machine_t *machine)
+{
+    if (machine->elements)
+    {
+        destroy_map(machine->elements);
+    }
+
+    free(machine);
 }
 
 void destroy_outcome(outcome_t *outcome)
@@ -180,7 +197,7 @@ void destroy_outcome(outcome_t *outcome)
     free(outcome);
 }
 
-static value_t *apply_expression(expression_t *expression, invoke_frame_t *frame)
+static value_t *apply_expression(expression_t *expression, invoke_frame_t *frame, machine_t *machine)
 {
     switch (expression->type)
     {
@@ -221,7 +238,7 @@ static value_t *apply_expression(expression_t *expression, invoke_frame_t *frame
             value_t *value;
 
             data = expression->data;
-            value = apply_expression(data->value, frame);
+            value = apply_expression(data->value, frame, machine);
 
             if (has_halting_effect(frame))
             {
@@ -243,7 +260,6 @@ static value_t *apply_expression(expression_t *expression, invoke_frame_t *frame
             data = expression->data;
             descendant.variables = empty_map(hash_string, dereference_value_unsafe, 8);
             descendant.arguments.expressions = data->arguments;
-            descendant.elements = frame->elements;
 
             if (data->arguments->length > 0)
             {
@@ -280,7 +296,7 @@ static value_t *apply_expression(expression_t *expression, invoke_frame_t *frame
                             dereference_value(last);
                         }
 
-                        last = apply_expression(expressions->items[index], &descendant);
+                        last = apply_expression(expressions->items[index], &descendant, machine);
 
                         if (descendant.effect == VALUE_EFFECT_RETURN)
                         {
@@ -346,7 +362,7 @@ static value_t *apply_expression(expression_t *expression, invoke_frame_t *frame
                 value_t *test;
 
                 branch = branches->items[index];
-                test = apply_expression(branch->condition, frame);
+                test = apply_expression(branch->condition, frame, machine);
 
                 if (has_halting_effect(frame))
                 {
@@ -362,7 +378,7 @@ static value_t *apply_expression(expression_t *expression, invoke_frame_t *frame
 
                     if (pass == BOOLEAN_TRUE)
                     {
-                        last = apply_expression(branch->action, frame);
+                        last = apply_expression(branch->action, frame, machine);
 
                         break;
                     }
@@ -395,7 +411,7 @@ static value_t *apply_expression(expression_t *expression, invoke_frame_t *frame
             {
                 value_t *test;
 
-                test = apply_expression(data->condition, frame);
+                test = apply_expression(data->condition, frame, machine);
 
                 if (has_halting_effect(frame))
                 {
@@ -417,7 +433,7 @@ static value_t *apply_expression(expression_t *expression, invoke_frame_t *frame
                         dereference_value(last);
                     }
 
-                    last = apply_expression(data->action, frame);
+                    last = apply_expression(data->action, frame, machine);
 
                     if (frame->effect == VALUE_EFFECT_BREAK)
                     {
@@ -456,7 +472,7 @@ static value_t *apply_expression(expression_t *expression, invoke_frame_t *frame
             value_t *last;
 
             data = expression->data;
-            last = apply_expression(data->action, frame);
+            last = apply_expression(data->action, frame, machine);
 
             if (frame->effect == VALUE_EFFECT_RETURN || frame->effect == VALUE_EFFECT_BREAK || frame->effect == VALUE_EFFECT_CONTINUE)
             {
@@ -480,7 +496,7 @@ static value_t *apply_expression(expression_t *expression, invoke_frame_t *frame
         {
             value_t *argument;
 
-            if (next_argument(VALUE_TYPES_ANY, &argument, frame))
+            if (next_argument(VALUE_TYPES_ANY, &argument, frame, machine))
             {
                 argument->owners += 1;
             }
@@ -494,7 +510,7 @@ static value_t *apply_expression(expression_t *expression, invoke_frame_t *frame
             value_t *test;
 
             data = expression->data;
-            test = apply_expression(data->pick, frame);
+            test = apply_expression(data->pick, frame, machine);
 
             if (has_halting_effect(frame))
             {
@@ -512,7 +528,7 @@ static value_t *apply_expression(expression_t *expression, invoke_frame_t *frame
             value_t *test;
 
             data = expression->data;
-            test = apply_expression(data->pick, frame);
+            test = apply_expression(data->pick, frame, machine);
 
             if (has_halting_effect(frame))
             {
@@ -530,7 +546,7 @@ static value_t *apply_expression(expression_t *expression, invoke_frame_t *frame
             value_t *test;
 
             data = expression->data;
-            test = apply_expression(data->pick, frame);
+            test = apply_expression(data->pick, frame, machine);
 
             if (has_halting_effect(frame))
             {
@@ -548,7 +564,7 @@ static value_t *apply_expression(expression_t *expression, invoke_frame_t *frame
             value_t *test;
 
             data = expression->data;
-            test = apply_expression(data->error, frame);
+            test = apply_expression(data->error, frame, machine);
 
             if (has_halting_effect(frame))
             {
@@ -566,7 +582,7 @@ static value_t *apply_expression(expression_t *expression, invoke_frame_t *frame
             value_t *test;
 
             data = expression->data;
-            test = apply_expression(data->pick, frame);
+            test = apply_expression(data->pick, frame, machine);
 
             if (has_halting_effect(frame))
             {
@@ -581,7 +597,7 @@ static value_t *apply_expression(expression_t *expression, invoke_frame_t *frame
                 name = view_string(test);
                 dereference_value(test);
 
-                if (!has_map_item(frame->elements, name))
+                if (!has_map_item(machine->elements, name))
                 {
                     return throw_error("absent import", frame);
                 }
@@ -617,7 +633,7 @@ static value_t *apply_expression(expression_t *expression, invoke_frame_t *frame
 
                     name = view_string(item);
 
-                    if (!has_map_item(frame->elements, name))
+                    if (!has_map_item(machine->elements, name))
                     {
                         destroy_list(functions);
 
@@ -655,7 +671,7 @@ static value_t *apply_expression(expression_t *expression, invoke_frame_t *frame
 
                             name = chain->key;
 
-                            if (!has_map_item(frame->elements, name))
+                            if (!has_map_item(machine->elements, name))
                             {
                                 destroy_map(functions);
 
@@ -709,7 +725,7 @@ static value_t *apply_expression(expression_t *expression, invoke_frame_t *frame
                     dereference_value(last);
                 }
 
-                last = apply_expression(expressions->items[index], frame);
+                last = apply_expression(expressions->items[index], frame, machine);
 
                 if (has_halting_effect(frame))
                 {
@@ -733,11 +749,11 @@ static value_t *apply_expression(expression_t *expression, invoke_frame_t *frame
 
             data = expression->data;
             name = data->name;
-            wrapper = get_map_item(frame->elements, name);
+            wrapper = get_map_item(machine->elements, name);
 
             if (wrapper)
             {
-                return wrapper->run(frame);
+                return wrapper->run(frame, machine);
             }
             else
             {
@@ -752,17 +768,17 @@ static value_t *apply_expression(expression_t *expression, invoke_frame_t *frame
     return new_null();
 }
 
-static value_t *run_add(invoke_frame_t *frame)
+static value_t *run_add(invoke_frame_t *frame, machine_t *machine)
 {
     value_t *left, *right;
     number_t sum;
 
-    if (!next_argument(VALUE_TYPE_NUMBER, &left, frame))
+    if (!next_argument(VALUE_TYPE_NUMBER, &left, frame, machine))
     {
         return left;
     }
 
-    if (!next_argument(VALUE_TYPE_NUMBER, &right, frame))
+    if (!next_argument(VALUE_TYPE_NUMBER, &right, frame, machine))
     {
         return right;
     }
@@ -775,17 +791,17 @@ static value_t *run_add(invoke_frame_t *frame)
     return new_number(sum);
 }
 
-static value_t *run_subtract(invoke_frame_t *frame)
+static value_t *run_subtract(invoke_frame_t *frame, machine_t *machine)
 {
     value_t *left, *right;
     number_t difference;
 
-    if (!next_argument(VALUE_TYPE_NUMBER, &left, frame))
+    if (!next_argument(VALUE_TYPE_NUMBER, &left, frame, machine))
     {
         return left;
     }
 
-    if (!next_argument(VALUE_TYPE_NUMBER, &right, frame))
+    if (!next_argument(VALUE_TYPE_NUMBER, &right, frame, machine))
     {
         return right;
     }
@@ -798,17 +814,17 @@ static value_t *run_subtract(invoke_frame_t *frame)
     return new_number(difference);
 }
 
-static value_t *run_multiply(invoke_frame_t *frame)
+static value_t *run_multiply(invoke_frame_t *frame, machine_t *machine)
 {
     value_t *left, *right;
     number_t product;
 
-    if (!next_argument(VALUE_TYPE_NUMBER, &left, frame))
+    if (!next_argument(VALUE_TYPE_NUMBER, &left, frame, machine))
     {
         return left;
     }
 
-    if (!next_argument(VALUE_TYPE_NUMBER, &right, frame))
+    if (!next_argument(VALUE_TYPE_NUMBER, &right, frame, machine))
     {
         return right;
     }
@@ -821,17 +837,17 @@ static value_t *run_multiply(invoke_frame_t *frame)
     return new_number(product);
 }
 
-static value_t *run_divide(invoke_frame_t *frame)
+static value_t *run_divide(invoke_frame_t *frame, machine_t *machine)
 {
     value_t *left, *right;
     number_t quotient;
 
-    if (!next_argument(VALUE_TYPE_NUMBER, &left, frame))
+    if (!next_argument(VALUE_TYPE_NUMBER, &left, frame, machine))
     {
         return left;
     }
 
-    if (!next_argument(VALUE_TYPE_NUMBER, &right, frame))
+    if (!next_argument(VALUE_TYPE_NUMBER, &right, frame, machine))
     {
         return right;
     }
@@ -844,17 +860,17 @@ static value_t *run_divide(invoke_frame_t *frame)
     return new_number(quotient);
 }
 
-static value_t *run_modulo(invoke_frame_t *frame)
+static value_t *run_modulo(invoke_frame_t *frame, machine_t *machine)
 {
     value_t *left, *right;
     number_t remainder;
 
-    if (!next_argument(VALUE_TYPE_NUMBER, &left, frame))
+    if (!next_argument(VALUE_TYPE_NUMBER, &left, frame, machine))
     {
         return left;
     }
 
-    if (!next_argument(VALUE_TYPE_NUMBER, &right, frame))
+    if (!next_argument(VALUE_TYPE_NUMBER, &right, frame, machine))
     {
         return right;
     }
@@ -867,11 +883,11 @@ static value_t *run_modulo(invoke_frame_t *frame)
     return new_number(remainder);
 }
 
-static value_t *run_truncate(invoke_frame_t *frame)
+static value_t *run_truncate(invoke_frame_t *frame, machine_t *machine)
 {
     value_t *value;
 
-    if (!next_argument(VALUE_TYPE_NUMBER, &value, frame))
+    if (!next_argument(VALUE_TYPE_NUMBER, &value, frame, machine))
     {
         return value;
     }
@@ -879,16 +895,16 @@ static value_t *run_truncate(invoke_frame_t *frame)
     return new_number(truncate_number(view_number(value)));
 }
 
-static value_t *run_and(invoke_frame_t *frame)
+static value_t *run_and(invoke_frame_t *frame, machine_t *machine)
 {
     value_t *left, *right;
 
-    if (!next_argument(VALUE_TYPE_BOOLEAN, &left, frame))
+    if (!next_argument(VALUE_TYPE_BOOLEAN, &left, frame, machine))
     {
         return left;
     }
 
-    if (!next_argument(VALUE_TYPE_BOOLEAN, &right, frame))
+    if (!next_argument(VALUE_TYPE_BOOLEAN, &right, frame, machine))
     {
         return right;
     }
@@ -896,16 +912,16 @@ static value_t *run_and(invoke_frame_t *frame)
     return new_boolean(view_boolean(left) && view_boolean(right) ? BOOLEAN_TRUE : BOOLEAN_FALSE);
 }
 
-static value_t *run_or(invoke_frame_t *frame)
+static value_t *run_or(invoke_frame_t *frame, machine_t *machine)
 {
     value_t *left, *right;
 
-    if (!next_argument(VALUE_TYPE_BOOLEAN, &left, frame))
+    if (!next_argument(VALUE_TYPE_BOOLEAN, &left, frame, machine))
     {
         return left;
     }
 
-    if (!next_argument(VALUE_TYPE_BOOLEAN, &right, frame))
+    if (!next_argument(VALUE_TYPE_BOOLEAN, &right, frame, machine))
     {
         return right;
     }
@@ -913,11 +929,11 @@ static value_t *run_or(invoke_frame_t *frame)
     return new_boolean(view_boolean(left) || view_boolean(right) ? BOOLEAN_TRUE : BOOLEAN_FALSE);
 }
 
-static value_t *run_not(invoke_frame_t *frame)
+static value_t *run_not(invoke_frame_t *frame, machine_t *machine)
 {
     value_t *value;
 
-    if (!next_argument(VALUE_TYPE_BOOLEAN, &value, frame))
+    if (!next_argument(VALUE_TYPE_BOOLEAN, &value, frame, machine))
     {
         return value;
     }
@@ -925,16 +941,16 @@ static value_t *run_not(invoke_frame_t *frame)
     return new_boolean(!view_boolean(value) ? BOOLEAN_TRUE : BOOLEAN_FALSE);
 }
 
-static value_t *run_precedes(invoke_frame_t *frame)
+static value_t *run_precedes(invoke_frame_t *frame, machine_t *machine)
 {
     value_t *left, *right;
 
-    if (!next_argument(VALUE_TYPES_ANY, &left, frame))
+    if (!next_argument(VALUE_TYPES_ANY, &left, frame, machine))
     {
         return left;
     }
 
-    if (!next_argument(VALUE_TYPES_ANY, &right, frame))
+    if (!next_argument(VALUE_TYPES_ANY, &right, frame, machine))
     {
         return right;
     }
@@ -942,16 +958,16 @@ static value_t *run_precedes(invoke_frame_t *frame)
     return new_boolean(compare_values(left, right) < 0 ? BOOLEAN_TRUE : BOOLEAN_FALSE);
 }
 
-static value_t *run_succeeds(invoke_frame_t *frame)
+static value_t *run_succeeds(invoke_frame_t *frame, machine_t *machine)
 {
     value_t *left, *right;
 
-    if (!next_argument(VALUE_TYPES_ANY, &left, frame))
+    if (!next_argument(VALUE_TYPES_ANY, &left, frame, machine))
     {
         return left;
     }
 
-    if (!next_argument(VALUE_TYPES_ANY, &right, frame))
+    if (!next_argument(VALUE_TYPES_ANY, &right, frame, machine))
     {
         return right;
     }
@@ -959,16 +975,16 @@ static value_t *run_succeeds(invoke_frame_t *frame)
     return new_boolean(compare_values(left, right) > 0 ? BOOLEAN_TRUE : BOOLEAN_FALSE);
 }
 
-static value_t *run_equals(invoke_frame_t *frame)
+static value_t *run_equals(invoke_frame_t *frame, machine_t *machine)
 {
     value_t *left, *right;
 
-    if (!next_argument(VALUE_TYPES_ANY, &left, frame))
+    if (!next_argument(VALUE_TYPES_ANY, &left, frame, machine))
     {
         return left;
     }
 
-    if (!next_argument(VALUE_TYPES_ANY, &right, frame))
+    if (!next_argument(VALUE_TYPES_ANY, &right, frame, machine))
     {
         return right;
     }
@@ -976,19 +992,19 @@ static value_t *run_equals(invoke_frame_t *frame)
     return new_boolean(compare_values(left, right) == 0 ? BOOLEAN_TRUE : BOOLEAN_FALSE);
 }
 
-static value_t *run_write(invoke_frame_t *frame)
+static value_t *run_write(invoke_frame_t *frame, machine_t *machine)
 {
     value_t *message, *file;
     FILE *handle;
     int closable, flushable;
     string_t *string;
 
-    if (!next_argument(VALUE_TYPE_STRING, &message, frame))
+    if (!next_argument(VALUE_TYPE_STRING, &message, frame, machine))
     {
         return message;
     }
 
-    if (!next_argument(VALUE_TYPE_NUMBER | VALUE_TYPE_STRING, &file, frame))
+    if (!next_argument(VALUE_TYPE_NUMBER | VALUE_TYPE_STRING, &file, frame, machine))
     {
         return file;
     }
@@ -1080,7 +1096,7 @@ static value_t *run_write(invoke_frame_t *frame)
     return new_null();
 }
 
-static value_t *run_read(invoke_frame_t *frame)
+static value_t *run_read(invoke_frame_t *frame, machine_t *machine)
 {
     value_t *file, *until;
     FILE *handle;
@@ -1089,12 +1105,12 @@ static value_t *run_read(invoke_frame_t *frame)
     char *bytes;
     size_t fill, length;
 
-    if (!next_argument(VALUE_TYPE_NUMBER | VALUE_TYPE_STRING, &file, frame))
+    if (!next_argument(VALUE_TYPE_NUMBER | VALUE_TYPE_STRING, &file, frame, machine))
     {
         return file;
     }
 
-    if (!next_argument(VALUE_TYPE_NULL | VALUE_TYPE_STRING, &until, frame))
+    if (!next_argument(VALUE_TYPE_NULL | VALUE_TYPE_STRING, &until, frame, machine))
     {
         return until;
     }
@@ -1216,11 +1232,11 @@ static value_t *run_read(invoke_frame_t *frame)
     return steal_string(create_string(bytes, fill));
 }
 
-static value_t *run_delete(invoke_frame_t *frame)
+static value_t *run_delete(invoke_frame_t *frame, machine_t *machine)
 {
     value_t *file;
 
-    if (!next_argument(VALUE_TYPE_NUMBER | VALUE_TYPE_STRING, &file, frame))
+    if (!next_argument(VALUE_TYPE_NUMBER | VALUE_TYPE_STRING, &file, frame, machine))
     {
         return file;
     }
@@ -1257,12 +1273,12 @@ static value_t *run_delete(invoke_frame_t *frame)
     }
 }
 
-static value_t *run_query(invoke_frame_t *frame)
+static value_t *run_query(invoke_frame_t *frame, machine_t *machine)
 {
     value_t *key;
     char *value, *cstring;
 
-    if (!next_argument(VALUE_TYPE_STRING, &key, frame))
+    if (!next_argument(VALUE_TYPE_STRING, &key, frame, machine))
     {
         return key;
     }
@@ -1281,11 +1297,11 @@ static value_t *run_query(invoke_frame_t *frame)
     }
 }
 
-static value_t *run_freeze(invoke_frame_t *frame)
+static value_t *run_freeze(invoke_frame_t *frame, machine_t *machine)
 {
     value_t *value;
 
-    if (!next_argument(VALUE_TYPES_ANY, &value, frame))
+    if (!next_argument(VALUE_TYPES_ANY, &value, frame, machine))
     {
         return value;
     }
@@ -1293,14 +1309,14 @@ static value_t *run_freeze(invoke_frame_t *frame)
     return steal_string(represent_value(value));
 }
 
-static value_t *run_thaw(invoke_frame_t *frame)
+static value_t *run_thaw(invoke_frame_t *frame, machine_t *machine)
 {
     value_t *code, *value;
     script_t *script;
     expression_t *expression;
     literal_expression_data_t *data;
 
-    if (!next_argument(VALUE_TYPE_STRING, &code, frame))
+    if (!next_argument(VALUE_TYPE_STRING, &code, frame, machine))
     {
         return code;
     }
@@ -1331,11 +1347,11 @@ static value_t *run_thaw(invoke_frame_t *frame)
     return value;
 }
 
-static value_t *run_type(invoke_frame_t *frame)
+static value_t *run_type(invoke_frame_t *frame, machine_t *machine)
 {
     value_t *value;
 
-    if (!next_argument(VALUE_TYPES_ANY, &value, frame))
+    if (!next_argument(VALUE_TYPES_ANY, &value, frame, machine))
     {
         return value;
     }
@@ -1369,17 +1385,17 @@ static value_t *run_type(invoke_frame_t *frame)
     }
 }
 
-static value_t *run_cast(invoke_frame_t *frame)
+static value_t *run_cast(invoke_frame_t *frame, machine_t *machine)
 {
     value_t *value, *type;
     string_t *pattern;
 
-    if (!next_argument(VALUE_TYPES_ANY, &value, frame))
+    if (!next_argument(VALUE_TYPES_ANY, &value, frame, machine))
     {
         return value;
     }
 
-    if (!next_argument(VALUE_TYPE_STRING, &type, frame))
+    if (!next_argument(VALUE_TYPE_STRING, &type, frame, machine))
     {
         return type;
     }
@@ -1540,11 +1556,11 @@ static value_t *run_cast(invoke_frame_t *frame)
     }
 }
 
-static value_t *run_get(invoke_frame_t *frame)
+static value_t *run_get(invoke_frame_t *frame, machine_t *machine)
 {
     value_t *collection, *key;
 
-    if (!next_argument(VALUE_TYPES_COLLECTION, &collection, frame))
+    if (!next_argument(VALUE_TYPES_COLLECTION, &collection, frame, machine))
     {
         return collection;
     }
@@ -1557,7 +1573,7 @@ static value_t *run_get(invoke_frame_t *frame)
             string_t *string;
             int number;
 
-            if (!next_argument(VALUE_TYPE_NUMBER, &key, frame))
+            if (!next_argument(VALUE_TYPE_NUMBER, &key, frame, machine))
             {
                 return key;
             }
@@ -1586,7 +1602,7 @@ static value_t *run_get(invoke_frame_t *frame)
             size_t index, cursor;
             int number;
 
-            if (!next_argument(VALUE_TYPE_NUMBER, &key, frame))
+            if (!next_argument(VALUE_TYPE_NUMBER, &key, frame, machine))
             {
                 return key;
             }
@@ -1627,7 +1643,7 @@ static value_t *run_get(invoke_frame_t *frame)
             value_t *value;
             map_t *map;
 
-            if (!next_argument(VALUE_TYPE_STRING, &key, frame))
+            if (!next_argument(VALUE_TYPE_STRING, &key, frame, machine))
             {
                 return key;
             }
@@ -1652,11 +1668,11 @@ static value_t *run_get(invoke_frame_t *frame)
     }
 }
 
-static value_t *run_set(invoke_frame_t *frame)
+static value_t *run_set(invoke_frame_t *frame, machine_t *machine)
 {
     value_t *collection, *key, *item;
 
-    if (!next_argument(VALUE_TYPES_COLLECTION, &collection, frame))
+    if (!next_argument(VALUE_TYPES_COLLECTION, &collection, frame, machine))
     {
         return collection;
     }
@@ -1670,12 +1686,12 @@ static value_t *run_set(invoke_frame_t *frame)
             int index;
             size_t beforeLength, afterLength, destinationLength;
 
-            if (!next_argument(VALUE_TYPE_NUMBER, &key, frame))
+            if (!next_argument(VALUE_TYPE_NUMBER, &key, frame, machine))
             {
                 return key;
             }
 
-            if (!next_argument(VALUE_TYPE_STRING, &item, frame))
+            if (!next_argument(VALUE_TYPE_STRING, &item, frame, machine))
             {
                 return item;
             }
@@ -1724,12 +1740,12 @@ static value_t *run_set(invoke_frame_t *frame)
             size_t index, cursor;
             int number;
 
-            if (!next_argument(VALUE_TYPE_NUMBER, &key, frame))
+            if (!next_argument(VALUE_TYPE_NUMBER, &key, frame, machine))
             {
                 return key;
             }
 
-            if (!next_argument(VALUE_TYPES_ANY, &item, frame))
+            if (!next_argument(VALUE_TYPES_ANY, &item, frame, machine))
             {
                 return item;
             }
@@ -1775,12 +1791,12 @@ static value_t *run_set(invoke_frame_t *frame)
         {
             map_t *source, *destination;
 
-            if (!next_argument(VALUE_TYPE_STRING, &key, frame))
+            if (!next_argument(VALUE_TYPE_STRING, &key, frame, machine))
             {
                 return key;
             }
 
-            if (!next_argument(VALUE_TYPES_ANY, &item, frame))
+            if (!next_argument(VALUE_TYPES_ANY, &item, frame, machine))
             {
                 return item;
             }
@@ -1802,11 +1818,11 @@ static value_t *run_set(invoke_frame_t *frame)
     }
 }
 
-static value_t *run_unset(invoke_frame_t *frame)
+static value_t *run_unset(invoke_frame_t *frame, machine_t *machine)
 {
     value_t *collection, *key;
 
-    if (!next_argument(VALUE_TYPES_COLLECTION, &collection, frame))
+    if (!next_argument(VALUE_TYPES_COLLECTION, &collection, frame, machine))
     {
         return collection;
     }
@@ -1818,7 +1834,7 @@ static value_t *run_unset(invoke_frame_t *frame)
             string_t *source;
             int number;
 
-            if (!next_argument(VALUE_TYPE_NUMBER, &key, frame))
+            if (!next_argument(VALUE_TYPE_NUMBER, &key, frame, machine))
             {
                 return key;
             }
@@ -1857,7 +1873,7 @@ static value_t *run_unset(invoke_frame_t *frame)
             int number;
             size_t index, cursor;
 
-            if (!next_argument(VALUE_TYPE_NUMBER, &key, frame))
+            if (!next_argument(VALUE_TYPE_NUMBER, &key, frame, machine))
             {
                 return key;
             }
@@ -1897,7 +1913,7 @@ static value_t *run_unset(invoke_frame_t *frame)
         {
             map_t *source, *destination;
 
-            if (!next_argument(VALUE_TYPE_STRING, &key, frame))
+            if (!next_argument(VALUE_TYPE_STRING, &key, frame, machine))
             {
                 return key;
             }
@@ -1917,11 +1933,11 @@ static value_t *run_unset(invoke_frame_t *frame)
     }
 }
 
-static value_t *run_merge(invoke_frame_t *frame)
+static value_t *run_merge(invoke_frame_t *frame, machine_t *machine)
 {
     value_t *left, *right;
 
-    if (!next_argument(VALUE_TYPES_COLLECTION, &left, frame))
+    if (!next_argument(VALUE_TYPES_COLLECTION, &left, frame, machine))
     {
         return left;
     }
@@ -1930,7 +1946,7 @@ static value_t *run_merge(invoke_frame_t *frame)
     {
         case VALUE_TYPE_STRING:
         {
-            if (!next_argument(VALUE_TYPE_STRING, &right, frame))
+            if (!next_argument(VALUE_TYPE_STRING, &right, frame, machine))
             {
                 return right;
             }
@@ -1943,7 +1959,7 @@ static value_t *run_merge(invoke_frame_t *frame)
             list_t *source, *destination;
             size_t index;
 
-            if (!next_argument(VALUE_TYPE_LIST, &right, frame))
+            if (!next_argument(VALUE_TYPE_LIST, &right, frame, machine))
             {
                 return right;
             }
@@ -1980,7 +1996,7 @@ static value_t *run_merge(invoke_frame_t *frame)
         {
             map_t *source, *destination;
 
-            if (!next_argument(VALUE_TYPE_MAP, &right, frame))
+            if (!next_argument(VALUE_TYPE_MAP, &right, frame, machine))
             {
                 return right;
             }
@@ -2003,13 +2019,13 @@ static value_t *run_merge(invoke_frame_t *frame)
     }
 }
 
-static value_t *run_length(invoke_frame_t *frame)
+static value_t *run_length(invoke_frame_t *frame, machine_t *machine)
 {
     value_t *collection;
     size_t length;
     number_t number;
 
-    if (!next_argument(VALUE_TYPES_COLLECTION, &collection, frame))
+    if (!next_argument(VALUE_TYPES_COLLECTION, &collection, frame, machine))
     {
         return collection;
     }
@@ -2041,11 +2057,11 @@ static value_t *run_length(invoke_frame_t *frame)
     return new_number(number);
 }
 
-static value_t *run_keys(invoke_frame_t *frame)
+static value_t *run_keys(invoke_frame_t *frame, machine_t *machine)
 {
     value_t *collection;
 
-    if (!next_argument(VALUE_TYPES_COLLECTION, &collection, frame))
+    if (!next_argument(VALUE_TYPES_COLLECTION, &collection, frame, machine))
     {
         return collection;
     }
@@ -2145,19 +2161,19 @@ static value_t *run_keys(invoke_frame_t *frame)
     }
 }
 
-static value_t *run_sort(invoke_frame_t *frame)
+static value_t *run_sort(invoke_frame_t *frame, machine_t *machine)
 {
     value_t *collection, *direction;
     list_t *source, *destination;
     int ascending;
     size_t index;
 
-    if (!next_argument(VALUE_TYPE_LIST, &collection, frame))
+    if (!next_argument(VALUE_TYPE_LIST, &collection, frame, machine))
     {
         return collection;
     }
 
-    if (!next_argument(VALUE_TYPE_STRING, &direction, frame))
+    if (!next_argument(VALUE_TYPE_STRING, &direction, frame, machine))
     {
         return direction;
     }
@@ -2252,7 +2268,7 @@ static value_t *create_element_function(string_t *name)
     return steal_function(create_function(expressions, source));
 }
 
-static element_wrapper_t *create_element_wrapper(value_t *(*run)(invoke_frame_t *))
+static element_wrapper_t *create_element_wrapper(value_t *(*run)(invoke_frame_t *, machine_t *))
 {
     element_wrapper_t *wrapper;
 
@@ -2262,7 +2278,7 @@ static element_wrapper_t *create_element_wrapper(value_t *(*run)(invoke_frame_t 
     return wrapper;
 }
 
-static int next_argument(int types, value_t **out, invoke_frame_t *frame)
+static int next_argument(int types, value_t **out, invoke_frame_t *frame, machine_t *machine)
 {
     value_t *result;
 
@@ -2272,7 +2288,7 @@ static int next_argument(int types, value_t **out, invoke_frame_t *frame)
         return 0;
     }
 
-    result = apply_expression(frame->arguments.expressions->items[frame->arguments.index], frame->parent);
+    result = apply_expression(frame->arguments.expressions->items[frame->arguments.index], frame->parent, machine);
     frame->arguments.evaluated[frame->arguments.index] = result;
     frame->arguments.index += 1;
     frame->effect = frame->parent->effect;

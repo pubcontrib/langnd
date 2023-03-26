@@ -122,11 +122,14 @@ int main(int argumentsCount, char **arguments)
 
 static int run_text(string_t *text)
 {
+    machine_t *machine;
     outcome_t *outcome;
 
     ensure_portable_environment();
 
-    outcome = execute(text);
+    machine = empty_machine();
+    outcome = execute(text, machine);
+    destroy_machine(machine);
 
     if (outcome->errorMessage)
     {
