@@ -25,7 +25,7 @@ typedef struct frame_t
 typedef struct
 {
     value_t *(*run)(frame_t *, machine_t *);
-} element_wrapper_t;
+} native_t;
 
 static value_t *apply_expression(expression_t *expression, frame_t *frame, machine_t *machine);
 static value_t *run_add(frame_t *frame, machine_t *machine);
@@ -55,9 +55,10 @@ static value_t *run_merge(frame_t *frame, machine_t *machine);
 static value_t *run_length(frame_t *frame, machine_t *machine);
 static value_t *run_keys(frame_t *frame, machine_t *machine);
 static value_t *run_sort(frame_t *frame, machine_t *machine);
-static map_t *create_core_elements();
+static map_t *create_machine_natives();
+static map_t *create_machine_elements(map_t *natives);
 static value_t *create_element_function(string_t *name);
-static element_wrapper_t *create_element_wrapper(value_t *(*run)(frame_t *, machine_t *));
+static native_t *create_native(value_t *(*run)(frame_t *, machine_t *));
 static int next_argument(int types, value_t **out, frame_t *frame, machine_t *machine);
 static int has_next_argument(const frame_t *frame);
 static void copy_map_items(const map_t *source, map_t *destination);
@@ -65,7 +66,7 @@ static int compare_values_ascending(const void *left, const void *right);
 static int compare_values_descending(const void *left, const void *right);
 static value_t *throw_error(const char *message, machine_t *machine);
 static void destroy_expression_unsafe(void *expression);
-static void destroy_element_wrapper_unsafe(void *wrapper);
+static void destroy_native_unsafe(void *native);
 static void dereference_value_unsafe(void *value);
 static int has_halting_effect(machine_t *machine);
 
@@ -74,8 +75,9 @@ machine_t *empty_machine()
     machine_t *machine;
 
     machine = allocate(1, sizeof(machine_t));
+    machine->natives = create_machine_natives();
+    machine->elements = create_machine_elements(machine->natives);
     machine->effect = VALUE_EFFECT_NONE;
-    machine->elements = create_core_elements();
 
     return machine;
 }
@@ -164,6 +166,11 @@ outcome_t *execute(string_t *code, machine_t *machine)
 
 void destroy_machine(machine_t *machine)
 {
+    if (machine->natives)
+    {
+        destroy_map(machine->natives);
+    }
+
     if (machine->elements)
     {
         destroy_map(machine->elements);
@@ -579,71 +586,71 @@ static value_t *apply_expression(expression_t *expression, frame_t *frame, machi
             if (test->type == VALUE_TYPE_STRING)
             {
                 string_t *name;
-                value_t *function;
+                value_t *element;
 
                 name = view_string(test);
                 dereference_value(test);
+                element = get_map_item(machine->elements, name);
 
-                if (!has_map_item(machine->elements, name))
+                if (!element)
                 {
                     return throw_error("absent import", machine);
                 }
 
-                function = create_element_function(copy_string(name));
-                set_map_item(frame->variables, copy_string(name), function);
-                function->owners += 1;
+                set_map_item(frame->variables, copy_string(name), element);
+                element->owners += 2;
 
-                return function;
+                return element;
             }
             else if (test->type == VALUE_TYPE_LIST)
             {
-                list_t *names, *functions;
+                list_t *names, *elements;
                 size_t index;
 
                 names = view_list(test);
                 dereference_value(test);
-                functions = empty_list(dereference_value_unsafe, 1);
+                elements = empty_list(dereference_value_unsafe, 1);
 
                 for (index = 0; index < names->length; index++)
                 {
-                    value_t *item, *function;
+                    value_t *item, *element;
                     string_t *name;
 
                     item = names->items[index];
 
                     if (item->type != VALUE_TYPE_STRING)
                     {
-                        destroy_list(functions);
+                        destroy_list(elements);
 
                         return throw_error("alien argument", machine);
                     }
 
                     name = view_string(item);
+                    element = get_map_item(machine->elements, name);
 
-                    if (!has_map_item(machine->elements, name))
+                    if (!element)
                     {
-                        destroy_list(functions);
+                        destroy_list(elements);
 
                         return throw_error("absent import", machine);
                     }
 
-                    function = create_element_function(copy_string(name));
-                    set_map_item(frame->variables, copy_string(name), function);
-                    function->owners += 1;
+                    set_map_item(frame->variables, copy_string(name), element);
+                    element->owners += 2;
 
-                    add_list_item(functions, function);
+                    add_list_item(elements, element);
                 }
 
-                return steal_list(functions);
+                return steal_list(elements);
             }
             else if (test->type == VALUE_TYPE_MAP)
             {
-                map_t *mappings, *functions;
+                map_t *mappings, *elements;
                 size_t index;
 
                 mappings = view_map(test);
                 dereference_value(test);
-                functions = empty_map(hash_string, dereference_value_unsafe, 1);
+                elements = empty_map(hash_string, dereference_value_unsafe, 1);
 
                 for (index = 0; index < mappings->capacity; index++)
                 {
@@ -653,14 +660,15 @@ static value_t *apply_expression(expression_t *expression, frame_t *frame, machi
 
                         for (chain = mappings->chains[index]; chain != NULL; chain = chain->next)
                         {
-                            value_t *item, *function;
+                            value_t *item, *element;
                             string_t *name, *alias;
 
                             name = chain->key;
+                            element = get_map_item(machine->elements, name);
 
-                            if (!has_map_item(machine->elements, name))
+                            if (!element)
                             {
-                                destroy_map(functions);
+                                destroy_map(elements);
 
                                 return throw_error("absent import", machine);
                             }
@@ -669,22 +677,21 @@ static value_t *apply_expression(expression_t *expression, frame_t *frame, machi
 
                             if (item->type != VALUE_TYPE_STRING)
                             {
-                                destroy_map(functions);
+                                destroy_map(elements);
 
                                 return throw_error("alien argument", machine);
                             }
 
                             alias = view_string(item);
-                            function = create_element_function(copy_string(name));
-                            set_map_item(frame->variables, copy_string(alias), function);
-                            function->owners += 1;
+                            set_map_item(frame->variables, copy_string(alias), element);
+                            element->owners += 2;
 
-                            set_map_item(functions, copy_string(alias), function);
+                            set_map_item(elements, copy_string(alias), element);
                         }
                     }
                 }
 
-                return steal_map(functions);
+                return steal_map(elements);
             }
             else
             {
@@ -728,19 +735,19 @@ static value_t *apply_expression(expression_t *expression, frame_t *frame, machi
             return last;
         }
 
-        case EXPRESSION_TYPE_ELEMENT:
+        case EXPRESSION_TYPE_NATIVE:
         {
-            element_expression_data_t *data;
+            native_expression_data_t *data;
             string_t *name;
-            element_wrapper_t *wrapper;
+            native_t *native;
 
             data = expression->data;
             name = data->name;
-            wrapper = get_map_item(machine->elements, name);
+            native = get_map_item(machine->natives, name);
 
-            if (wrapper)
+            if (native)
             {
-                return wrapper->run(frame, machine);
+                return native->run(frame, machine);
             }
             else
             {
@@ -2196,39 +2203,65 @@ static value_t *run_sort(frame_t *frame, machine_t *machine)
     return steal_list(destination);
 }
 
-static map_t *create_core_elements()
+static map_t *create_machine_natives()
 {
     map_t *map;
 
-    map = empty_map(hash_string, destroy_element_wrapper_unsafe, 32);
+    map = empty_map(hash_string, destroy_native_unsafe, 32);
 
-    set_map_item(map, cstring_to_string("add"), create_element_wrapper(run_add));
-    set_map_item(map, cstring_to_string("subtract"), create_element_wrapper(run_subtract));
-    set_map_item(map, cstring_to_string("multiply"), create_element_wrapper(run_multiply));
-    set_map_item(map, cstring_to_string("divide"), create_element_wrapper(run_divide));
-    set_map_item(map, cstring_to_string("modulo"), create_element_wrapper(run_modulo));
-    set_map_item(map, cstring_to_string("truncate"), create_element_wrapper(run_truncate));
-    set_map_item(map, cstring_to_string("and"), create_element_wrapper(run_and));
-    set_map_item(map, cstring_to_string("or"), create_element_wrapper(run_or));
-    set_map_item(map, cstring_to_string("not"), create_element_wrapper(run_not));
-    set_map_item(map, cstring_to_string("precedes"), create_element_wrapper(run_precedes));
-    set_map_item(map, cstring_to_string("succeeds"), create_element_wrapper(run_succeeds));
-    set_map_item(map, cstring_to_string("equals"), create_element_wrapper(run_equals));
-    set_map_item(map, cstring_to_string("write"), create_element_wrapper(run_write));
-    set_map_item(map, cstring_to_string("read"), create_element_wrapper(run_read));
-    set_map_item(map, cstring_to_string("delete"), create_element_wrapper(run_delete));
-    set_map_item(map, cstring_to_string("query"), create_element_wrapper(run_query));
-    set_map_item(map, cstring_to_string("freeze"), create_element_wrapper(run_freeze));
-    set_map_item(map, cstring_to_string("thaw"), create_element_wrapper(run_thaw));
-    set_map_item(map, cstring_to_string("type"), create_element_wrapper(run_type));
-    set_map_item(map, cstring_to_string("cast"), create_element_wrapper(run_cast));
-    set_map_item(map, cstring_to_string("get"), create_element_wrapper(run_get));
-    set_map_item(map, cstring_to_string("set"), create_element_wrapper(run_set));
-    set_map_item(map, cstring_to_string("unset"), create_element_wrapper(run_unset));
-    set_map_item(map, cstring_to_string("merge"), create_element_wrapper(run_merge));
-    set_map_item(map, cstring_to_string("length"), create_element_wrapper(run_length));
-    set_map_item(map, cstring_to_string("keys"), create_element_wrapper(run_keys));
-    set_map_item(map, cstring_to_string("sort"), create_element_wrapper(run_sort));
+    set_map_item(map, cstring_to_string("add"), create_native(run_add));
+    set_map_item(map, cstring_to_string("subtract"), create_native(run_subtract));
+    set_map_item(map, cstring_to_string("multiply"), create_native(run_multiply));
+    set_map_item(map, cstring_to_string("divide"), create_native(run_divide));
+    set_map_item(map, cstring_to_string("modulo"), create_native(run_modulo));
+    set_map_item(map, cstring_to_string("truncate"), create_native(run_truncate));
+    set_map_item(map, cstring_to_string("and"), create_native(run_and));
+    set_map_item(map, cstring_to_string("or"), create_native(run_or));
+    set_map_item(map, cstring_to_string("not"), create_native(run_not));
+    set_map_item(map, cstring_to_string("precedes"), create_native(run_precedes));
+    set_map_item(map, cstring_to_string("succeeds"), create_native(run_succeeds));
+    set_map_item(map, cstring_to_string("equals"), create_native(run_equals));
+    set_map_item(map, cstring_to_string("write"), create_native(run_write));
+    set_map_item(map, cstring_to_string("read"), create_native(run_read));
+    set_map_item(map, cstring_to_string("delete"), create_native(run_delete));
+    set_map_item(map, cstring_to_string("query"), create_native(run_query));
+    set_map_item(map, cstring_to_string("freeze"), create_native(run_freeze));
+    set_map_item(map, cstring_to_string("thaw"), create_native(run_thaw));
+    set_map_item(map, cstring_to_string("type"), create_native(run_type));
+    set_map_item(map, cstring_to_string("cast"), create_native(run_cast));
+    set_map_item(map, cstring_to_string("get"), create_native(run_get));
+    set_map_item(map, cstring_to_string("set"), create_native(run_set));
+    set_map_item(map, cstring_to_string("unset"), create_native(run_unset));
+    set_map_item(map, cstring_to_string("merge"), create_native(run_merge));
+    set_map_item(map, cstring_to_string("length"), create_native(run_length));
+    set_map_item(map, cstring_to_string("keys"), create_native(run_keys));
+    set_map_item(map, cstring_to_string("sort"), create_native(run_sort));
+
+    return map;
+}
+
+static map_t *create_machine_elements(map_t *natives)
+{
+    map_t *map;
+    size_t index;
+
+    map = empty_map(hash_string, dereference_value_unsafe, natives->capacity);
+
+    for (index = 0; index < natives->capacity; index++)
+    {
+        if (natives->chains[index])
+        {
+            map_chain_t *chain;
+
+            for (chain = natives->chains[index]; chain != NULL; chain = chain->next)
+            {
+                string_t *name;
+
+                name = chain->key;
+                set_map_item(map, copy_string(name), create_element_function(copy_string(name)));
+            }
+        }
+    }
 
     return map;
 }
@@ -2237,12 +2270,12 @@ static value_t *create_element_function(string_t *name)
 {
     list_t *expressions;
     expression_t *expression;
-    element_expression_data_t *data;
+    native_expression_data_t *data;
     string_t *source;
 
     expression = allocate(1, sizeof(expression_t));
-    expression->type = EXPRESSION_TYPE_ELEMENT;
-    data = allocate(1, sizeof(element_expression_data_t));
+    expression->type = EXPRESSION_TYPE_NATIVE;
+    data = allocate(1, sizeof(native_expression_data_t));
     data->name = name;
     expression->data = data;
     expressions = empty_list(destroy_expression_unsafe, 1);
@@ -2255,14 +2288,14 @@ static value_t *create_element_function(string_t *name)
     return steal_function(create_function(expressions, source));
 }
 
-static element_wrapper_t *create_element_wrapper(value_t *(*run)(frame_t *, machine_t *))
+static native_t *create_native(value_t *(*run)(frame_t *, machine_t *))
 {
-    element_wrapper_t *wrapper;
+    native_t *native;
 
-    wrapper = allocate(1, sizeof(element_wrapper_t));
-    wrapper->run = run;
+    native = allocate(1, sizeof(native_t));
+    native->run = run;
 
-    return wrapper;
+    return native;
 }
 
 static int next_argument(int types, value_t **out, frame_t *frame, machine_t *machine)
@@ -2345,9 +2378,9 @@ static void destroy_expression_unsafe(void *expression)
     destroy_expression((expression_t *) expression);
 }
 
-static void destroy_element_wrapper_unsafe(void *wrapper)
+static void destroy_native_unsafe(void *native)
 {
-    free(wrapper);
+    free(native);
 }
 
 static void dereference_value_unsafe(void *value)

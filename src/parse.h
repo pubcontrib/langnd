@@ -20,7 +20,7 @@ typedef enum
     EXPRESSION_TYPE_THROW,
     EXPRESSION_TYPE_IMPORT,
     EXPRESSION_TYPE_SNIPPET,
-    EXPRESSION_TYPE_ELEMENT
+    EXPRESSION_TYPE_NATIVE
 } expression_type_t;
 
 typedef struct
@@ -106,7 +106,7 @@ typedef struct
 typedef struct
 {
    string_t *name;
-} element_expression_data_t;
+} native_expression_data_t;
 
 typedef struct
 {

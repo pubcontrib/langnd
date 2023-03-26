@@ -14,6 +14,7 @@ typedef enum
 
 typedef struct
 {
+    map_t *natives;
     map_t *elements;
     value_effect_t effect;
 } machine_t;

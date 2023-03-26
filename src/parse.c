@@ -348,9 +348,9 @@ void destroy_expression(expression_t *expression)
                 break;
             }
 
-            case EXPRESSION_TYPE_ELEMENT:
+            case EXPRESSION_TYPE_NATIVE:
             {
-                element_expression_data_t *data;
+                native_expression_data_t *data;
 
                 data = expression->data;
 
