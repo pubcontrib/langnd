@@ -74,7 +74,7 @@ machine_t *empty_machine()
     machine_t *machine;
 
     machine = allocate(1, sizeof(machine_t));
-    machine->effect = VALUE_EFFECT_PROGRESS;
+    machine->effect = VALUE_EFFECT_NONE;
     machine->elements = create_core_elements();
 
     return machine;
@@ -289,7 +289,7 @@ static value_t *apply_expression(expression_t *expression, invoke_frame_t *frame
 
                         if (machine->effect == VALUE_EFFECT_RETURN)
                         {
-                            machine->effect = VALUE_EFFECT_PROGRESS;
+                            machine->effect = VALUE_EFFECT_NONE;
                             break;
                         }
                         else if (machine->effect == VALUE_EFFECT_BREAK || machine->effect == VALUE_EFFECT_CONTINUE || machine->effect == VALUE_EFFECT_THROW)
@@ -424,12 +424,12 @@ static value_t *apply_expression(expression_t *expression, invoke_frame_t *frame
 
                     if (machine->effect == VALUE_EFFECT_BREAK)
                     {
-                        machine->effect = VALUE_EFFECT_PROGRESS;
+                        machine->effect = VALUE_EFFECT_NONE;
                         break;
                     }
                     else if (machine->effect == VALUE_EFFECT_CONTINUE)
                     {
-                        machine->effect = VALUE_EFFECT_PROGRESS;
+                        machine->effect = VALUE_EFFECT_NONE;
                         continue;
                     }
                     else if (machine->effect == VALUE_EFFECT_THROW)
@@ -467,7 +467,7 @@ static value_t *apply_expression(expression_t *expression, invoke_frame_t *frame
             }
             else if (machine->effect == VALUE_EFFECT_THROW)
             {
-                machine->effect = VALUE_EFFECT_PROGRESS;
+                machine->effect = VALUE_EFFECT_NONE;
 
                 return last;
             }
