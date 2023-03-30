@@ -56,6 +56,7 @@ verify()
     expected_output=''
     expected_code=0
     capture_stream=1
+    argv=''
 
     # Increment the test count
     count=`expr $count + 1`
@@ -99,6 +100,17 @@ verify()
                 fi
 
                 input="$1"
+                shift
+                ;;
+
+            'with argv')
+                if [ "${1+x}" != 'x' ]
+                then
+                    flaw='missing input'
+                    break
+                fi
+
+                argv="$argv $1"
                 shift
                 ;;
 
@@ -180,17 +192,17 @@ verify()
         then
             if [ -z "$input" ]
             then
-                actual_output=`$PROGRAM -t -- "$source" 2>/dev/null`
+                actual_output=`$PROGRAM -t -- "$source" $argv 2>/dev/null`
             else
-                actual_output=`printf '%s' "$input" | $PROGRAM -t -- "$source" 2>/dev/null`
+                actual_output=`printf '%s' "$input" | $PROGRAM -t -- "$source" $argv 2>/dev/null`
             fi
         elif [ $capture_stream = 2 ]
         then
             if [ -z "$input" ]
             then
-                actual_output=`$PROGRAM -t -- "$source" 2>&1 > /dev/null`
+                actual_output=`$PROGRAM -t -- "$source" $argv 2>&1 > /dev/null`
             else
-                actual_output=`printf '%s' "$input" | $PROGRAM -t -- "$source" 2>&1 > /dev/null`
+                actual_output=`printf '%s' "$input" | $PROGRAM -t -- "$source" $argv 2>&1 > /dev/null`
             fi
         fi
     elif [ "$source_format" = 'file' ]
@@ -202,17 +214,17 @@ verify()
         then
             if [ -z "$input" ]
             then
-                actual_output=`$PROGRAM -f "$source_file" 2>/dev/null`
+                actual_output=`$PROGRAM -f "$source_file" $argv 2>/dev/null`
             else
-                actual_output=`printf '%s' "$input" | $PROGRAM -f "$source_file" 2>/dev/null`
+                actual_output=`printf '%s' "$input" | $PROGRAM -f "$source_file" $argv 2>/dev/null`
             fi
         elif [ $capture_stream = 2 ]
         then
             if [ -z "$input" ]
             then
-                actual_output=`$PROGRAM -f "$source_file" 2>&1 > /dev/null`
+                actual_output=`$PROGRAM -f "$source_file" $argv 2>&1 > /dev/null`
             else
-                actual_output=`printf '%s' "$input" | $PROGRAM -f "$source_file" 2>&1 > /dev/null`
+                actual_output=`printf '%s' "$input" | $PROGRAM -f "$source_file" $argv 2>&1 > /dev/null`
             fi
         fi
     fi

@@ -4,8 +4,8 @@
 #include "execute.h"
 #include "utility.h"
 
-static int run_text(string_t *text);
-static int run_file(char *file);
+static int run_text(string_t *text, int argc, char **argv, int skip);
+static int run_file(char *file, int argc, char **argv, int skip);
 static int run_help();
 static int run_version();
 
@@ -85,7 +85,7 @@ int main(int argumentsCount, char **arguments)
                 string.bytes = arguments[argumentsIndex++];
                 string.length = strlen(string.bytes);
 
-                return run_text(&string);
+                return run_text(&string, argumentsCount, arguments, argumentsIndex);
             }
             else
             {
@@ -98,7 +98,11 @@ int main(int argumentsCount, char **arguments)
         {
             if (argumentsIndex < argumentsCount)
             {
-                return run_file(arguments[argumentsIndex++]);
+                char *file;
+
+                file = arguments[argumentsIndex++];
+
+                return run_file(file, argumentsCount, arguments, argumentsIndex);
             }
             else
             {
@@ -120,14 +124,14 @@ int main(int argumentsCount, char **arguments)
     return PROGRAM_SUCCESS;
 }
 
-static int run_text(string_t *text)
+static int run_text(string_t *text, int argc, char **argv, int skip)
 {
     machine_t *machine;
     outcome_t *outcome;
 
     ensure_portable_environment();
 
-    machine = empty_machine();
+    machine = empty_machine(argc, argv, skip);
     outcome = execute(text, machine);
     destroy_machine(machine);
 
@@ -158,7 +162,7 @@ static int run_text(string_t *text)
     return PROGRAM_SUCCESS;
 }
 
-static int run_file(char *file)
+static int run_file(char *file, int argc, char **argv, int skip)
 {
     FILE *handle;
     int status;
@@ -207,7 +211,7 @@ static int run_file(char *file)
     }
 
     fclose(handle);
-    status = run_text(create_string(bytes, length));
+    status = run_text(create_string(bytes, length), argc, argv, skip);
 
     if (bytes)
     {
@@ -220,9 +224,9 @@ static int run_file(char *file)
 static int run_help()
 {
     printf("Usage:\n");
-    printf("  %s script\n", PROGRAM_NAME);
-    printf("  %s -t script\n", PROGRAM_NAME);
-    printf("  %s -f script\n", PROGRAM_NAME);
+    printf("  %s script [inputs]\n", PROGRAM_NAME);
+    printf("  %s -t script [inputs]\n", PROGRAM_NAME);
+    printf("  %s -f script [inputs]\n", PROGRAM_NAME);
     printf("\n");
     printf("Options:\n");
     printf("  -t  Set program to text mode.\n");

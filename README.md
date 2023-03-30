@@ -188,6 +188,8 @@ and the implementation of the language are a work in progress.
     $keys({"a": 1, "b": 2, "c": 3})            # ["a", "b", "c"]
     $sort([3, 2, 5, 1, 4], "+")                # [1, 2, 3, 4, 5]
 
+    $inputs                                    # ["commit", "-m", "fix: ui"]
+
 ## License
 
 langnd is licensed under the Unlicensed license. Review the UNLICENSE file

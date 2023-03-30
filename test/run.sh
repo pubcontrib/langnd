@@ -78,4 +78,6 @@ introduce
 . suite/function/keys.sh
 . suite/function/sort.sh
 
+. suite/core/inputs.sh
+
 conclude

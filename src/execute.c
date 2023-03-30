@@ -56,7 +56,7 @@ static value_t *run_length(frame_t *frame, machine_t *machine);
 static value_t *run_keys(frame_t *frame, machine_t *machine);
 static value_t *run_sort(frame_t *frame, machine_t *machine);
 static map_t *create_machine_natives();
-static map_t *create_machine_elements(map_t *natives);
+static map_t *create_machine_elements(map_t *natives, int argc, char **argv, int skip);
 static value_t *create_element_function(string_t *name);
 static native_t *create_native(value_t *(*run)(frame_t *, machine_t *));
 static int next_argument(int types, value_t **out, frame_t *frame, machine_t *machine);
@@ -70,13 +70,13 @@ static void destroy_native_unsafe(void *native);
 static void dereference_value_unsafe(void *value);
 static int has_halting_effect(machine_t *machine);
 
-machine_t *empty_machine()
+machine_t *empty_machine(int argc, char **argv, int skip)
 {
     machine_t *machine;
 
     machine = allocate(1, sizeof(machine_t));
     machine->natives = create_machine_natives();
-    machine->elements = create_machine_elements(machine->natives);
+    machine->elements = create_machine_elements(machine->natives, argc, argv, skip);
     machine->effect = VALUE_EFFECT_NONE;
 
     return machine;
@@ -2240,9 +2240,10 @@ static map_t *create_machine_natives()
     return map;
 }
 
-static map_t *create_machine_elements(map_t *natives)
+static map_t *create_machine_elements(map_t *natives, int argc, char **argv, int skip)
 {
     map_t *map;
+    list_t *inputs;
     size_t index;
 
     map = empty_map(hash_string, dereference_value_unsafe, natives->capacity);
@@ -2262,6 +2263,24 @@ static map_t *create_machine_elements(map_t *natives)
             }
         }
     }
+
+    inputs = empty_list(dereference_value_unsafe, 1);
+
+    while (skip > 0)
+    {
+        argc--;
+        argv++;
+        skip--;
+    }
+
+    while (argc > 0)
+    {
+        add_list_item(inputs, steal_string(cstring_to_string(*argv)));
+        argc--;
+        argv++;
+    }
+
+    set_map_item(map, cstring_to_string("inputs"), steal_list(inputs));
 
     return map;
 }
