@@ -1,4 +1,4 @@
-suite 'function/add'
+suite 'core/add'
 
 verify 'import ["write", "freeze", "add"] from core $write($freeze($add(0, 0)), 1)' \
     'prints to stdout' '0'

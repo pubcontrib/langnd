@@ -1,4 +1,4 @@
-suite 'function/cast'
+suite 'core/cast'
 
 verify 'import ["write", "freeze", "cast"] from core $write($freeze($cast(null, "NULL")), 1)' \
     'prints to stdout' 'null'

@@ -1,4 +1,4 @@
-suite 'function/subtract'
+suite 'core/subtract'
 
 verify 'import ["write", "freeze", "subtract"] from core $write($freeze($subtract(0, 0)), 1)' \
     'prints to stdout' '0'

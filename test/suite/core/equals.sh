@@ -1,4 +1,4 @@
-suite 'function/equals'
+suite 'core/equals'
 
 verify 'import ["write", "freeze", "equals"] from core $write($freeze($equals(null, null)), 1)' \
     'prints to stdout' 'true'

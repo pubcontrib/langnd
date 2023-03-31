@@ -1,4 +1,4 @@
-suite 'function/delete'
+suite 'core/delete'
 
 if [ -z "$NO_PERSISTENCE" ]
 then

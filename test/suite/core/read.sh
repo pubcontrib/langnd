@@ -1,4 +1,4 @@
-suite 'function/read'
+suite 'core/read'
 
 verify 'import "read" from core $read(0, null)' \
     'with stdin' 'TEXT INPUT' \

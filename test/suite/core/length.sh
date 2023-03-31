@@ -1,4 +1,4 @@
-suite 'function/length'
+suite 'core/length'
 
 verify 'import ["write", "freeze", "length"] from core $write($freeze($length("")), 1)' \
     'prints to stdout' '0'

@@ -1,4 +1,4 @@
-suite 'function/modulo'
+suite 'core/modulo'
 
 verify 'import ["write", "freeze", "modulo"] from core $write($freeze($modulo(1, 2)), 1)' \
     'prints to stdout' '1'

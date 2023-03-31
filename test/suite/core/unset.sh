@@ -1,4 +1,4 @@
-suite 'function/unset'
+suite 'core/unset'
 
 verify 'import ["write", "freeze", "unset"] from core $write($freeze($unset("abc", 1)), 1)' \
     'prints to stdout' '"bc"'

@@ -1,4 +1,4 @@
-suite 'function/merge'
+suite 'core/merge'
 
 verify 'import ["write", "merge"] from core $write($merge("this", " & that"), 1)' \
     'prints to stdout' 'this & that'

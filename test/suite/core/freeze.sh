@@ -1,4 +1,4 @@
-suite 'function/freeze'
+suite 'core/freeze'
 
 verify 'import ["write", "freeze"] from core $write($freeze(null), 1)' \
     'prints to stdout' 'null'

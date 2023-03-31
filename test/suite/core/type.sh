@@ -1,4 +1,4 @@
-suite 'function/type'
+suite 'core/type'
 
 verify 'import ["write", "type"] from core $write($type(null), 1)' \
     'prints to stdout' 'NULL'

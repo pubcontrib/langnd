@@ -1,4 +1,4 @@
-suite 'function/truncate'
+suite 'core/truncate'
 
 verify 'import ["write", "freeze", "truncate"] from core $write($freeze($truncate(0)), 1)' \
     'prints to stdout' '0'

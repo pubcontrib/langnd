@@ -1,4 +1,4 @@
-suite 'function/sort'
+suite 'core/sort'
 
 verify 'import ["write", "freeze", "sort"] from core $write($freeze($sort([], "+")), 1)' \
     'prints to stdout' '[]'

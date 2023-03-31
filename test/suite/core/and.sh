@@ -1,4 +1,4 @@
-suite 'function/and'
+suite 'core/and'
 
 verify 'import ["write", "freeze", "and"] from core $write($freeze($and(false, false)), 1)' \
     'prints to stdout' 'false'

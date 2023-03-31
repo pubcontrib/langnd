@@ -1,4 +1,4 @@
-suite 'function/keys'
+suite 'core/keys'
 
 verify 'import ["write", "freeze", "keys"] from core $write($freeze($keys("")), 1)' \
     'prints to stdout' '[]'

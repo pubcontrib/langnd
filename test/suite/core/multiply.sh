@@ -1,4 +1,4 @@
-suite 'function/multiply'
+suite 'core/multiply'
 
 verify 'import ["write", "freeze", "multiply"] from core $write($freeze($multiply(0, 0)), 1)' \
     'prints to stdout' '0'

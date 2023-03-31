@@ -1,4 +1,4 @@
-suite 'function/precedes'
+suite 'core/precedes'
 
 verify 'import ["write", "freeze", "precedes"] from core $write($freeze($precedes(null, null)), 1)' \
     'prints to stdout' 'false'

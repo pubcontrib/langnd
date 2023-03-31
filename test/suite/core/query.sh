@@ -1,4 +1,4 @@
-suite 'function/query'
+suite 'core/query'
 
 LND_TEST_VALUE=
 export LND_TEST_VALUE

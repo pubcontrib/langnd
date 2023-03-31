@@ -1,4 +1,4 @@
-suite 'function/write'
+suite 'core/write'
 
 verify 'import "write" from core $write("", 1)' \
     'prints to stdout' ''

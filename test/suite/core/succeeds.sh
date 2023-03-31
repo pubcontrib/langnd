@@ -1,4 +1,4 @@
-suite 'function/succeeds'
+suite 'core/succeeds'
 
 verify 'import ["write", "freeze", "succeeds"] from core $write($freeze($succeeds(null, null)), 1)' \
     'prints to stdout' 'false'

@@ -1,4 +1,4 @@
-suite 'function/thaw'
+suite 'core/thaw'
 
 verify 'import ["write", "freeze", "thaw"] from core $write($freeze($thaw("null")), 1)' \
     'prints to stdout' 'null'

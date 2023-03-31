@@ -1,4 +1,4 @@
-suite 'function/get'
+suite 'core/get'
 
 verify 'import ["write", "freeze", "get"] from core $write($freeze($get("abc", 1)), 1)' \
     'prints to stdout' '"a"'

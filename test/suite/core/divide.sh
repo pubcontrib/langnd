@@ -1,4 +1,4 @@
-suite 'function/divide'
+suite 'core/divide'
 
 verify 'import ["write", "freeze", "divide"] from core $write($freeze($divide(1, 2)), 1)' \
     'prints to stdout' '0.500000'

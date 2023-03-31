@@ -1,4 +1,4 @@
-suite 'function/set'
+suite 'core/set'
 
 verify 'import ["write", "freeze", "set"] from core $write($freeze($set("abc", 1, "x")), 1)' \
     'prints to stdout' '"xbc"'
