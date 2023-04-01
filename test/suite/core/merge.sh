@@ -6,6 +6,8 @@ verify 'import ["write", "merge"] from core $write($merge("this", ""), 1)' \
     'prints to stdout' 'this'
 verify 'import ["write", "merge"] from core $write($merge("", "that"), 1)' \
     'prints to stdout' 'that'
+verify 'import ["write", "merge"] from core $write($merge("", ""), 1)' \
+    'prints to stdout' ''
 verify 'import ["write", "freeze", "merge"] from core $write($freeze($merge(["this"], ["that"])), 1)' \
     'prints to stdout' '["this", "that"]'
 verify 'import ["write", "freeze", "merge"] from core $write($freeze($merge(["this"], [])), 1)' \
