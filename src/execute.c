@@ -439,7 +439,7 @@ static value_t *apply_expression(expression_t *expression, frame_t *frame, machi
                         machine->effect = VALUE_EFFECT_NONE;
                         continue;
                     }
-                    else if (machine->effect == VALUE_EFFECT_THROW)
+                    else if (machine->effect == VALUE_EFFECT_RETURN || machine->effect == VALUE_EFFECT_THROW)
                     {
                         break;
                     }

@@ -18,6 +18,8 @@ verify '$function=<import "write" from core $write("before", 1) return "value" $
     'prints to stdout' 'before'
 verify 'import ["write", "freeze"] from core $function=<return "first" return "second" return "third"> $write($freeze($function()), 1)' \
     'prints to stdout' '"first"'
+verify 'import ["write", "freeze"] from core $function=<while true \ return "value" /> $write($freeze($function()), 1)' \
+    'prints to stdout' '"value"'\
 
 verify 'return' \
     'errors with parse message' 'return'
