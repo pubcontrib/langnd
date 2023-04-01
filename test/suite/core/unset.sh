@@ -6,12 +6,16 @@ verify 'import ["write", "freeze", "unset"] from core $write($freeze($unset("abc
     'prints to stdout' '"ac"'
 verify 'import ["write", "freeze", "unset"] from core $write($freeze($unset("abc", 3)), 1)' \
     'prints to stdout' '"ab"'
+verify 'import ["write", "freeze", "unset"] from core $write($freeze($unset("x", 1)), 1)' \
+    'prints to stdout' '""'
 verify 'import ["write", "freeze", "unset"] from core $write($freeze($unset(["a", "b", "c"], 1)), 1)' \
     'prints to stdout' '["b", "c"]'
 verify 'import ["write", "freeze", "unset"] from core $write($freeze($unset(["a", "b", "c"], 2)), 1)' \
     'prints to stdout' '["a", "c"]'
 verify 'import ["write", "freeze", "unset"] from core $write($freeze($unset(["a", "b", "c"], 3)), 1)' \
     'prints to stdout' '["a", "b"]'
+verify 'import ["write", "freeze", "unset"] from core $write($freeze($unset(["x"], 1)), 1)' \
+    'prints to stdout' '[]'
 verify 'import ["write", "freeze", "unset"] from core $write($freeze($unset({"a": 1, "b": 2, "c": 3}, "a")), 1)' \
     'prints to stdout' '{"b": 2, "c": 3}'
 verify 'import ["write", "freeze", "unset"] from core $write($freeze($unset({"a": 1, "b": 2, "c": 3}, "b")), 1)' \
@@ -20,6 +24,8 @@ verify 'import ["write", "freeze", "unset"] from core $write($freeze($unset({"a"
     'prints to stdout' '{"a": 1, "b": 2}'
 verify 'import ["write", "freeze", "unset"] from core $write($freeze($unset({"a": 1, "b": 2, "c": 3}, "d")), 1)' \
     'prints to stdout' '{"a": 1, "b": 2, "c": 3}'
+verify 'import ["write", "freeze", "unset"] from core $write($freeze($unset({"x": 1}, "x")), 1)' \
+    'prints to stdout' '{}'
 
 verify 'import ["set", "unset", "write", "freeze"] from core $list1=["x"] $list1=$set($list1, 1, $list1) $list2=$unset($list1, 1) $write($freeze($list1), 1) $write($freeze($list2), 1)' \
     'prints to stdout' '[["x"]][]'
