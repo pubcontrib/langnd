@@ -56,6 +56,7 @@ verify()
     expected_output=''
     expected_code=0
     capture_stream=1
+    input=''
     argv=''
 
     # Increment the test count
