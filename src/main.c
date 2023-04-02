@@ -4,8 +4,8 @@
 #include "execute.h"
 #include "utility.h"
 
-static int run_text(string_t *text, int argc, char **argv, int skip);
-static int run_file(char *file, int argc, char **argv, int skip);
+static int run_text(const string_t *text, int argc, char **argv, int skip);
+static int run_file(const char *file, int argc, char **argv, int skip);
 static int run_help();
 static int run_version();
 
@@ -124,7 +124,7 @@ int main(int argumentsCount, char **arguments)
     return PROGRAM_SUCCESS;
 }
 
-static int run_text(string_t *text, int argc, char **argv, int skip)
+static int run_text(const string_t *text, int argc, char **argv, int skip)
 {
     machine_t *machine;
     outcome_t *outcome;
@@ -162,7 +162,7 @@ static int run_text(string_t *text, int argc, char **argv, int skip)
     return PROGRAM_SUCCESS;
 }
 
-static int run_file(char *file, int argc, char **argv, int skip)
+static int run_file(const char *file, int argc, char **argv, int skip)
 {
     FILE *handle;
     int status;
