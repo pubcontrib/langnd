@@ -59,7 +59,7 @@ static void dereference_value_unsafe(void *value);
 static void destroy_conditional_branch(conditional_branch_t *branch);
 static void destroy_conditional_branch_unsafe(void *branch);
 
-script_t *parse_script(string_t *code)
+script_t *parse_script(const string_t *code)
 {
     capsule_t capsule;
     script_t *script;

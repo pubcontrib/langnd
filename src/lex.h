@@ -32,12 +32,12 @@ typedef enum
 
 typedef struct
 {
-    string_t *code;
+    const string_t *code;
     scanner_state_t state;
     token_t token;
 } scanner_t;
 
-void start_scanner(scanner_t *scanner, string_t *code);
+void start_scanner(scanner_t *scanner, const string_t *code);
 void progress_scanner(scanner_t *scanner);
 
 #endif

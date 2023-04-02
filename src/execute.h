@@ -26,7 +26,7 @@ typedef struct
 } outcome_t;
 
 machine_t *empty_machine(int argc, char **argv, int skip);
-outcome_t *execute(string_t *code, machine_t *machine);
+outcome_t *execute(const string_t *code, machine_t *machine);
 void destroy_machine(machine_t *machine);
 void destroy_outcome(outcome_t *outcome);
 

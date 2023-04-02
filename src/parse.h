@@ -115,7 +115,7 @@ typedef struct
     string_t *hintMessage;
 } script_t;
 
-script_t *parse_script(string_t *code);
+script_t *parse_script(const string_t *code);
 void destroy_script(script_t *script);
 void destroy_expression(expression_t *expression);
 

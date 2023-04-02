@@ -18,7 +18,7 @@ static int is_letter_symbol(char symbol);
 static int is_short_identifier_symbol(char symbol);
 static int is_keyword_symbol(char symbol);
 
-void start_scanner(scanner_t *scanner, string_t *code)
+void start_scanner(scanner_t *scanner, const string_t *code)
 {
     scanner->code = code;
     scanner->state = SCANNER_STATE_RUNNING;

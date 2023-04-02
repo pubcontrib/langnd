@@ -82,7 +82,7 @@ machine_t *empty_machine(int argc, char **argv, int skip)
     return machine;
 }
 
-outcome_t *execute(string_t *code, machine_t *machine)
+outcome_t *execute(const string_t *code, machine_t *machine)
 {
     outcome_t *outcome;
     script_t *script;
