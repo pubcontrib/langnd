@@ -10,7 +10,7 @@ static void read_identifier_token(scanner_t *scanner);
 static void read_keyword_token(scanner_t *scanner);
 static int has_another_symbol(const scanner_t *scanner);
 static char read_next_symbol(scanner_t *scanner);
-static char peek_next_symbol(scanner_t *scanner);
+static char peek_next_symbol(const scanner_t *scanner);
 static int is_whitespace_symbol(char symbol);
 static int is_number_symbol(char symbol);
 static int is_string_symbol(char symbol);
@@ -329,7 +329,7 @@ static char read_next_symbol(scanner_t *scanner)
     return scanner->code->bytes[scanner->token.end++];
 }
 
-static char peek_next_symbol(scanner_t *scanner)
+static char peek_next_symbol(const scanner_t *scanner)
 {
     return scanner->code->bytes[scanner->token.end];
 }
