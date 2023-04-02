@@ -56,7 +56,7 @@ static value_t *run_length(frame_t *frame, machine_t *machine);
 static value_t *run_keys(frame_t *frame, machine_t *machine);
 static value_t *run_sort(frame_t *frame, machine_t *machine);
 static map_t *create_machine_natives();
-static map_t *create_machine_elements(map_t *natives, int argc, char **argv, int skip);
+static map_t *create_machine_elements(const map_t *natives, int argc, char **argv, int skip);
 static value_t *create_element_function(string_t *name);
 static native_t *create_native(value_t *(*run)(frame_t *, machine_t *));
 static int next_argument(int types, value_t **out, frame_t *frame, machine_t *machine);
@@ -68,7 +68,7 @@ static value_t *throw_error(const char *message, machine_t *machine);
 static void destroy_expression_unsafe(void *expression);
 static void destroy_native_unsafe(void *native);
 static void dereference_value_unsafe(void *value);
-static int has_halting_effect(machine_t *machine);
+static int has_halting_effect(const machine_t *machine);
 
 machine_t *empty_machine(int argc, char **argv, int skip)
 {
@@ -2240,7 +2240,7 @@ static map_t *create_machine_natives()
     return map;
 }
 
-static map_t *create_machine_elements(map_t *natives, int argc, char **argv, int skip)
+static map_t *create_machine_elements(const map_t *natives, int argc, char **argv, int skip)
 {
     map_t *map;
     list_t *inputs;
@@ -2407,7 +2407,7 @@ static void dereference_value_unsafe(void *value)
     dereference_value(value);
 }
 
-static int has_halting_effect(machine_t *machine)
+static int has_halting_effect(const machine_t *machine)
 {
     value_effect_t effect;
 
