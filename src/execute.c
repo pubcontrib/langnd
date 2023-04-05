@@ -44,6 +44,7 @@ static value_t *run_write(frame_t *frame, machine_t *machine);
 static value_t *run_read(frame_t *frame, machine_t *machine);
 static value_t *run_delete(frame_t *frame, machine_t *machine);
 static value_t *run_query(frame_t *frame, machine_t *machine);
+static value_t *run_evaluate(frame_t *frame, machine_t *machine);
 static value_t *run_freeze(frame_t *frame, machine_t *machine);
 static value_t *run_thaw(frame_t *frame, machine_t *machine);
 static value_t *run_type(frame_t *frame, machine_t *machine);
@@ -87,6 +88,7 @@ value_t *execute(const string_t *code, machine_t *machine)
     script_t *script;
     frame_t root;
     list_t *expressions;
+    value_t *last;
     size_t index;
 
     script = parse_script(code);
@@ -109,12 +111,16 @@ value_t *execute(const string_t *code, machine_t *machine)
 
     root.variables = empty_map(hash_string, dereference_value_unsafe, 8);
     expressions = script->expressions;
+    last = NULL;
 
     for (index = 0; index < expressions->length; index++)
     {
-        value_t *result;
+        if (last)
+        {
+            dereference_value(last);
+        }
 
-        result = apply_expression(expressions->items[index], &root, machine);
+        last = apply_expression(expressions->items[index], &root, machine);
 
         if (has_halting_effect(machine))
         {
@@ -147,29 +153,32 @@ value_t *execute(const string_t *code, machine_t *machine)
 
             if (message)
             {
-                dereference_value(result);
-                result = steal_string(cstring_to_string(message));
+                dereference_value(last);
+                last = steal_string(cstring_to_string(message));
             }
 
             details = empty_map(hash_string, dereference_value_unsafe, 1);
             set_map_item(details, cstring_to_string("message"), steal_string(cstring_to_string("failed to execute code")));
-            set_map_item(details, cstring_to_string("hint"), steal_string(represent_value(result)));
+            set_map_item(details, cstring_to_string("hint"), steal_string(represent_value(last)));
             machine->effect = VALUE_EFFECT_THROW;
 
-            dereference_value(result);
+            dereference_value(last);
             destroy_map(root.variables);
             destroy_script(script);
 
             return steal_map(details);
         }
-
-        dereference_value(result);
     }
 
     destroy_map(root.variables);
     destroy_script(script);
 
-    return new_null();
+    if (!last)
+    {
+        last = new_null();
+    }
+
+    return last;
 }
 
 void destroy_machine(machine_t *machine)
@@ -1284,6 +1293,18 @@ static value_t *run_query(frame_t *frame, machine_t *machine)
     }
 }
 
+static value_t *run_evaluate(frame_t *frame, machine_t *machine)
+{
+    value_t *code;
+
+    if (!next_argument(VALUE_TYPE_STRING, &code, frame, machine))
+    {
+        return code;
+    }
+
+    return execute(view_string(code), machine);
+}
+
 static value_t *run_freeze(frame_t *frame, machine_t *machine)
 {
     value_t *value;
@@ -2218,6 +2239,7 @@ static map_t *create_machine_natives()
     set_map_item(map, cstring_to_string("read"), create_native(run_read));
     set_map_item(map, cstring_to_string("delete"), create_native(run_delete));
     set_map_item(map, cstring_to_string("query"), create_native(run_query));
+    set_map_item(map, cstring_to_string("evaluate"), create_native(run_evaluate));
     set_map_item(map, cstring_to_string("freeze"), create_native(run_freeze));
     set_map_item(map, cstring_to_string("thaw"), create_native(run_thaw));
     set_map_item(map, cstring_to_string("type"), create_native(run_type));

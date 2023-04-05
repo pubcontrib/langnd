@@ -66,6 +66,7 @@ introduce
 . suite/core/read.sh
 . suite/core/delete.sh
 . suite/core/query.sh
+. suite/core/evaluate.sh
 . suite/core/freeze.sh
 . suite/core/thaw.sh
 . suite/core/type.sh
