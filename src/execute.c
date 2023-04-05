@@ -82,27 +82,29 @@ machine_t *empty_machine(int argc, char **argv, int skip)
     return machine;
 }
 
-outcome_t *execute(const string_t *code, machine_t *machine)
+value_t *execute(const string_t *code, machine_t *machine)
 {
-    outcome_t *outcome;
     script_t *script;
     frame_t root;
     list_t *expressions;
     size_t index;
 
-    outcome = allocate(1, sizeof(outcome_t));
-    outcome->errorMessage = NULL;
-    outcome->hintMessage = NULL;
     script = parse_script(code);
 
     if (script->errorMessage)
     {
-        outcome->errorMessage = script->errorMessage;
-        outcome->hintMessage = script->hintMessage;
+        map_t *details;
+
+        details = empty_map(hash_string, dereference_value_unsafe, 1);
+        set_map_item(details, cstring_to_string("message"), steal_string(script->errorMessage));
+        set_map_item(details, cstring_to_string("hint"), steal_string(script->hintMessage));
+        machine->effect = VALUE_EFFECT_THROW;
+
         script->errorMessage = NULL;
         script->hintMessage = NULL;
         destroy_script(script);
-        return outcome;
+
+        return steal_map(details);
     }
 
     root.variables = empty_map(hash_string, dereference_value_unsafe, 8);
@@ -116,6 +118,7 @@ outcome_t *execute(const string_t *code, machine_t *machine)
 
         if (has_halting_effect(machine))
         {
+            map_t *details;
             char *message;
 
             message = NULL;
@@ -148,11 +151,16 @@ outcome_t *execute(const string_t *code, machine_t *machine)
                 result = steal_string(cstring_to_string(message));
             }
 
-            outcome->errorMessage = cstring_to_string("failed to execute code");
-            outcome->hintMessage = represent_value(result);
-            dereference_value(result);
+            details = empty_map(hash_string, dereference_value_unsafe, 1);
+            set_map_item(details, cstring_to_string("message"), steal_string(cstring_to_string("failed to execute code")));
+            set_map_item(details, cstring_to_string("hint"), steal_string(represent_value(result)));
+            machine->effect = VALUE_EFFECT_THROW;
 
-            break;
+            dereference_value(result);
+            destroy_map(root.variables);
+            destroy_script(script);
+
+            return steal_map(details);
         }
 
         dereference_value(result);
@@ -161,7 +169,7 @@ outcome_t *execute(const string_t *code, machine_t *machine)
     destroy_map(root.variables);
     destroy_script(script);
 
-    return outcome;
+    return new_null();
 }
 
 void destroy_machine(machine_t *machine)
@@ -177,21 +185,6 @@ void destroy_machine(machine_t *machine)
     }
 
     free(machine);
-}
-
-void destroy_outcome(outcome_t *outcome)
-{
-    if (outcome->errorMessage)
-    {
-        destroy_string(outcome->errorMessage);
-    }
-
-    if (outcome->hintMessage)
-    {
-        destroy_string(outcome->hintMessage);
-    }
-
-    free(outcome);
 }
 
 static value_t *apply_expression(expression_t *expression, frame_t *frame, machine_t *machine)

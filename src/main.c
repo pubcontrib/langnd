@@ -8,6 +8,7 @@ static int run_text(const string_t *text, int argc, char **argv, int skip);
 static int run_file(const char *file, int argc, char **argv, int skip);
 static int run_help();
 static int run_version();
+static string_t *get_detail(const map_t *details, char *key);
 
 typedef enum
 {
@@ -127,37 +128,50 @@ int main(int argumentsCount, char **arguments)
 static int run_text(const string_t *text, int argc, char **argv, int skip)
 {
     machine_t *machine;
-    outcome_t *outcome;
+    value_t *outcome;
+    value_effect_t effect;
 
     ensure_portable_environment();
 
     machine = empty_machine(argc, argv, skip);
     outcome = execute(text, machine);
+    effect = machine->effect;
     destroy_machine(machine);
 
-    if (outcome->errorMessage)
+    if (effect == VALUE_EFFECT_THROW)
     {
-        string_t *string;
+        string_t *message, *hint;
+        map_t *details;
+
+        details = view_map(outcome);
+        message = get_detail(details, "message");
+
+        if (outcome->type != VALUE_TYPE_MAP || !message)
+        {
+            crash_with_message("unsupported branch invoked");
+
+            return PROGRAM_FAILURE;
+        }
 
         fprintf(stderr, "%s: ", PROGRAM_NAME);
-        string = outcome->errorMessage;
-        fwrite(string->bytes, sizeof(char), string->length, stderr);
+        fwrite(message->bytes, sizeof(char), message->length, stderr);
         fprintf(stderr, "\n");
 
-        if (outcome->hintMessage)
+        hint = get_detail(details, "hint");
+
+        if (hint)
         {
             fprintf(stderr, "    [hint] ");
-            string = outcome->hintMessage;
-            fwrite(string->bytes, sizeof(char), string->length, stderr);
+            fwrite(hint->bytes, sizeof(char), hint->length, stderr);
             fprintf(stderr, "\n");
         }
 
-        destroy_outcome(outcome);
+        dereference_value(outcome);
 
         return PROGRAM_FAILURE;
     }
 
-    destroy_outcome(outcome);
+    dereference_value(outcome);
 
     return PROGRAM_SUCCESS;
 }
@@ -240,4 +254,24 @@ static int run_version()
 {
     printf("%s\n", PROGRAM_VERSION);
     return PROGRAM_SUCCESS;
+}
+
+static string_t *get_detail(const map_t *details, char *name)
+{
+    value_t *item;
+    string_t key;
+
+    key.bytes = name;
+    key.length = strlen(name);
+
+    item = get_map_item(details, &key);
+
+    if (item && item->type == VALUE_TYPE_STRING)
+    {
+        return view_string(item);
+    }
+    else
+    {
+        return NULL;
+    }
 }
