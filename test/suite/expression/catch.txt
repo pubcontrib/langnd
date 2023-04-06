@@ -1,0 +1,34 @@
+#!/usr/local/bin/langnd
+
+import ["read", "evaluate", "get"] from core
+
+$testing = $evaluate($read("testing.txt", null))
+$returns = $get($testing, "returns")
+$parseFails = $get($testing, "parseFails")
+
+$returns(<catch \ />, null)
+$returns(<import "divide" from core catch \ $divide(100, 0) />, "arithmetic error")
+$returns(<catch \ "not an error" />, null)
+$returns(<$value=100 catch \ $value />, null)
+$returns(<$error=catch \ / $error>, null)
+$returns(<import "divide" from core $error=catch \ $divide(100, 0) / $error>, "arithmetic error")
+$returns(<$error=catch \ "not an error" / $error>, null)
+$returns(<$value=100 $error=catch \ $value / $error>, null)
+$returns(<import "divide" from core $error=catch \ import "missing" from core $divide(100, 0) $missing / $error>, "absent import")
+$returns(<import "divide" from core $error=catch \ $divide(100, 0) / $error=$error>, "arithmetic error")
+$returns(<import ["divide", "merge"] from core $merge(catch \ $divide(100, 0) /, "!")>, "arithmetic error!")
+$returns(<import ["divide", "merge"] from core $error=catch \ $divide(100, 0) / $merge($error, "!")>, "arithmetic error!")
+$returns(<$error=catch \ throw "custom error" / $error>, "custom error")
+$returns(<$error=catch \ $me="custom error" throw $me / $error>, "custom error")
+$returns(<import "merge" from core $error=catch \ throw $merge("custom ", "error") / $error>, "custom error")
+$returns(<catch \ throw null />, null)
+$returns(<catch \ throw true />, true)
+$returns(<catch \ throw 100 />, 100)
+$returns(<catch \ throw "text" />, "text")
+$returns(<catch \ throw [1, 2, 3] />, [1, 2, 3])
+$returns(<catch \ throw {"a": 1, "b": 2, "c": 3} />, {"a": 1, "b": 2, "c": 3})
+$returns(<catch \ throw <import "multiply" from core $number=argument return $multiply($number, $number)> />, <import "multiply" from core $number=argument return $multiply($number, $number)>)
+$returns(<$error=catch catch \ throw "custom error" / $error>, null)
+
+$parseFails("catch", "catch")
+$parseFails("catch \\", "\\")

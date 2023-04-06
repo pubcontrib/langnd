@@ -1,0 +1,8 @@
+#!/usr/local/bin/langnd
+
+import ["read", "evaluate", "get"] from core
+
+$testing = $evaluate($read("testing.txt", null))
+$returns = $get($testing, "returns")
+
+$returns(<import "inputs" from core>, [])

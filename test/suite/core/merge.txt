@@ -1,0 +1,24 @@
+#!/usr/local/bin/langnd
+
+import ["read", "evaluate", "get"] from core
+
+$testing = $evaluate($read("testing.txt", null))
+$returns = $get($testing, "returns")
+
+$returns(<import "merge" from core $merge("this", " & that")>, "this & that")
+$returns(<import "merge" from core $merge("this", "")>, "this")
+$returns(<import "merge" from core $merge("", "that")>, "that")
+$returns(<import "merge" from core $merge("", "")>, "")
+$returns(<import "merge" from core $merge(["this"], ["that"])>, ["this", "that"])
+$returns(<import "merge" from core $merge(["this"], [])>, ["this"])
+$returns(<import "merge" from core $merge([], ["that"])>, ["that"])
+$returns(<import "merge" from core $merge([], [])>, [])
+$returns(<import "merge" from core $merge(["this", "that"], ["other"])>, ["this", "that", "other"])
+$returns(<import "merge" from core $merge(["this"], ["that", "other"])>, ["this", "that", "other"])
+$returns(<import "merge" from core $merge({"this": 1}, {"that": 2})>, {"that": 2, "this": 1})
+$returns(<import "merge" from core $merge({"this": 1}, {})>, {"this": 1})
+$returns(<import "merge" from core $merge({}, {"that": 2})>, {"that": 2})
+$returns(<import "merge" from core $merge({}, {})>, {})
+$returns(<import "merge" from core $merge({"this": 1, "that": 2}, {"other": 3})>, {"other": 3, "that": 2, "this": 1})
+$returns(<import "merge" from core $merge({"this": 1}, {"that": 2, "other": 3})>, {"other": 3, "that": 2, "this": 1})
+$returns(<import "merge" from core $merge({"this": 1}, {"this": 2})>, {"this": 2})

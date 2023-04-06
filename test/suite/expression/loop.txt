@@ -1,0 +1,32 @@
+#!/usr/local/bin/langnd
+
+import ["read", "evaluate", "get"] from core
+
+$testing = $evaluate($read("testing.txt", null))
+$returns = $get($testing, "returns")
+$throws = $get($testing, "throws")
+$parseFails = $get($testing, "parseFails")
+
+$returns(<while false \ "hit" />, null)
+$returns(<import ["precedes", "add"] from core $i=1 $last=null while $precedes($i, 4) \ $last=$i $i=$add($i, 1) / $last>, 3)
+$returns(<import ["precedes", "multiply", "add"] from core $i=1 $last=null while $precedes($i, 4) \ $j=1 while $precedes($j, 4) \ $last=$multiply($i, $j) $j=$add($j, 1) / $i=$add($i, 1) / $last>, 9)
+$returns(<$loop=true $result=while $loop \ "first" $loop=false "last" / $result>, "last")
+$returns(<$result=while false \ "first" "..." "last" / $result>, null)
+$returns(<$loop=true $result=while if true \ $loop / \ $loop=false "last" / $result>, "last")
+$returns(<$loop=true $result=while $loop if true \ $loop=false "last" / $result>, "last")
+
+$parseFails("while", "while")
+$parseFails("while \\ /", "/")
+$parseFails("while false \\", "\\")
+$parseFails("while false /", "/")
+$parseFails("while false \\ 100", "100")
+
+$throws(<while null \ />, "alien argument")
+$throws(<while 100 \ />, "alien argument")
+$throws(<while "text" \ />, "alien argument")
+$throws(<while [1, 2, 3] \ />, "alien argument")
+$throws(<while {"a": 1, "b": 2, "c": 3} \ />, "alien argument")
+$throws(<while <import "multiply" from core $number=argument return $multiply($number, $number)> \ />, "alien argument")
+
+$throws(<import "divide" from core while true \ "before" $divide(100, 0) "after" />, "arithmetic error")
+$throws(<import "divide" from core while $divide(100, 0) \ $missing />, "arithmetic error")

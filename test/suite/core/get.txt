@@ -1,0 +1,30 @@
+#!/usr/local/bin/langnd
+
+import ["read", "evaluate", "get"] from core
+
+$testing = $evaluate($read("testing.txt", null))
+$returns = $get($testing, "returns")
+$throws = $get($testing, "throws")
+
+$returns(<import "get" from core $get("abc", 1)>, "a")
+$returns(<import "get" from core $get("abc", 2)>, "b")
+$returns(<import "get" from core $get("abc", 3)>, "c")
+$returns(<import "get" from core $get(["a", "b", "c"], 1)>, "a")
+$returns(<import "get" from core $get(["a", "b", "c"], 2)>, "b")
+$returns(<import "get" from core $get(["a", "b", "c"], 3)>, "c")
+$returns(<import "get" from core $get({"a": 1, "b": 2, "c": 3}, "a")>, 1)
+$returns(<import "get" from core $get({"a": 1, "b": 2, "c": 3}, "b")>, 2)
+$returns(<import "get" from core $get({"a": 1, "b": 2, "c": 3}, "c")>, 3)
+
+$returns(<import "get" from core $item=$get(["x"], 1) $item>, "x")
+$returns(<import "get" from core $list=["x"] $item=$get($list, 1) $item>, "x")
+$returns(<import "get" from core $list=[["x"]] $list=$get($list, 1) $item=$get($list, 1) $item>, "x")
+$returns(<import "get" from core $item=$get({"k": "x"}, "k") $item>, "x")
+$returns(<import "get" from core $map={"k": "x"} $value=$get($map, "k") $value>, "x")
+$returns(<import "get" from core $map={"m": {"k": "x"}} $map=$get($map, "m") $value=$get($map, "k") $value>, "x")
+
+$throws(<import "get" from core $get("abc", 0)>, "absent key")
+$throws(<import "get" from core $get("abc", 4)>, "absent key")
+$throws(<import "get" from core $get(["a", "b", "c"], 0)>, "absent key")
+$throws(<import "get" from core $get(["a", "b", "c"], 4)>, "absent key")
+$throws(<import "get" from core $get({"a": 1, "b": 2, "c": 3}, "d")>, "absent key")

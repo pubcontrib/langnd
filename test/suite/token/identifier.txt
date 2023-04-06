@@ -1,0 +1,12 @@
+#!/usr/local/bin/langnd
+
+import ["read", "evaluate", "get"] from core
+
+$testing = $evaluate($read("testing.txt", null))
+$lexFails = $get($testing, "lexFails")
+
+$lexFails("$$$var", "$$$var")
+$lexFails("$", "$")
+$lexFails("$var-me", "-me")
+$lexFails("$-var", "$-var")
+$lexFails("$\"missing end", "$\"missing end")

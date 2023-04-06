@@ -1,0 +1,23 @@
+#!/usr/local/bin/langnd
+
+import ["read", "evaluate", "get"] from core
+
+$testing = $evaluate($read("testing.txt", null))
+$returns = $get($testing, "returns")
+$throws = $get($testing, "throws")
+
+$returns(<import "subtract" from core $subtract(0, 0)>, 0)
+$returns(<import "subtract" from core $subtract(1, 2)>, -1)
+$returns(<import "subtract" from core $subtract(123, 456)>, -333)
+$returns(<import "subtract" from core $subtract(-1, -2)>, 1)
+$returns(<import "subtract" from core $subtract(-123, -456)>, 333)
+$returns(<import "subtract" from core $subtract(0.1, 0.2)>, -0.100006)
+$returns(<import "subtract" from core $subtract(0.123, 0.456)>, -0.333007)
+$returns(<import "subtract" from core $subtract(-0.1, -0.2)>, 0.100006)
+$returns(<import "subtract" from core $subtract(-0.123, -0.456)>, 0.333007)
+$returns(<import "subtract" from core $subtract(123.456, 123.456)>, 0)
+$returns(<import "subtract" from core $subtract(-123.456, -123.456)>, 0)
+
+$throws(<import "subtract" from core $subtract(-32767, 32767)>, "arithmetic error")
+$throws(<import "subtract" from core $subtract(-1, 32767)>, "arithmetic error")
+$throws(<import "subtract" from core $subtract(-32767, 1)>, "arithmetic error")

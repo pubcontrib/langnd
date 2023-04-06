@@ -1,0 +1,14 @@
+#!/usr/local/bin/langnd
+
+import ["read", "evaluate", "get"] from core
+
+$testing = $evaluate($read("testing.txt", null))
+$returns = $get($testing, "returns")
+
+$returns(<import "type" from core $type(null)>, "NULL")
+$returns(<import "type" from core $type(false)>, "BOOLEAN")
+$returns(<import "type" from core $type(0)>, "NUMBER")
+$returns(<import "type" from core $type("")>, "STRING")
+$returns(<import "type" from core $type([])>, "LIST")
+$returns(<import "type" from core $type({})>, "MAP")
+$returns(<import "type" from core $type(<>)>, "FUNCTION")

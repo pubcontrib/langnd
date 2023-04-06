@@ -1,0 +1,13 @@
+#!/usr/local/bin/langnd
+
+import ["read", "evaluate", "get"] from core
+
+$testing = $evaluate($read("testing.txt", null))
+$returns = $get($testing, "returns")
+
+$returns(<import "evaluate" from core $evaluate("")>, null)
+$returns(<import "evaluate" from core $evaluate(" ")>, null)
+$returns(<import "evaluate" from core $evaluate("\a009")>, null)
+$returns(<import "evaluate" from core $evaluate("\a010")>, null)
+$returns(<import "evaluate" from core $evaluate("\a013")>, null)
+$returns(<import "evaluate" from core $evaluate("\a032")>, null)

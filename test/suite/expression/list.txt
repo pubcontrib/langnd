@@ -1,0 +1,19 @@
+#!/usr/local/bin/langnd
+
+import ["read", "evaluate", "get"] from core
+
+$testing = $evaluate($read("testing.txt", null))
+$returns = $get($testing, "returns")
+$parseFails = $get($testing, "parseFails")
+
+$returns(<[]>, [])
+$returns(<[null, false, 0, "", [], {}, <>]>, [null, false, 0, "", [], {}, <>])
+
+$parseFails("[", "[")
+$parseFails("[,", ",")
+$parseFails("[,]", ",]")
+$parseFails("[1 2]", "1 2]")
+$parseFails("$item=1 [$item]", "$item]")
+$parseFails("import \"cast\" from core [$cast(\"1\", \"NUMBER\")]", ")]")
+$parseFails("[if true \\ 1 / otherwise \\ 2 /]", "/]")
+$parseFails("[catch \\ throw 1 /]", "/]")

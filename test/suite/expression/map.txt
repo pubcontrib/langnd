@@ -1,0 +1,29 @@
+#!/usr/local/bin/langnd
+
+import ["read", "evaluate", "get"] from core
+
+$testing = $evaluate($read("testing.txt", null))
+$returns = $get($testing, "returns")
+$parseFails = $get($testing, "parseFails")
+
+$returns(<{}>, {})
+$returns(<{"null": null, "boolean": false, "number": 0, "string": "", "list": [], "map": {}, "function": <>}>, {"null": null, "boolean": false, "number": 0, "string": "", "list": [], "map": {}, "function": <>})
+
+$parseFails("{", "{")
+$parseFails("{:", ":")
+$parseFails("{,", ",")
+$parseFails("{:}", ":}")
+$parseFails("{,}", ",}")
+$parseFails("{\"key\" \"value\"}", "\"key\" \"value\"}")
+$parseFails("{\"key\": \"value\"", "\"value\"")
+$parseFails("{\"key\": \"value\",", ",")
+$parseFails("{null: null}", "null: null}")
+$parseFails("{0: 0}", "0: 0}")
+$parseFails("{false: false}", "false: false}")
+$parseFails("{[]: []}", "]: []}")
+$parseFails("{{}: {}}", "}: {}}")
+$parseFails("{<>: <>}", ">: <>}")
+$parseFails("$key=\"k\" $value=\"v\" {$key: $value}", "$key: $value}")
+$parseFails("import \"cast\" from core {$cast(\"key\", \"STRING\"): $cast(\"value\", \"STRING\")}", "): $cast(\"value\", \"STRING\")}")
+$parseFails("{if true \\ \"key\" /: if true \\ \"value\" /}", "/: if true \\ \"value\" /}")
+$parseFails("{catch \\ throw \"key\" /: catch \\ throw \"value\" /}", "/: catch \\ throw \"value\" /}")

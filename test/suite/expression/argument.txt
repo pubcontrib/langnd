@@ -1,0 +1,18 @@
+#!/usr/local/bin/langnd
+
+import ["read", "evaluate", "get"] from core
+
+$testing = $evaluate($read("testing.txt", null))
+$returns = $get($testing, "returns")
+
+$returns(<$pass=<argument> $pass(null)>, null)
+$returns(<$pass=<argument> $pass(false)>, false)
+$returns(<$pass=<argument> $pass(0)>, 0)
+$returns(<$pass=<argument> $pass("")>, "")
+$returns(<$pass=<argument> $pass([])>, [])
+$returns(<$pass=<argument> $pass({})>, {})
+$returns(<$pass=<argument> $pass(<>)>, <>)
+$returns(<$square=<import "multiply" from core $number=argument return $multiply($number, $number)> $square(4)>, 16)
+$returns(<import "set" from core $exclaim=<import "merge" from core $merge(argument, "!")> $slots=["", "", ""] $slots=$set($slots, 1, $exclaim("one")) $slots=$set($slots, 2, $exclaim("two")) $slots=$set($slots, 3, $exclaim("three"))>, ["one!", "two!", "three!"])
+$returns(<$decide=<import "equals" from core $pick=argument $true=argument $false=argument if $equals($pick, true) \ return $true / otherwise \ return $false /> $decide(false, "LEFT", "RIGHT")>, "RIGHT")
+$returns(<$nothing=<> $nothing(throw "error")>, null)

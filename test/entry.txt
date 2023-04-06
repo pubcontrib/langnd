@@ -1,0 +1,207 @@
+#!/usr/local/bin/langnd
+
+# entry.txt: test for expected behavior from a langnd program build
+#
+# Usage:
+#     entry.txt
+
+$suite =
+<
+  # run a suite of tests
+
+  $name = argument
+
+  import ["read", "evaluate", "merge"] from core
+
+  $file = $merge($name, ".txt")
+  $file = $merge("suite/", $file)
+  $thrown = catch $evaluate($read($file, null))
+
+  import ["equals", "not", "freeze"] from core
+
+  if $not($equals($thrown, null))
+  \
+    import ["evaluate", "read", "get", "write"] from core
+
+    $testing = $evaluate($read("testing.txt", null))
+    $color = $get($testing, "color")
+
+    if $color
+    \
+      $write("\a027[7;31m FAIL \a027[0m\n", 1)
+    /
+    otherwise
+    \
+      $write("[FAIL]\n", 1)
+    /
+
+    import ["get", "thaw", "type", "equals"] from core
+
+    $hint = $get($thrown, "hint")
+    catch
+    \
+      $hint = $thaw($hint)
+    /
+
+    if $equals($type($hint), "MAP")
+    \
+      import "unset" from core
+
+      if $color
+      \
+        $write("\a027[1mReason:\a027[0m\n", 1)
+      /
+      otherwise
+      \
+        $write("Reason:\n", 1)
+      /
+      $write($get($hint, "reason"), 1)
+      $write("\n", 1)
+
+      if $color
+      \
+        $write("\a027[1mSuite:\a027[0m\n", 1)
+      /
+      otherwise
+      \
+        $write("Suite:\n", 1)
+      /
+      $write($name, 1)
+      $write("\n", 1)
+
+      if $color
+      \
+        $write("\a027[1mSource:\a027[0m\n", 1)
+      /
+      otherwise
+      \
+        $write("Source:\n", 1)
+      /
+      $write($get($hint, "source"), 1)
+      $write("\n", 1)
+
+      if $color
+      \
+        $write("\a027[1mDetails:\a027[0m\n", 1)
+      /
+      otherwise
+      \
+        $write("Details:\n", 1)
+      /
+      $details = $hint
+      $details = $unset($details, "reason")
+      $details = $unset($details, "source")
+      $write($freeze($details), 1)
+      $write("\n", 1)
+    /
+    else if $equals($type($hint), "STRING")
+    \
+      if $color
+      \
+        $write("\a027[1mReason:\a027[0m\n", 1)
+      /
+      otherwise
+      \
+        $write("Reason:\n", 1)
+      /
+      $write($get($thrown, "message"), 1)
+      $write("\n", 1)
+
+      if $color
+      \
+        $write("\a027[1mSuite:\a027[0m\n", 1)
+      /
+      otherwise
+      \
+        $write("Suite:\n", 1)
+      /
+      $write($name, 1)
+      $write("\n", 1)
+
+      if $color
+      \
+        $write("\a027[1mHint:\a027[0m\n", 1)
+      /
+      otherwise
+      \
+        $write("Hint:\n", 1)
+      /
+      $write($hint, 1)
+      $write("\n", 1)
+    /
+
+    $write("\n", 1)
+
+    throw "test suite failed"
+  /
+>
+
+$suite("token/unknown")
+$suite("token/whitespace")
+$suite("token/string")
+$suite("token/identifier")
+
+$suite("expression/null")
+$suite("expression/boolean")
+$suite("expression/number")
+$suite("expression/string")
+$suite("expression/list")
+$suite("expression/map")
+$suite("expression/function")
+$suite("expression/assignment")
+$suite("expression/invoke")
+$suite("expression/branch")
+$suite("expression/loop")
+$suite("expression/catch")
+$suite("expression/argument")
+$suite("expression/return")
+$suite("expression/break")
+$suite("expression/continue")
+$suite("expression/throw")
+$suite("expression/import")
+$suite("expression/snippet")
+
+$suite("core/add")
+$suite("core/subtract")
+$suite("core/multiply")
+$suite("core/divide")
+$suite("core/modulo")
+$suite("core/truncate")
+$suite("core/and")
+$suite("core/or")
+$suite("core/not")
+$suite("core/precedes")
+$suite("core/succeeds")
+$suite("core/equals")
+$suite("core/write")
+$suite("core/read")
+$suite("core/delete")
+$suite("core/query")
+$suite("core/evaluate")
+$suite("core/freeze")
+$suite("core/thaw")
+$suite("core/type")
+$suite("core/cast")
+$suite("core/get")
+$suite("core/set")
+$suite("core/unset")
+$suite("core/merge")
+$suite("core/length")
+$suite("core/keys")
+$suite("core/sort")
+$suite("core/inputs")
+
+# any tester making it this far passes
+import ["evaluate", "read", "get", "write"] from core
+
+$testing = $evaluate($read("testing.txt", null))
+$color = $get($testing, "color")
+
+if $color
+\
+  $write("\a027[7;32m PASS \a027[0m\n", 1)
+/
+otherwise
+\
+  $write("[PASS]\n", 1)
+/

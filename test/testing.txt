@@ -1,0 +1,222 @@
+#!/usr/local/bin/langnd
+
+$returns =
+<
+  # tests if a function returns an expected value
+
+  $do = argument
+  $expected = argument
+
+  import ["equals", "not"] from core
+
+  $returned = null
+
+  $thrown = catch
+  \
+    $returned = $do()
+  /
+
+  if $not($equals($thrown, null))
+  \
+    import ["set", "freeze"] from core
+
+    $error = {}
+    $error = $set($error, "reason", "an unexpected error was thrown")
+    $error = $set($error, "thrown", $thrown)
+    $error = $set($error, "source", $freeze($do))
+
+    throw $error
+  /
+
+  if $not($equals($returned, $expected))
+  \
+    import ["set", "freeze"] from core
+
+    $error = {}
+    $error = $set($error, "reason", "an unexpected value was returned")
+    $error = $set($error, "actual", $returned)
+    $error = $set($error, "expected", $expected)
+    $error = $set($error, "source", $freeze($do))
+
+    throw $error
+  /
+>
+
+$throws =
+<
+  # tests if a function throws an expected value
+
+  $do = argument
+  $expected = argument
+
+  import ["equals", "not"] from core
+
+  $returned = null
+
+  $thrown = catch
+  \
+    $returned = $do()
+  /
+
+  if $not($equals($returned, null))
+  \
+    import ["set", "freeze"] from core
+
+    $error = {}
+    $error = $set($error, "reason", "an expected error was not thrown")
+    $error = $set($error, "returned", $returned)
+    $error = $set($error, "source", $freeze($do))
+
+    throw $error
+  /
+
+  if $not($equals($thrown, $expected))
+  \
+    import ["set", "freeze"] from core
+
+    $error = {}
+    $error = $set($error, "reason", "an unexpected error was thrown")
+    $error = $set($error, "actual", $thrown)
+    $error = $set($error, "expected", $expected)
+    $error = $set($error, "source", $freeze($do))
+
+    throw $error
+  /
+>
+
+$lexFails =
+<
+  # tests if source fails the lexer
+
+  $source = argument
+  $hint = argument
+
+  import ["equals", "not", "evaluate", "set"] from core
+
+  $returned = null
+
+  $thrown = catch
+  \
+    $returned = $evaluate($source)
+  /
+
+  if $not($equals($returned, null))
+  \
+    import "freeze" from core
+
+    $error = {}
+    $error = $set($error, "reason", "an expected error was not thrown")
+    $error = $set($error, "returned", $returned)
+    $error = $set($error, "source", $source)
+
+    throw $error
+  /
+
+  $expected = {}
+  $expected = $set($expected, "message", "failed to lex code")
+  $expected = $set($expected, "hint", $hint)
+
+  if $not($equals($thrown, $expected))
+  \
+    import "freeze" from core
+
+    $error = {}
+    $error = $set($error, "reason", "an unexpected error was thrown")
+    $error = $set($error, "actual", $thrown)
+    $error = $set($error, "expected", $expected)
+    $error = $set($error, "source", $source)
+
+    throw $error
+  /
+>
+
+$parseFails =
+<
+  # tests if source fails the parser
+
+  $source = argument
+  $hint = argument
+
+  import ["equals", "not", "evaluate", "set"] from core
+
+  $returned = null
+
+  $thrown = catch
+  \
+    $returned = $evaluate($source)
+  /
+
+  if $not($equals($returned, null))
+  \
+    import "freeze" from core
+
+    $error = {}
+    $error = $set($error, "reason", "an expected error was not thrown")
+    $error = $set($error, "returned", $returned)
+    $error = $set($error, "source", $source)
+
+    throw $error
+  /
+
+  $expected = {}
+  $expected = $set($expected, "message", "failed to parse code")
+  $expected = $set($expected, "hint", $hint)
+
+  if $not($equals($thrown, $expected))
+  \
+    import "freeze" from core
+
+    $error = {}
+    $error = $set($error, "reason", "an unexpected error was thrown")
+    $error = $set($error, "actual", $thrown)
+    $error = $set($error, "expected", $expected)
+    $error = $set($error, "source", $source)
+
+    throw $error
+  /
+>
+
+$supportsEnvironmentFlag =
+<
+  # checks if color is supported
+
+  $name = argument
+
+  import ["query", "equals", "not", "type"] from core
+
+  $error = catch
+  \
+    return $equals($query($name), "")
+  /
+
+  if $equals($type($error), "STRING")
+  \
+    if $equals($error, "absent environment variable")
+    \
+      return true
+    /
+    otherwise
+    \
+      throw $error
+    /
+  /
+  else if $equals($type($error), "NULL")
+  \
+    throw $error
+  /
+  otherwise
+  \
+    return true
+  /
+>
+
+import "set" from core
+
+$module = {}
+$module = $set($module, "returns", $returns)
+$module = $set($module, "throws", $throws)
+$module = $set($module, "lexFails", $lexFails)
+$module = $set($module, "parseFails", $parseFails)
+$module = $set($module, "persistence", $supportsEnvironmentFlag("NO_PERSISTENCE"))
+$module = $set($module, "color", $supportsEnvironmentFlag("NO_COLOR"))
+$module

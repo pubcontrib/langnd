@@ -1,0 +1,11 @@
+#!/usr/local/bin/langnd
+
+import ["read", "evaluate", "get"] from core
+
+$testing = $evaluate($read("testing.txt", null))
+$returns = $get($testing, "returns")
+
+$returns(<import "and" from core $and(false, false)>, false)
+$returns(<import "and" from core $and(false, true)>, false)
+$returns(<import "and" from core $and(true, false)>, false)
+$returns(<import "and" from core $and(true, true)>, true)

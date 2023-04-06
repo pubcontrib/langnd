@@ -1,0 +1,22 @@
+#!/usr/local/bin/langnd
+
+import ["read", "evaluate", "get"] from core
+
+$testing = $evaluate($read("testing.txt", null))
+$returns = $get($testing, "returns")
+$throws = $get($testing, "throws")
+$parseFails = $get($testing, "parseFails")
+
+$returns(<import "set" from core $slots=[0,0,0] while true \ $slots=$set($slots, 1, 1) break "here" $slots=$set($slots, 2, 2) / $slots=$set($slots, 3, 3)>, [1, 0, 3])
+$returns(<$result=while true \ break "here" / $result>, "here")
+$returns(<$result=while true \ $pick="here" break $pick / $result>, "here")
+$returns(<import "set" from core $slots=[0,0,0,0,0] while true \ $slots=$set($slots, 1, 1) catch \ $slots=$set($slots, 2, 2) break "here" $slots=$set($slots, 3, 3) / $slots=$set($slots, 4, 4) / $slots=$set($slots, 5, 5)>, [1, 2, 0, 0, 5])
+$returns(<$result=while true \ catch \ break "here" / / $result>, "here")
+$returns(<$result=while true \ catch \ $pick="here" break $pick / / $result>, "here")
+$returns(<$result=while true \ break break "here" / $result>, "here")
+$throws(<import "evaluate" from core $evaluate("throw break \"here\"")>, {"message": "failed to execute code", "hint": "\"lost break\""})
+$throws(<import "evaluate" from core $evaluate("continue break \"here\"")>, {"message": "failed to execute code", "hint": "\"lost break\""})
+
+$parseFails("break", "break")
+
+$throws(<import "evaluate" from core $evaluate("break \"here\"")>, {"message": "failed to execute code", "hint": "\"lost break\""})

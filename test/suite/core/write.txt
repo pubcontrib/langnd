@@ -1,0 +1,44 @@
+#!/usr/local/bin/langnd
+
+import ["read", "evaluate", "get"] from core
+
+$testing = $evaluate($read("testing.txt", null))
+$returns = $get($testing, "returns")
+$persistence = $get($testing, "persistence")
+
+if $persistence
+\
+  $returns(<
+  import ["query", "merge", "write"] from core
+  $directory = "/tmp"
+  catch $directory = $query("TMPDIR")
+  $file = $merge($directory, "/write.txt")
+  $write("TEXT", $file)
+  $write("", $file)
+
+  import "read" from core
+  $read($file, null)
+>, "")
+  $returns(<
+  import ["query", "merge", "write"] from core
+  $directory = "/tmp"
+  catch $directory = $query("TMPDIR")
+  $file = $merge($directory, "/write.txt")
+  $write("", $file)
+  $write("TEXT", $file)
+
+  import "read" from core
+  $read($file, null)
+>, "TEXT")
+  $returns(<
+  import ["query", "merge", "write"] from core
+  $directory = "/tmp"
+  catch $directory = $query("TMPDIR")
+  $file = $merge($directory, "/write.txt")
+  $write("FIRST", $file)
+  $write("LAST", $file)
+
+  import "read" from core
+  $read($file, null)
+>, "LAST")
+/

@@ -1,0 +1,30 @@
+#!/usr/local/bin/langnd
+
+import ["read", "evaluate", "get"] from core
+
+$testing = $evaluate($read("testing.txt", null))
+$returns = $get($testing, "returns")
+$throws = $get($testing, "throws")
+
+$returns(<import "unset" from core $unset("abc", 1)>, "bc")
+$returns(<import "unset" from core $unset("abc", 2)>, "ac")
+$returns(<import "unset" from core $unset("abc", 3)>, "ab")
+$returns(<import "unset" from core $unset("x", 1)>, "")
+$returns(<import "unset" from core $unset(["a", "b", "c"], 1)>, ["b", "c"])
+$returns(<import "unset" from core $unset(["a", "b", "c"], 2)>, ["a", "c"])
+$returns(<import "unset" from core $unset(["a", "b", "c"], 3)>, ["a", "b"])
+$returns(<import "unset" from core $unset(["x"], 1)>, [])
+$returns(<import "unset" from core $unset({"a": 1, "b": 2, "c": 3}, "a")>, {"b": 2, "c": 3})
+$returns(<import "unset" from core $unset({"a": 1, "b": 2, "c": 3}, "b")>, {"a": 1, "c": 3})
+$returns(<import "unset" from core $unset({"a": 1, "b": 2, "c": 3}, "c")>, {"a": 1, "b": 2})
+$returns(<import "unset" from core $unset({"a": 1, "b": 2, "c": 3}, "d")>, {"a": 1, "b": 2, "c": 3})
+$returns(<import "unset" from core $unset({"x": 1}, "x")>, {})
+
+$returns(<import ["set", "unset"] from core $list1=["x"] $list1=$set($list1, 1, $list1) $list2=$unset($list1, 1) $list1>, [["x"]])
+$returns(<import ["set", "unset"] from core $list1=["x"] $list1=$set($list1, 1, $list1) $list2=$unset($list1, 1) $list2>, [])
+$returns(<import ["set", "unset"] from core $list=["x"] $list=$set($list, 1, $list) $list=$unset($list, 1) $list>, [])
+
+$throws(<import "unset" from core $unset("abc", 0)>, "absent key")
+$throws(<import "unset" from core $unset("abc", 4)>, "absent key")
+$throws(<import "unset" from core $unset(["a", "b", "c"], 0)>, "absent key")
+$throws(<import "unset" from core $unset(["a", "b", "c"], 4)>, "absent key")

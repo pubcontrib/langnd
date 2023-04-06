@@ -1,0 +1,23 @@
+#!/usr/local/bin/langnd
+
+import ["read", "evaluate", "get"] from core
+
+$testing = $evaluate($read("testing.txt", null))
+$returns = $get($testing, "returns")
+$throws = $get($testing, "throws")
+$parseFails = $get($testing, "parseFails")
+
+$returns(<$function=<return null> $function()>, null)
+$returns(<$function=<return false> $function()>, false)
+$returns(<$function=<return 0> $function()>, 0)
+$returns(<$function=<return ""> $function()>, "")
+$returns(<$function=<return []> $function()>, [])
+$returns(<$function=<return {}> $function()>, {})
+$returns(<$function=<return <>> $function()>, <>)
+$returns(<$function=<"before" return "value" "after"> $function()>, "value")
+$returns(<$function=<return "first" return "second" return "third"> $function()>, "first")
+$returns(<$function=<while true \ return "value" /> $function()>, "value")
+
+$parseFails("return", "return")
+
+$throws(<import "evaluate" from core $evaluate("return \"result\"")>, {"message": "failed to execute code", "hint": "\"lost return\""})

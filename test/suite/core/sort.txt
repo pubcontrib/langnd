@@ -1,0 +1,43 @@
+#!/usr/local/bin/langnd
+
+import ["read", "evaluate", "get"] from core
+
+$testing = $evaluate($read("testing.txt", null))
+$returns = $get($testing, "returns")
+$throws = $get($testing, "throws")
+
+$returns(<import "sort" from core $sort([], "+")>, [])
+$returns(<import "sort" from core $sort([null, null], "+")>, [null, null])
+$returns(<import "sort" from core $sort([false, true], "+")>, [false, true])
+$returns(<import "sort" from core $sort([true, false], "+")>, [false, true])
+$returns(<import "sort" from core $sort([1, 2, 3], "+")>, [1, 2, 3])
+$returns(<import "sort" from core $sort([3, 2, 1], "+")>, [1, 2, 3])
+$returns(<import "sort" from core $sort(["A", "B", "C"], "+")>, ["A", "B", "C"])
+$returns(<import "sort" from core $sort(["C", "B", "A"], "+")>, ["A", "B", "C"])
+$returns(<import "sort" from core $sort([[1], [2], [3]], "+")>, [[1], [2], [3]])
+$returns(<import "sort" from core $sort([[3], [2], [1]], "+")>, [[1], [2], [3]])
+$returns(<import "sort" from core $sort([{"A": null}, {"B": null}, {"C": null}], "+")>, [{"A": null}, {"B": null}, {"C": null}])
+$returns(<import "sort" from core $sort([{"C": null}, {"B": null}, {"A": null}], "+")>, [{"A": null}, {"B": null}, {"C": null}])
+$returns(<import "sort" from core $sort([<1>, <2>, <3>], "+")>, [<1>, <2>, <3>])
+$returns(<import "sort" from core $sort([<3>, <2>, <1>], "+")>, [<1>, <2>, <3>])
+$returns(<import "sort" from core $sort([null, false, 0, "", [], {}, <>], "+")>, [null, false, 0, "", [], {}, <>])
+$returns(<import "sort" from core $sort([<>, {}, [], "", 0, false, null], "+")>, [null, false, 0, "", [], {}, <>])
+
+$returns(<import "sort" from core $sort([], "-")>, [])
+$returns(<import "sort" from core $sort([null, null], "-")>, [null, null])
+$returns(<import "sort" from core $sort([false, true], "-")>, [true, false])
+$returns(<import "sort" from core $sort([true, false], "-")>, [true, false])
+$returns(<import "sort" from core $sort([1, 2, 3], "-")>, [3, 2, 1])
+$returns(<import "sort" from core $sort([3, 2, 1], "-")>, [3, 2, 1])
+$returns(<import "sort" from core $sort(["A", "B", "C"], "-")>, ["C", "B", "A"])
+$returns(<import "sort" from core $sort(["C", "B", "A"], "-")>, ["C", "B", "A"])
+$returns(<import "sort" from core $sort([[1], [2], [3]], "-")>, [[3], [2], [1]])
+$returns(<import "sort" from core $sort([[3], [2], [1]], "-")>, [[3], [2], [1]])
+$returns(<import "sort" from core $sort([{"A": null}, {"B": null}, {"C": null}], "-")>, [{"C": null}, {"B": null}, {"A": null}])
+$returns(<import "sort" from core $sort([{"C": null}, {"B": null}, {"A": null}], "-")>, [{"C": null}, {"B": null}, {"A": null}])
+$returns(<import "sort" from core $sort([<1>, <2>, <3>], "-")>, [<3>, <2>, <1>])
+$returns(<import "sort" from core $sort([<3>, <2>, <1>], "-")>, [<3>, <2>, <1>])
+$returns(<import "sort" from core $sort([null, false, 0, "", [], {}, <>], "-")>, [<>, {}, [], "", 0, false, null])
+$returns(<import "sort" from core $sort([<>, {}, [], "", 0, false, null], "-")>, [<>, {}, [], "", 0, false, null])
+
+$throws(<import "sort" from core $sort([3, 2, 1], "?")>, "damaged argument")

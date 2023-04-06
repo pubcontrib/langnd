@@ -1,0 +1,21 @@
+#!/usr/local/bin/langnd
+
+import ["read", "evaluate", "get"] from core
+
+$testing = $evaluate($read("testing.txt", null))
+$returns = $get($testing, "returns")
+$parseFails = $get($testing, "parseFails")
+
+$returns(<<>>, <>)
+$returns(<<null>>, <null>)
+$returns(<<false>>, <false>)
+$returns(<<0>>, <0>)
+$returns(<<"">>, <"">)
+$returns(<<[]>>, <[]>)
+$returns(<<{}>>, <{}>)
+$returns(<<<>>>, <<>>)
+$returns(<<null false 0 "" [] {} <>>>, <null false 0 "" [] {} <>>)
+
+$parseFails("<", "<")
+$parseFails("<,", ",")
+$parseFails("<#comment>", "<#comment>")

@@ -1,0 +1,12 @@
+#!/usr/local/bin/langnd
+
+import ["read", "evaluate", "get"] from core
+
+$testing = $evaluate($read("testing.txt", null))
+$returns = $get($testing, "returns")
+$lexFails = $get($testing, "lexFails")
+
+$returns(<false>, false)
+$returns(<true>, true)
+$lexFails("FALSE", "FALSE")
+$lexFails("TRUE", "TRUE")

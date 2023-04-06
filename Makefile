@@ -8,7 +8,6 @@ CD = cd
 CC = cc
 RM = rm
 CP = cp
-SH = sh
 MKDIR = mkdir
 PREFIX = /usr/local
 
@@ -18,7 +17,7 @@ clean:
 	$(RM) -f bin/langnd obj/main.o obj/execute.o obj/parse.o obj/lex.o obj/utility.o
 
 check: bin/langnd
-	$(CD) test && $(SH) run.sh ../bin/langnd
+	$(CD) test && ../bin/langnd -f entry.txt
 
 install: bin/langnd
 	$(CP) bin/langnd $(DESTDIR)$(PREFIX)/bin/langnd

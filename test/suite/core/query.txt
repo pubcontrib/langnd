@@ -1,0 +1,11 @@
+#!/usr/local/bin/langnd
+
+import ["read", "evaluate", "get"] from core
+
+$testing = $evaluate($read("testing.txt", null))
+$returns = $get($testing, "returns")
+$throws = $get($testing, "throws")
+
+$returns(<import ["query", "type"] from core $type($query("TERM"))>, "STRING")
+
+$throws(<import "query" from core $query("missing_env_var")>, "absent environment variable")

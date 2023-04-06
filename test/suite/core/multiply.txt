@@ -1,0 +1,22 @@
+#!/usr/local/bin/langnd
+
+import ["read", "evaluate", "get"] from core
+
+$testing = $evaluate($read("testing.txt", null))
+$returns = $get($testing, "returns")
+$throws = $get($testing, "throws")
+
+$returns(<import "multiply" from core $multiply(0, 0)>, 0)
+$returns(<import "multiply" from core $multiply(1, 2)>, 2)
+$returns(<import "multiply" from core $multiply(-1, -2)>, 2)
+$returns(<import "multiply" from core $multiply(0.1, 0.2)>, 0.019989)
+$returns(<import "multiply" from core $multiply(0.123, 0.456)>, 0.056076)
+$returns(<import "multiply" from core $multiply(-0.1, -0.2)>, 0.019989)
+$returns(<import "multiply" from core $multiply(-0.123, -0.456)>, 0.056076)
+$returns(<import "multiply" from core $multiply(123.456, 123.456)>, 15241.382354)
+$returns(<import "multiply" from core $multiply(-123.456, -123.456)>, 15241.382354)
+
+$throws(<import "multiply" from core $multiply(32767, 32767)>, "arithmetic error")
+$throws(<import "multiply" from core $multiply(32767, -32767)>, "arithmetic error")
+$throws(<import "multiply" from core $multiply(-32767, 32767)>, "arithmetic error")
+$throws(<import "multiply" from core $multiply(-32767, -32767)>, "arithmetic error")

@@ -1,0 +1,33 @@
+#!/usr/local/bin/langnd
+
+import ["read", "evaluate", "get"] from core
+
+$testing = $evaluate($read("testing.txt", null))
+$returns = $get($testing, "returns")
+$throws = $get($testing, "throws")
+
+$returns(<import "thaw" from core $thaw("null")>, null)
+$returns(<import "thaw" from core $thaw("true")>, true)
+$returns(<import "thaw" from core $thaw("100")>, 100)
+$returns(<import "thaw" from core $thaw("\"text\"")>, "text")
+$returns(<import "thaw" from core $thaw("[1, 2, 3]")>, [1, 2, 3])
+$returns(<import "thaw" from core $thaw("{\"a\": 1, \"b\": 2, \"c\": 3}")>, {"a": 1, "b": 2, "c": 3})
+$returns(<import "thaw" from core $thaw("<import \"multiply\" from core $number=argument return $multiply($number, $number)>")>, <import "multiply" from core $number=argument return $multiply($number, $number)>)
+
+$returns(<import "thaw" from core $thaw(" \t\n100")>, 100)
+$returns(<import "thaw" from core $thaw("100 \t\n")>, 100)
+$returns(<import "thaw" from core $thaw("# number\n100")>, 100)
+$returns(<import "thaw" from core $thaw("100\n# number")>, 100)
+
+$throws(<import "thaw" from core $thaw("junk")>, "cast error")
+$throws(<import "thaw" from core $thaw("{\"key\" \"value\"}")>, "cast error")
+$throws(<import "thaw" from core $thaw("")>, "cast error")
+$throws(<import "thaw" from core $thaw("# comment")>, "cast error")
+$throws(<import "thaw" from core $thaw("1 2 3")>, "cast error")
+$throws(<import "thaw" from core $thaw("$value=100")>, "cast error")
+$throws(<import "thaw" from core $thaw("$add(1, 2)")>, "cast error")
+$throws(<import "thaw" from core $thaw("if true \\ /")>, "cast error")
+$throws(<import "thaw" from core $thaw("while true \\ /")>, "cast error")
+$throws(<import "thaw" from core $thaw("catch \\ /")>, "cast error")
+$throws(<import "thaw" from core $thaw("throw \"error\"")>, "cast error")
+$throws(<import "thaw" from core $thaw("$value")>, "cast error")

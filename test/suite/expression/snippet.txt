@@ -1,0 +1,12 @@
+#!/usr/local/bin/langnd
+
+import ["read", "evaluate", "get"] from core
+
+$testing = $evaluate($read("testing.txt", null))
+$returns = $get($testing, "returns")
+$throws = $get($testing, "throws")
+
+$returns(<\ />, null)
+$returns(<\ 1 2 3 />, 3)
+$throws(<\ throw "custom error" />, "custom error")
+$returns(<catch \ "before" throw "end" "after" />, "end")

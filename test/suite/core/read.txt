@@ -1,0 +1,97 @@
+#!/usr/local/bin/langnd
+
+import ["read", "evaluate", "get"] from core
+
+$testing = $evaluate($read("testing.txt", null))
+$returns = $get($testing, "returns")
+$throws = $get($testing, "throws")
+$persistence = $get($testing, "persistence")
+
+if $persistence
+\
+  $returns(<
+  import ["query", "merge", "write"] from core
+  $directory = "/tmp"
+  catch $directory = $query("TMPDIR")
+  $file = $merge($directory, "/read.txt")
+  $write("", $file)
+
+  import "read" from core
+  $read($file, null)
+>, "")
+  $returns(<
+  import ["query", "merge", "write"] from core
+  $directory = "/tmp"
+  catch $directory = $query("TMPDIR")
+  $file = $merge($directory, "/read.txt")
+  $write("TEXT FILE", $file)
+
+  import "read" from core
+  $read($file, null)
+>, "TEXT FILE")
+  $returns(<
+  import ["query", "merge", "write"] from core
+  $directory = "/tmp"
+  catch $directory = $query("TMPDIR")
+  $file = $merge($directory, "/read.txt")
+  $write("LINE 1\nLINE 2\nLINE 3", $file)
+
+  import "read" from core
+  $read($file, null)
+>, "LINE 1\nLINE 2\nLINE 3")
+  $returns(<
+  import ["query", "merge", "write"] from core
+  $directory = "/tmp"
+  catch $directory = $query("TMPDIR")
+  $file = $merge($directory, "/read.txt")
+  $write("", $file)
+
+  import "read" from core
+  $read($file, "\n")
+>, "")
+  $returns(<
+  import ["query", "merge", "write"] from core
+  $directory = "/tmp"
+  catch $directory = $query("TMPDIR")
+  $file = $merge($directory, "/read.txt")
+  $write("TEXT FILE", $file)
+
+  import "read" from core
+  $read($file, "\n")
+>, "TEXT FILE")
+  $returns(<
+  import ["query", "merge", "write"] from core
+  $directory = "/tmp"
+  catch $directory = $query("TMPDIR")
+  $file = $merge($directory, "/read.txt")
+  $write("LINE 1\nLINE 2\nLINE 3", $file)
+
+  import "read" from core
+  $read($file, "\n")
+>, "LINE 1")
+  $returns(<
+  import ["query", "merge", "write"] from core
+  $directory = "/tmp"
+  catch $directory = $query("TMPDIR")
+  $file = $merge($directory, "/read.txt")
+  $write("LINE 1\nLINE 2\nLINE 3", $file)
+
+  import "read" from core
+  $read($file, "\n")
+  $read($file, "\n")
+  $read($file, "\n")
+>, "LINE 1")
+  $returns(<
+  import ["query", "merge", "write"] from core
+  $directory = "/tmp"
+  catch $directory = $query("TMPDIR")
+  $file = $merge($directory, "/read.txt")
+  $write("WORD 1\a000WORD 2\a000WORD 3", $file)
+
+  import "read" from core
+  $read($file, "\a000")
+>, "WORD 1")
+/
+
+$throws(<import "read" from core $read(0, "")>, "damaged argument")
+$throws(<import "read" from core $read(0, "END")>, "damaged argument")

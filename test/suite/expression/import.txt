@@ -1,0 +1,24 @@
+#!/usr/local/bin/langnd
+
+import ["read", "evaluate", "get"] from core
+
+$testing = $evaluate($read("testing.txt", null))
+$returns = $get($testing, "returns")
+
+$returns(<import "freeze" from core>, <import "freeze" from core>)
+$returns(<import "freeze" from core $freeze("text")>, "\"text\"")
+$returns(<$name="freeze" import $name from core>, <import "freeze" from core>)
+$returns(<$function=<"freeze"> import $function() from core>, <import "freeze" from core>)
+$returns(<import ["merge", "freeze"] from core>, [<import "merge" from core>, <import "freeze" from core>])
+$returns(<import ["merge", "freeze"] from core $merge($freeze("text"), " #code")>, "\"text\" #code")
+$returns(<$names=["merge", "freeze"] import $names from core>, [<import "merge" from core>, <import "freeze" from core>])
+$returns(<$function=<["merge", "freeze"]> import $function() from core>, [<import "merge" from core>, <import "freeze" from core>])
+$returns(<import [] from core>, [])
+$returns(<import ["freeze", "freeze", "freeze"] from core>, [<import "freeze" from core>, <import "freeze" from core>, <import "freeze" from core>])
+$returns(<import {"merge": "M", "freeze": "F"} from core>, {"F": <import "freeze" from core>, "M": <import "merge" from core>})
+$returns(<import {"merge": "M", "freeze": "F"} from core $M($F("text"), " #code")>, "\"text\" #code")
+$returns(<$mappings={"merge": "M", "freeze": "F"} import $mappings from core>, {"F": <import "freeze" from core>, "M": <import "merge" from core>})
+$returns(<$function=<{"merge": "M", "freeze": "F"}> import $function() from core>, {"F": <import "freeze" from core>, "M": <import "merge" from core>})
+$returns(<import {} from core>, {})
+$returns(<import {"merge": "X", "freeze": "X"} from core>, {"X": <import "freeze" from core>})
+$returns(<import {"merge": "X", "freeze": "X"} from core $X("text")>, "\"text\"")

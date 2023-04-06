@@ -1,0 +1,38 @@
+#!/usr/local/bin/langnd
+
+import ["read", "evaluate", "get"] from core
+
+$testing = $evaluate($read("testing.txt", null))
+$returns = $get($testing, "returns")
+$throws = $get($testing, "throws")
+$persistence = $get($testing, "persistence")
+
+if $persistence
+\
+  $returns(<
+  import ["query", "merge", "write"] from core
+  $directory = "/tmp"
+  catch $directory = $query("TMPDIR")
+  $file = $merge($directory, "/delete.txt")
+  $write("TEXT FILE", $file)
+
+  import "delete" from core
+  $delete($file)
+>, null)
+
+  $throws(<
+  import ["query", "merge", "write"] from core
+  $directory = "/tmp"
+  catch $directory = $query("TMPDIR")
+  $file = $merge($directory, "/delete.txt")
+  $write("TEXT FILE", $file)
+
+  import ["delete", "read"] from core
+  $delete($file)
+  $read($file, null)
+>, "absent file")
+/
+
+$throws(<import "delete" from core $delete(0)>, "io error")
+$throws(<import "delete" from core $delete(1)>, "io error")
+$throws(<import "delete" from core $delete(2)>, "io error")

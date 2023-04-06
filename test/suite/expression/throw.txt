@@ -1,0 +1,26 @@
+#!/usr/local/bin/langnd
+
+import ["read", "evaluate", "get"] from core
+
+$testing = $evaluate($read("testing.txt", null))
+$throws = $get($testing, "throws")
+$parseFails = $get($testing, "parseFails")
+
+$throws(<throw null>, null)
+$throws(<throw true>, true)
+$throws(<throw 100>, 100)
+$throws(<throw "text">, "text")
+$throws(<throw [1, 2, 3]>, [1, 2, 3])
+$throws(<throw {"a": 1, "b": 2, "c": 3}>, {"a": 1, "b": 2, "c": 3})
+$throws(<throw <import "multiply" from core $number=argument return $multiply($number, $number)>>, <import "multiply" from core $number=argument return $multiply($number, $number)>)
+$throws(<$var="PANIC!" throw $var>, "PANIC!")
+$throws(<import "merge" from core throw $merge("PANIC", "!")>, "PANIC!")
+$throws(<import "divide" from core $error=catch \ $divide(100, 0) / throw $error>, "arithmetic error")
+$throws(<import "merge" from core throw $merge($missing, "!")>, "absent variable")
+$throws(<throw throw "text">, "text")
+$throws(<break throw "text">, "text")
+$throws(<continue throw "text">, "text")
+
+$throws(<throw "0000000000111111111122222222223333333333444444444455555555556666666666777777777788888888889999999999">, "0000000000111111111122222222223333333333444444444455555555556666666666777777777788888888889999999999")
+
+$parseFails("throw", "throw")

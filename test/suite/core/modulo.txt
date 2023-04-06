@@ -1,0 +1,16 @@
+#!/usr/local/bin/langnd
+
+import ["read", "evaluate", "get"] from core
+
+$testing = $evaluate($read("testing.txt", null))
+$returns = $get($testing, "returns")
+$throws = $get($testing, "throws")
+
+$returns(<import "modulo" from core $modulo(1, 2)>, 1)
+$returns(<import "modulo" from core $modulo(123, 456)>, 123)
+$returns(<import "modulo" from core $modulo(-1, -2)>, -1)
+$returns(<import "modulo" from core $modulo(-123, -456)>, -123)
+$returns(<import "modulo" from core $modulo(123.456, 123.456)>, 0)
+$returns(<import "modulo" from core $modulo(-123.456, -123.456)>, 0)
+
+$throws(<import "modulo" from core $modulo(100, 0)>, "arithmetic error")

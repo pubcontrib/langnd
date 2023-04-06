@@ -1,0 +1,24 @@
+#!/usr/local/bin/langnd
+
+import ["read", "evaluate", "get"] from core
+
+$testing = $evaluate($read("testing.txt", null))
+$returns = $get($testing, "returns")
+$throws = $get($testing, "throws")
+
+$returns(<import "divide" from core $divide(1, 2)>, 0.500000)
+$returns(<import "divide" from core $divide(123, 456)>, 0.269729)
+$returns(<import "divide" from core $divide(-1, -2)>, 0.500000)
+$returns(<import "divide" from core $divide(-123, -456)>, 0.269729)
+$returns(<import "divide" from core $divide(0.1, 0.2)>, 0.499954)
+$returns(<import "divide" from core $divide(0.123, 0.456)>, 0.269699)
+$returns(<import "divide" from core $divide(-0.1, -0.2)>, 0.499954)
+$returns(<import "divide" from core $divide(-0.123, -0.456)>, 0.269699)
+$returns(<import "divide" from core $divide(123.456, 123.456)>, 1)
+$returns(<import "divide" from core $divide(-123.456, -123.456)>, 1)
+
+$throws(<import "divide" from core $divide(32767, 0.5)>, "arithmetic error")
+$throws(<import "divide" from core $divide(32767, -0.5)>, "arithmetic error")
+$throws(<import "divide" from core $divide(-32767, 0.5)>, "arithmetic error")
+$throws(<import "divide" from core $divide(-32767, -0.5)>, "arithmetic error")
+$throws(<import "divide" from core $divide(100, 0)>, "arithmetic error")
