@@ -180,6 +180,7 @@ static int run_file(const char *file, int argc, char **argv, int skip)
 {
     FILE *handle;
     int status;
+    string_t text;
     char *bytes;
     long length;
 
@@ -225,7 +226,9 @@ static int run_file(const char *file, int argc, char **argv, int skip)
     }
 
     fclose(handle);
-    status = run_text(create_string(bytes, length), argc, argv, skip);
+    text.bytes = bytes;
+    text.length = length;
+    status = run_text(&text, argc, argv, skip);
 
     if (bytes)
     {
