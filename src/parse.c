@@ -497,8 +497,7 @@ static expression_t *read_any_expression(capsule_t *capsule)
         }
         else
         {
-            crash_with_message("unsupported branch invoked");
-            return NULL;
+            expression = create_unknown_expression();
         }
 
         destroy_string(keyword);

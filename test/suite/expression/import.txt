@@ -4,6 +4,7 @@ import ["read", "evaluate", "get"] from core
 
 $testing = $evaluate($read("testing.txt", null))
 $returns = $get($testing, "returns")
+$parseFails = $get($testing, "parseFails")
 
 $returns(<import "freeze" from core>, <import "freeze" from core>)
 $returns(<import "freeze" from core $freeze("text")>, "\"text\"")
@@ -22,3 +23,7 @@ $returns(<$function=<{"merge": "M", "freeze": "F"}> import $function() from core
 $returns(<import {} from core>, {})
 $returns(<import {"merge": "X", "freeze": "X"} from core>, {"X": <import "freeze" from core>})
 $returns(<import {"merge": "X", "freeze": "X"} from core $X("text")>, "\"text\"")
+
+$parseFails("import", "import")
+$parseFails("from", "from")
+$parseFails("core", "core")
