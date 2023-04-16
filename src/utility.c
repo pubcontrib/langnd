@@ -1280,7 +1280,7 @@ int string_to_number(const string_t *text, number_t *out)
 
             if (!decimal)
             {
-                places = (point == -1 ? (int) text->length : point) - (negative ? 1 : 0) - wholeIndex++;
+                places = (point == -1 ? (int) text->length : point) - wholeIndex++;
                 whole += digit * integer_power(10, places - 1);
 
                 if (whole > 32767)
@@ -1304,6 +1304,7 @@ int string_to_number(const string_t *text, number_t *out)
             if (index == 0)
             {
                 negative = 1;
+                wholeIndex++;
                 continue;
             }
             else
@@ -1316,6 +1317,7 @@ int string_to_number(const string_t *text, number_t *out)
             if (index == 0)
             {
                 negative = 0;
+                wholeIndex++;
                 continue;
             }
             else
