@@ -249,7 +249,12 @@ string_t *represent_value(const value_t *value)
 
                 destination = allocate(source->length + 2, sizeof(char));
                 destination[0] = '"';
-                memcpy(destination + 1, source->bytes, source->length);
+
+                if (source->length > 0)
+                {
+                    memcpy(destination + 1, source->bytes, source->length);
+                }
+
                 destination[source->length + 1] = '"';
 
                 return create_string(destination, source->length + 2);
@@ -990,8 +995,16 @@ string_t *merge_strings(const string_t *left, const string_t *right)
     if (length > 0)
     {
         sum = allocate(length, sizeof(char));
-        memcpy(sum, left->bytes, left->length);
-        memcpy(sum + left->length, right->bytes, right->length);
+
+        if (left->length > 0)
+        {
+            memcpy(sum, left->bytes, left->length);
+        }
+
+        if (right->length > 0)
+        {
+            memcpy(sum + left->length, right->bytes, right->length);
+        }
     }
     else
     {

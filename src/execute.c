@@ -1735,9 +1735,21 @@ static value_t *run_set(frame_t *frame, machine_t *machine)
             destinationLength += afterLength;
 
             destination = allocate(destinationLength, sizeof(char));
-            memcpy(destination, source->bytes, beforeLength);
-            memcpy(destination + beforeLength, middle->bytes, middle->length);
-            memcpy(destination + beforeLength + middle->length, source->bytes + beforeLength + 1, afterLength);
+
+            if (beforeLength > 0)
+            {
+                memcpy(destination, source->bytes, beforeLength);
+            }
+
+            if (middle->length > 0)
+            {
+                memcpy(destination + beforeLength, middle->bytes, middle->length);
+            }
+
+            if (afterLength > 0)
+            {
+                memcpy(destination + beforeLength + middle->length, source->bytes + beforeLength + 1, afterLength);
+            }
 
             return steal_string(create_string(destination, destinationLength));
         }
