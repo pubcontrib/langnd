@@ -27,7 +27,11 @@ if $persistence
   $write("TEXT FILE", $file)
 
   import "read" from core
-  $read($file, null)
+  $result = $read($file, null)
+
+  import "delete" from core
+  $delete($file)
+  return $result
 >, "TEXT FILE")
   $returns(<
   import ["query", "merge", "write"] from core
@@ -37,7 +41,11 @@ if $persistence
   $write("LINE 1\nLINE 2\nLINE 3", $file)
 
   import "read" from core
-  $read($file, null)
+  $result = $read($file, null)
+
+  import "delete" from core
+  $delete($file)
+  return $result
 >, "LINE 1\nLINE 2\nLINE 3")
   $returns(<
   import ["query", "merge", "write"] from core
@@ -47,7 +55,11 @@ if $persistence
   $write("", $file)
 
   import "read" from core
-  $read($file, "\n")
+  $result = $read($file, "\n")
+
+  import "delete" from core
+  $delete($file)
+  return $result
 >, "")
   $returns(<
   import ["query", "merge", "write"] from core
@@ -57,7 +69,11 @@ if $persistence
   $write("TEXT FILE", $file)
 
   import "read" from core
-  $read($file, "\n")
+  $result = $read($file, "\n")
+
+  import "delete" from core
+  $delete($file)
+  return $result
 >, "TEXT FILE")
   $returns(<
   import ["query", "merge", "write"] from core
@@ -67,7 +83,11 @@ if $persistence
   $write("LINE 1\nLINE 2\nLINE 3", $file)
 
   import "read" from core
-  $read($file, "\n")
+  $result = $read($file, "\n")
+
+  import "delete" from core
+  $delete($file)
+  return $result
 >, "LINE 1")
   $returns(<
   import ["query", "merge", "write"] from core
@@ -79,7 +99,11 @@ if $persistence
   import "read" from core
   $read($file, "\n")
   $read($file, "\n")
-  $read($file, "\n")
+  $result = $read($file, "\n")
+
+  import "delete" from core
+  $delete($file)
+  return $result
 >, "LINE 1")
   $returns(<
   import ["query", "merge", "write"] from core
@@ -89,7 +113,11 @@ if $persistence
   $write("WORD 1\a000WORD 2\a000WORD 3", $file)
 
   import "read" from core
-  $read($file, "\a000")
+  $result = $read($file, "\a000")
+
+  import "delete" from core
+  $delete($file)
+  return $result
 >, "WORD 1")
 /
 

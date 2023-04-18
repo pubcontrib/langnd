@@ -17,7 +17,11 @@ if $persistence
   $write("", $file)
 
   import "read" from core
-  $read($file, null)
+  $result = $read($file, null)
+
+  import "delete" from core
+  $delete($file)
+  return $result
 >, "")
   $returns(<
   import ["query", "merge", "write"] from core
@@ -28,7 +32,11 @@ if $persistence
   $write("TEXT", $file)
 
   import "read" from core
-  $read($file, null)
+  $result = $read($file, null)
+
+  import "delete" from core
+  $delete($file)
+  return $result
 >, "TEXT")
   $returns(<
   import ["query", "merge", "write"] from core
@@ -39,6 +47,10 @@ if $persistence
   $write("LAST", $file)
 
   import "read" from core
-  $read($file, null)
+  $result = $read($file, null)
+
+  import "delete" from core
+  $delete($file)
+  return $result
 >, "LAST")
 /
