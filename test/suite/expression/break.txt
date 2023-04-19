@@ -14,10 +14,9 @@ $returns(<import "set" from core $slots=[0,0,0,0,0] while true \ $slots=$set($sl
 $returns(<$result=while true \ catch \ break "here" / / $result>, "here")
 $returns(<$result=while true \ catch \ $pick="here" break $pick / / $result>, "here")
 $returns(<$result=while true \ break break "here" / $result>, "here")
+$throws(<import "evaluate" from core $evaluate("break \"here\"")>, {"message": "failed to execute code", "hint": "\"lost break\""})
 $throws(<import "evaluate" from core $evaluate("break break \"here\"")>, {"message": "failed to execute code", "hint": "\"lost break\""})
 $throws(<import "evaluate" from core $evaluate("continue break \"here\"")>, {"message": "failed to execute code", "hint": "\"lost break\""})
 $throws(<import "evaluate" from core $evaluate("throw break \"here\"")>, {"message": "failed to execute code", "hint": "\"lost break\""})
 
 $parseFails("break", "break")
-
-$throws(<import "evaluate" from core $evaluate("break \"here\"")>, {"message": "failed to execute code", "hint": "\"lost break\""})
