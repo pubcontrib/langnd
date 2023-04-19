@@ -17,9 +17,9 @@ $throws(<$var="PANIC!" throw $var>, "PANIC!")
 $throws(<import "merge" from core throw $merge("PANIC", "!")>, "PANIC!")
 $throws(<import "divide" from core $error=catch \ $divide(100, 0) / throw $error>, "arithmetic error")
 $throws(<import "merge" from core throw $merge($missing, "!")>, "absent variable")
-$throws(<throw throw "text">, "text")
-$throws(<break throw "text">, "text")
-$throws(<continue throw "text">, "text")
+$throws(<break throw "here">, "here")
+$throws(<continue throw "here">, "here")
+$throws(<throw throw "here">, "here")
 
 $throws(<throw "0000000000111111111122222222223333333333444444444455555555556666666666777777777788888888889999999999">, "0000000000111111111122222222223333333333444444444455555555556666666666777777777788888888889999999999")
 
