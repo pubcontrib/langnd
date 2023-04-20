@@ -28,11 +28,11 @@ $suite =
 
     if $color
     \
-      $write("\a027[7;31m FAIL \a027[0m\n", 1)
+      $write("\a027[7;31m FAIL \a027[0m\n", 2)
     /
     otherwise
     \
-      $write("[FAIL]\n", 1)
+      $write("[FAIL]\n", 2)
     /
 
     import ["get", "thaw", "type", "equals"] from core
@@ -55,18 +55,18 @@ $suite =
 
       if $color
       \
-        $write("\a027[1m", 1)
-        $write($header, 1)
-        $write(":\a027[0m\n", 1)
+        $write("\a027[1m", 2)
+        $write($header, 2)
+        $write(":\a027[0m\n", 2)
       /
       otherwise
       \
-        $write($header, 1)
-        $write(":\n", 1)
+        $write($header, 2)
+        $write(":\n", 2)
       /
 
-      $write($message, 1)
-      $write("\n", 1)
+      $write($message, 2)
+      $write("\n", 2)
     >
 
     if $equals($type($hint), "MAP")
@@ -87,7 +87,7 @@ $suite =
       $writeDetail("Hint", $hint, $color)
     /
 
-    $write("\n", 1)
+    $write("\n", 2)
 
     throw "test suite failed"
   /
@@ -156,9 +156,9 @@ $color = $get($testing, "color")
 
 if $color
 \
-  $write("\a027[7;32m PASS \a027[0m\n", 1)
+  $write("\a027[7;32m PASS \a027[0m\n", 2)
 /
 otherwise
 \
-  $write("[PASS]\n", 1)
+  $write("[PASS]\n", 2)
 /
