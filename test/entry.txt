@@ -43,91 +43,50 @@ $suite =
       $hint = $thaw($hint)
     /
 
+    $writeDetail =
+    <
+      # write a detailed message with optional style
+
+      $header = argument
+      $message = argument
+      $color = argument
+
+      import "write" from core
+
+      if $color
+      \
+        $write("\a027[1m", 1)
+        $write($header, 1)
+        $write(":\a027[0m\n", 1)
+      /
+      otherwise
+      \
+        $write($header, 1)
+        $write(":\n", 1)
+      /
+
+      $write($message, 1)
+      $write("\n", 1)
+    >
+
     if $equals($type($hint), "MAP")
     \
       import "unset" from core
 
-      if $color
-      \
-        $write("\a027[1mReason:\a027[0m\n", 1)
-      /
-      otherwise
-      \
-        $write("Reason:\n", 1)
-      /
-      $write($get($hint, "reason"), 1)
-      $write("\n", 1)
-
-      if $color
-      \
-        $write("\a027[1mSuite:\a027[0m\n", 1)
-      /
-      otherwise
-      \
-        $write("Suite:\n", 1)
-      /
-      $write($name, 1)
-      $write("\n", 1)
-
-      if $color
-      \
-        $write("\a027[1mSource:\a027[0m\n", 1)
-      /
-      otherwise
-      \
-        $write("Source:\n", 1)
-      /
-      $write($get($hint, "source"), 1)
-      $write("\n", 1)
-
-      if $color
-      \
-        $write("\a027[1mDetails:\a027[0m\n", 1)
-      /
-      otherwise
-      \
-        $write("Details:\n", 1)
-      /
       $details = $hint
       $details = $unset($details, "reason")
       $details = $unset($details, "source")
-      $write($freeze($details), 1)
-      $write("\n", 1)
+
+      $writeDetail("Reason", $get($hint, "reason"), $color)
+      $writeDetail("Suite", $name, $color)
+      $writeDetail("Source", $get($hint, "source"), $color)
+      $writeDetail("Details", $freeze($details), $color)
     /
     else if $equals($type($hint), "STRING")
     \
-      if $color
-      \
-        $write("\a027[1mReason:\a027[0m\n", 1)
-      /
-      otherwise
-      \
-        $write("Reason:\n", 1)
-      /
-      $write($get($thrown, "message"), 1)
-      $write("\n", 1)
-
-      if $color
-      \
-        $write("\a027[1mSuite:\a027[0m\n", 1)
-      /
-      otherwise
-      \
-        $write("Suite:\n", 1)
-      /
-      $write($name, 1)
-      $write("\n", 1)
-
-      if $color
-      \
-        $write("\a027[1mHint:\a027[0m\n", 1)
-      /
-      otherwise
-      \
-        $write("Hint:\n", 1)
-      /
-      $write($hint, 1)
-      $write("\n", 1)
+      $writeDetail("Reason", $get($thrown, "message"), $color)
+      $writeDetail("Suite", $name, $color)
+      $writeDetail("Hint", $hint, $color)
     /
 
     $write("\n", 1)
