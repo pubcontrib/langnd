@@ -176,6 +176,7 @@ and the implementation of the language are a work in progress.
     $read("/tmp/hello.txt", null)              # "hello file!"
     $delete("/tmp/hello.txt")                  # null
     $query("USER")                             # "wareification"
+    $evaluate("import \"set\" from core")      # <import "set" from core>
     $freeze([1, 2, 3])                         # "[1, 2, 3]"
     $thaw("[3, 2, 1]")                         # [3, 2, 1]
     $type("mystery")                           # "STRING"
