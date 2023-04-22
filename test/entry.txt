@@ -24,16 +24,10 @@ $suite =
     import ["evaluate", "read", "get", "write"] from core
 
     $testing = $evaluate($read("testing.txt", null))
+    $writeStatus = $get($testing, "writeStatus")
     $color = $get($testing, "color")
 
-    if $color
-    \
-      $write("\a027[7;31m FAIL \a027[0m\n", 2)
-    /
-    otherwise
-    \
-      $write("[FAIL]\n", 2)
-    /
+    $writeStatus("FAIL", $color, 31)
 
     import ["get", "thaw", "type", "equals"] from core
 
@@ -152,13 +146,7 @@ $suite("core/inputs")
 import ["evaluate", "read", "get", "write"] from core
 
 $testing = $evaluate($read("testing.txt", null))
+$writeStatus = $get($testing, "writeStatus")
 $color = $get($testing, "color")
 
-if $color
-\
-  $write("\a027[7;32m PASS \a027[0m\n", 2)
-/
-otherwise
-\
-  $write("[PASS]\n", 2)
-/
+$writeStatus("PASS", $color, 32)
