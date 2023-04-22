@@ -176,6 +176,32 @@ $parseFails =
   /
 >
 
+$writeDetail =
+<
+  # write a detailed message with optional style
+
+  $header = argument
+  $message = argument
+  $color = argument
+
+  import "write" from core
+
+  if $color
+  \
+    $write("\a027[1m", 2)
+    $write($header, 2)
+    $write(":\a027[0m\n", 2)
+  /
+  otherwise
+  \
+    $write($header, 2)
+    $write(":\n", 2)
+  /
+
+  $write($message, 2)
+  $write("\n", 2)
+>
+
 $writeStatus =
 <
   # write a status with optional style
@@ -248,6 +274,7 @@ $module = $set($module, "returns", $returns)
 $module = $set($module, "throws", $throws)
 $module = $set($module, "lexFails", $lexFails)
 $module = $set($module, "parseFails", $parseFails)
+$module = $set($module, "writeDetail", $writeDetail)
 $module = $set($module, "writeStatus", $writeStatus)
 $module = $set($module, "persistence", $supportsEnvironmentFlag("NO_PERSISTENCE"))
 $module = $set($module, "color", $supportsEnvironmentFlag("NO_COLOR"))
