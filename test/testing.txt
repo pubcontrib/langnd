@@ -178,7 +178,7 @@ $parseFails =
 
 $supportsEnvironmentFlag =
 <
-  # checks if color is supported
+  # checks if an environment flag is set
 
   $name = argument
 
