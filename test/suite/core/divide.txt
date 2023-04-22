@@ -18,7 +18,7 @@ $returns(<import "divide" from core $divide(123.456, 123.456)>, 1)
 $returns(<import "divide" from core $divide(-123.456, -123.456)>, 1)
 
 $throws(<import "divide" from core $divide(32767, 0.5)>, "arithmetic error")
+$throws(<import "divide" from core $divide(-32767, -0.5)>, "arithmetic error")
 $throws(<import "divide" from core $divide(32767, -0.5)>, "arithmetic error")
 $throws(<import "divide" from core $divide(-32767, 0.5)>, "arithmetic error")
-$throws(<import "divide" from core $divide(-32767, -0.5)>, "arithmetic error")
 $throws(<import "divide" from core $divide(100, 0)>, "arithmetic error")

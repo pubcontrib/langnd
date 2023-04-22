@@ -17,6 +17,6 @@ $returns(<import "multiply" from core $multiply(123.456, 123.456)>, 15241.382354
 $returns(<import "multiply" from core $multiply(-123.456, -123.456)>, 15241.382354)
 
 $throws(<import "multiply" from core $multiply(32767, 32767)>, "arithmetic error")
+$throws(<import "multiply" from core $multiply(-32767, -32767)>, "arithmetic error")
 $throws(<import "multiply" from core $multiply(32767, -32767)>, "arithmetic error")
 $throws(<import "multiply" from core $multiply(-32767, 32767)>, "arithmetic error")
-$throws(<import "multiply" from core $multiply(-32767, -32767)>, "arithmetic error")
