@@ -18,8 +18,8 @@ $returns(<import "evaluate" from core $evaluate("import \"add\" from core $add(1
 
 $throws(<import "evaluate" from core $evaluate("...")>, {"hint": "...", "message": "failed to lex code"})
 $throws(<import "evaluate" from core $evaluate("[")>, {"hint": "[", "message": "failed to parse code"})
-$throws(<import "evaluate" from core $evaluate("throw \"error\"")>, {"hint": "\"error\"", "message": "failed to execute code"})
+$throws(<import "evaluate" from core $evaluate("throw \"error\"")>, {"hint": "error", "message": "failed to execute code"})
 
-$throws(<import "evaluate" from core $evaluate("return \"lost\"")>, {"hint": "\"lost return\"", "message": "failed to execute code"})
-$throws(<import "evaluate" from core $evaluate("break \"lost\"")>, {"hint": "\"lost break\"", "message": "failed to execute code"})
-$throws(<import "evaluate" from core $evaluate("continue \"lost\"")>, {"hint": "\"lost continue\"", "message": "failed to execute code"})
+$throws(<import "evaluate" from core $evaluate("return \"lost\"")>, {"hint": "lost return", "message": "failed to execute code"})
+$throws(<import "evaluate" from core $evaluate("break \"lost\"")>, {"hint": "lost break", "message": "failed to execute code"})
+$throws(<import "evaluate" from core $evaluate("continue \"lost\"")>, {"hint": "lost continue", "message": "failed to execute code"})

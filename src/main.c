@@ -8,7 +8,8 @@ static int run_text(const string_t *text, int argc, char **argv, int skip);
 static int run_file(const char *file, int argc, char **argv, int skip);
 static int run_help();
 static int run_version();
-static string_t *get_detail(const map_t *details, char *key);
+static string_t *cite_detail(const map_t *details, char *name);
+static string_t *transcribe_detail(const map_t *details, char *name);
 
 typedef enum
 {
@@ -144,7 +145,7 @@ static int run_text(const string_t *text, int argc, char **argv, int skip)
         map_t *details;
 
         details = view_map(outcome);
-        message = get_detail(details, "message");
+        message = cite_detail(details, "message");
 
         if (outcome->type != VALUE_TYPE_MAP || !message)
         {
@@ -157,13 +158,15 @@ static int run_text(const string_t *text, int argc, char **argv, int skip)
         fwrite(message->bytes, sizeof(char), message->length, stderr);
         fprintf(stderr, "\n");
 
-        hint = get_detail(details, "hint");
+        hint = transcribe_detail(details, "hint");
 
         if (hint)
         {
             fprintf(stderr, "    [hint] ");
             fwrite(hint->bytes, sizeof(char), hint->length, stderr);
             fprintf(stderr, "\n");
+
+            destroy_string(hint);
         }
 
         dereference_value(outcome);
@@ -259,7 +262,7 @@ static int run_version()
     return PROGRAM_SUCCESS;
 }
 
-static string_t *get_detail(const map_t *details, char *name)
+static string_t *cite_detail(const map_t *details, char *name)
 {
     value_t *item;
     string_t key;
@@ -272,6 +275,26 @@ static string_t *get_detail(const map_t *details, char *name)
     if (item && item->type == VALUE_TYPE_STRING)
     {
         return view_string(item);
+    }
+    else
+    {
+        return NULL;
+    }
+}
+
+static string_t *transcribe_detail(const map_t *details, char *name)
+{
+    value_t *item;
+    string_t key;
+
+    key.bytes = name;
+    key.length = strlen(name);
+
+    item = get_map_item(details, &key);
+
+    if (item)
+    {
+        return represent_value(item);
     }
     else
     {

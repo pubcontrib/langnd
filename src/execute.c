@@ -159,7 +159,8 @@ value_t *execute(const string_t *code, machine_t *machine)
 
             details = empty_map(hash_string, dereference_value_unsafe, 1);
             set_map_item(details, cstring_to_string("message"), steal_string(cstring_to_string("failed to execute code")));
-            set_map_item(details, cstring_to_string("hint"), steal_string(represent_value(last)));
+            set_map_item(details, cstring_to_string("hint"), last);
+            last->owners += 1;
             machine->effect = VALUE_EFFECT_THROW;
 
             dereference_value(last);
