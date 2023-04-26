@@ -20,4 +20,4 @@ $returns(<$function=<while true \ return "value" /> $function()>, "value")
 
 $parseFails("return", "return")
 
-$throws(<import "evaluate" from core $evaluate("return \"result\"")>, {"message": "failed to execute code", "hint": "lost return"})
+$throws(<import "evaluate" from core $evaluate("return \"result\"")>, {"issue": "failed to execute code", "cause": "lost return"})

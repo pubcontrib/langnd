@@ -32,28 +32,28 @@ $suite =
 
     import ["get", "thaw", "type", "equals"] from core
 
-    $hint = $get($thrown, "hint")
-    catch
-    \
-      $hint = $thaw($hint)
-    /
+    $issue = $get($thrown, "issue")
+    $cause = null
+    catch $cause = $get($thrown, "cause")
 
-    if $equals($type($hint), "MAP")
+    if $equals($type($cause), "MAP")
     \
-      $writeDetail("Reason", $get($hint, "reason"), $color)
+      $writeDetail("Reason", $get($cause, "reason"), $color)
       $writeDetail("Suite", $name, $color)
-      $writeDetail("Source", $get($hint, "source"), $color)
+      $writeDetail("Source", $get($cause, "source"), $color)
 
-      catch $writeDetail("Actual", $freeze($get($hint, "actual")), $color)
-      catch $writeDetail("Expected", $freeze($get($hint, "expected")), $color)
-      catch $writeDetail("Returned", $freeze($get($hint, "returned")), $color)
-      catch $writeDetail("Thrown", $freeze($get($hint, "thrown")), $color)
+      catch $writeDetail("Actual", $freeze($get($cause, "actual")), $color)
+      catch $writeDetail("Expected", $freeze($get($cause, "expected")), $color)
+      catch $writeDetail("Returned", $freeze($get($cause, "returned")), $color)
+      catch $writeDetail("Thrown", $freeze($get($cause, "thrown")), $color)
     /
-    else if $equals($type($hint), "STRING")
+    otherwise
     \
-      $writeDetail("Reason", $get($thrown, "message"), $color)
+      $writeDetail("Reason", $issue, $color)
       $writeDetail("Suite", $name, $color)
-      $writeDetail("Hint", $hint, $color)
+
+      catch $writeDetail("Cause", $freeze($get($thrown, "cause")), $color)
+      catch $writeDetail("Hint", $freeze($get($thrown, "hint")), $color)
     /
 
     $write("\n", 2)

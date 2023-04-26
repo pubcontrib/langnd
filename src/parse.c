@@ -64,8 +64,8 @@ script_t *parse_script(const string_t *code)
     capsule_t capsule;
     script_t *script;
     list_t *expressions;
-    string_t *errorMessage;
-    string_t *hintMessage;
+    string_t *issue;
+    string_t *hint;
 
     capsule.hasPresent = 0;
     capsule.hasFuture = 0;
@@ -73,8 +73,8 @@ script_t *parse_script(const string_t *code)
     start_scanner(&capsule.scanner, code);
 
     expressions = empty_list(destroy_expression_unsafe, 1);
-    errorMessage = NULL;
-    hintMessage = NULL;
+    issue = NULL;
+    hint = NULL;
 
     while (capsule.scanner.state == SCANNER_STATE_RUNNING)
     {
@@ -89,8 +89,8 @@ script_t *parse_script(const string_t *code)
                 destroy_list(expressions);
                 destroy_expression(expression);
                 expressions = NULL;
-                errorMessage = cstring_to_string("failed to parse code");
-                hintMessage = substring_to_newline(capsule.scanner.code, capsule.present.start, 50);
+                issue = cstring_to_string("failed to parse code");
+                hint = substring_to_newline(capsule.scanner.code, capsule.present.start, 50);
                 break;
             }
 
@@ -100,28 +100,28 @@ script_t *parse_script(const string_t *code)
 
     if (capsule.scanner.state == SCANNER_STATE_ERRORED)
     {
-        errorMessage = cstring_to_string("failed to lex code");
-        hintMessage = substring_to_newline(capsule.scanner.code, capsule.scanner.token.start, 50);
+        issue = cstring_to_string("failed to lex code");
+        hint = substring_to_newline(capsule.scanner.code, capsule.scanner.token.start, 50);
     }
 
     script = allocate(1, sizeof(script_t));
     script->expressions = expressions;
-    script->errorMessage = errorMessage;
-    script->hintMessage = hintMessage;
+    script->issue = issue;
+    script->hint = hint;
 
     return script;
 }
 
 void destroy_script(script_t *script)
 {
-    if (script->errorMessage)
+    if (script->issue)
     {
-        destroy_string(script->errorMessage);
+        destroy_string(script->issue);
     }
 
-    if (script->hintMessage)
+    if (script->hint)
     {
-        destroy_string(script->hintMessage);
+        destroy_string(script->hint);
     }
 
     if (script->expressions)

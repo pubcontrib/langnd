@@ -113,7 +113,7 @@ $lexFails =
   /
 
   $expected = {}
-  $expected = $set($expected, "message", "failed to lex code")
+  $expected = $set($expected, "issue", "failed to lex code")
   $expected = $set($expected, "hint", $hint)
 
   if $not($equals($thrown, $expected))
@@ -159,7 +159,7 @@ $parseFails =
   /
 
   $expected = {}
-  $expected = $set($expected, "message", "failed to parse code")
+  $expected = $set($expected, "issue", "failed to parse code")
   $expected = $set($expected, "hint", $hint)
 
   if $not($equals($thrown, $expected))

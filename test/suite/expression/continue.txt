@@ -11,9 +11,9 @@ $returns(<import ["precedes", "add", "equals", "modulo", "set"] from core $slots
 $returns(<import ["precedes", "add", "equals", "modulo"] from core $i=0 $result=while $precedes($i, 10) \ $i=$add($i, 1) if $equals($modulo($i, 2), 0) \ continue "here" / "there" / $result>, "here")
 $returns(<import ["precedes", "add", "equals", "modulo"] from core $i=0 $result=while $precedes($i, 10) \ $i=$add($i, 1) if $equals($modulo($i, 2), 1) \ continue "here" / "there" / $result>, "there")
 $returns(<import ["precedes", "add", "equals", "modulo"] from core $i=0 $result=while $precedes($i, 10) \ $i=$add($i, 1) if $equals($modulo($i, 2), 0) \ continue continue "here" / "there" / $result>, "here")
-$throws(<import "evaluate" from core $evaluate("continue \"here\"")>, {"message": "failed to execute code", "hint": "lost continue"})
-$throws(<import "evaluate" from core $evaluate("break continue \"here\"")>, {"message": "failed to execute code", "hint": "lost continue"})
-$throws(<import "evaluate" from core $evaluate("continue continue \"here\"")>, {"message": "failed to execute code", "hint": "lost continue"})
-$throws(<import "evaluate" from core $evaluate("throw continue \"here\"")>, {"message": "failed to execute code", "hint": "lost continue"})
+$throws(<import "evaluate" from core $evaluate("continue \"here\"")>, {"issue": "failed to execute code", "cause": "lost continue"})
+$throws(<import "evaluate" from core $evaluate("break continue \"here\"")>, {"issue": "failed to execute code", "cause": "lost continue"})
+$throws(<import "evaluate" from core $evaluate("continue continue \"here\"")>, {"issue": "failed to execute code", "cause": "lost continue"})
+$throws(<import "evaluate" from core $evaluate("throw continue \"here\"")>, {"issue": "failed to execute code", "cause": "lost continue"})
 
 $parseFails("continue", "continue")

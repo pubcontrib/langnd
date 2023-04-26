@@ -141,13 +141,13 @@ static int run_text(const string_t *text, int argc, char **argv, int skip)
 
     if (effect == VALUE_EFFECT_THROW)
     {
-        string_t *message, *hint;
+        string_t *issue, *hint, *cause;
         map_t *details;
 
         details = view_map(outcome);
-        message = cite_detail(details, "message");
+        issue = cite_detail(details, "issue");
 
-        if (outcome->type != VALUE_TYPE_MAP || !message)
+        if (outcome->type != VALUE_TYPE_MAP || !issue)
         {
             crash_with_message("unsupported branch invoked");
 
@@ -155,7 +155,7 @@ static int run_text(const string_t *text, int argc, char **argv, int skip)
         }
 
         fprintf(stderr, "%s: ", PROGRAM_NAME);
-        fwrite(message->bytes, sizeof(char), message->length, stderr);
+        fwrite(issue->bytes, sizeof(char), issue->length, stderr);
         fprintf(stderr, "\n");
 
         hint = transcribe_detail(details, "hint");
@@ -167,6 +167,17 @@ static int run_text(const string_t *text, int argc, char **argv, int skip)
             fprintf(stderr, "\n");
 
             destroy_string(hint);
+        }
+
+        cause = transcribe_detail(details, "cause");
+
+        if (cause)
+        {
+            fprintf(stderr, "    [cause] ");
+            fwrite(cause->bytes, sizeof(char), cause->length, stderr);
+            fprintf(stderr, "\n");
+
+            destroy_string(cause);
         }
 
         dereference_value(outcome);

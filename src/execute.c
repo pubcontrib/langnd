@@ -93,17 +93,17 @@ value_t *execute(const string_t *code, machine_t *machine)
 
     script = parse_script(code);
 
-    if (script->errorMessage)
+    if (script->issue)
     {
         map_t *details;
 
         details = empty_map(hash_string, dereference_value_unsafe, 1);
-        set_map_item(details, cstring_to_string("message"), steal_string(script->errorMessage));
-        set_map_item(details, cstring_to_string("hint"), steal_string(script->hintMessage));
+        set_map_item(details, cstring_to_string("issue"), steal_string(script->issue));
+        set_map_item(details, cstring_to_string("hint"), steal_string(script->hint));
         machine->effect = VALUE_EFFECT_THROW;
 
-        script->errorMessage = NULL;
-        script->hintMessage = NULL;
+        script->issue = NULL;
+        script->hint = NULL;
         destroy_script(script);
 
         return steal_map(details);
@@ -158,8 +158,8 @@ value_t *execute(const string_t *code, machine_t *machine)
             }
 
             details = empty_map(hash_string, dereference_value_unsafe, 1);
-            set_map_item(details, cstring_to_string("message"), steal_string(cstring_to_string("failed to execute code")));
-            set_map_item(details, cstring_to_string("hint"), last);
+            set_map_item(details, cstring_to_string("issue"), steal_string(cstring_to_string("failed to execute code")));
+            set_map_item(details, cstring_to_string("cause"), last);
             last->owners += 1;
             machine->effect = VALUE_EFFECT_THROW;
 
@@ -1332,7 +1332,7 @@ static value_t *run_thaw(frame_t *frame, machine_t *machine)
 
     script = parse_script(view_string(code));
 
-    if (script->errorMessage || script->expressions->length != 1)
+    if (script->issue || script->expressions->length != 1)
     {
         destroy_script(script);
 

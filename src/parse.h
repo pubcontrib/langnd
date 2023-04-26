@@ -111,8 +111,8 @@ typedef struct
 typedef struct
 {
     list_t *expressions;
-    string_t *errorMessage;
-    string_t *hintMessage;
+    string_t *issue;
+    string_t *hint;
 } script_t;
 
 script_t *parse_script(const string_t *code);
