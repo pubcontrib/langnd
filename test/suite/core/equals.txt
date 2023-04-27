@@ -87,3 +87,54 @@ $returns(<import "equals" from core $equals(<import "multiply" from core $number
 $returns(<import "equals" from core $equals(<import "multiply" from core $number=argument return $multiply($number, $number)>, "text")>, false)
 $returns(<import "equals" from core $equals(<import "multiply" from core $number=argument return $multiply($number, $number)>, [1, 2, 3])>, false)
 $returns(<import "equals" from core $equals(<import "multiply" from core $number=argument return $multiply($number, $number)>, {"a": 1, "b": 2, "c": 3})>, false)
+
+$returns(<import "equals" from core $equals(<
+  import "multiply" from core
+  $number=argument
+  return $multiply($number, $number)
+>, <
+  import "multiply" from core
+  $number=argument
+  return $multiply($number, $number)
+>)>, true)
+$returns(<import "equals" from core $equals(<
+  import "multiply" from core
+  $number=argument
+  return $multiply($number, $number)
+>, <import "multiply" from core $number=argument return $multiply($number, $number)>)>, false)
+$returns(<import "equals" from core $equals(<import "multiply" from core $number=argument return $multiply($number, $number)>, <
+  import "multiply" from core
+  $number=argument
+  return $multiply($number, $number)
+>)>, false)
+$returns(<import "equals" from core $equals(<
+  # squares a number
+  import "multiply" from core
+  $number=argument
+  return $multiply($number, $number)
+>, <
+  # squares a number
+  import "multiply" from core
+  $number=argument
+  return $multiply($number, $number)
+>)>, true)
+$returns(<import "equals" from core $equals(<
+  # squares a number
+  import "multiply" from core
+  $number=argument
+  return $multiply($number, $number)
+>, <
+  import "multiply" from core
+  $number=argument
+  return $multiply($number, $number)
+>)>, false)
+$returns(<import "equals" from core $equals(<
+  import "multiply" from core
+  $number=argument
+  return $multiply($number, $number)
+>, <
+  # squares a number
+  import "multiply" from core
+  $number=argument
+  return $multiply($number, $number)
+>)>, false)
