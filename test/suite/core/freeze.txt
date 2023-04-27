@@ -108,3 +108,15 @@ $returns(<import "freeze" from core $freeze(<{}>)>, "<{}>")
 $returns(<import "freeze" from core $freeze(<<>>)>, "<<>>")
 $returns(<import "freeze" from core $freeze(<   >)>, "<   >")
 $returns(<import "freeze" from core $freeze(<null 0 "" [] {} <>>)>, "<null 0 \"\" [] {} <>>")
+
+$returns(<import "freeze" from core $freeze(<
+  import "multiply" from core
+  $number=argument
+  return $multiply($number, $number)
+>)>, "<\n  import \"multiply\" from core\n  $number=argument\n  return $multiply($number, $number)\n>")
+$returns(<import "freeze" from core $freeze(<
+  # squares a number
+  import "multiply" from core
+  $number=argument
+  return $multiply($number, $number)
+>)>, "<\n  # squares a number\n  import \"multiply\" from core\n  $number=argument\n  return $multiply($number, $number)\n>")
