@@ -11,8 +11,11 @@ and the implementation of the language are a work in progress.
     $warn=
     <
       # writes a message with a highlighted warning
-      $message=argument
+
+      $message = argument
+
       import "write" from core
+
       $write("\a027[7;33m WARN \a027[0m ", 1)
       $write($message, 1)
       $write("\n", 1)
@@ -69,6 +72,7 @@ and the implementation of the language are a work in progress.
     <return "result">
     <
       # double the input
+
       $number = argument
 
       import "multiply" from core
