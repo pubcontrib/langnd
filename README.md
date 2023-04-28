@@ -164,36 +164,36 @@ and the implementation of the language are a work in progress.
 
 **Core**
 
-    $add(75, 25)                               # 100
-    $subtract(500, 400)                        # 100
-    $multiply(20, 5)                           # 100
-    $divide(400, 4)                            # 100
-    $modulo(1000, 900)                         # 100
-    $truncate(100.200)                         # 100
-    $and(true, true)                           # true
-    $or(false, true)                           # true
-    $not(false)                                # true
-    $precedes(0, 100)                          # true
-    $succeeds(100, 0)                          # true
-    $equals(100, 100)                          # true
-    $write("hello file!", "/tmp/hello.txt")    # null
-    $read("/tmp/hello.txt", null)              # "hello file!"
-    $delete("/tmp/hello.txt")                  # null
-    $query("USER")                             # "wareification"
-    $evaluate("import \"set\" from core")      # <import "set" from core>
-    $freeze([1, 2, 3])                         # "[1, 2, 3]"
-    $thaw("[3, 2, 1]")                         # [3, 2, 1]
-    $type("mystery")                           # "STRING"
-    $cast("100", "NUMBER")                     # 100
-    $get(["a", "b", "c"], 2)                   # "b"
-    $set(["a", "b", "?"], 3, "c")              # ["a", "b", "c"]
-    $unset(["a", "b", "uh...", "c"], 3)        # ["a", "b", "c"]
-    $merge(["a"], ["b", "c"])                  # ["a", "b", "c"]
-    $length(["a", "b", "c"])                   # 3
-    $keys({"a": 1, "b": 2, "c": 3})            # ["a", "b", "c"]
-    $sort([3, 2, 5, 1, 4], "+")                # [1, 2, 3, 4, 5]
+    $add(75, 25)                                        # 100
+    $subtract(500, 400)                                 # 100
+    $multiply(20, 5)                                    # 100
+    $divide(400, 4)                                     # 100
+    $modulo(1000, 900)                                  # 100
+    $truncate(100.200)                                  # 100
+    $and(true, true)                                    # true
+    $or(false, true)                                    # true
+    $not(false)                                         # true
+    $precedes(0, 100)                                   # true
+    $succeeds(100, 0)                                   # true
+    $equals(100, 100)                                   # true
+    $write("hello file!", "/tmp/hello.txt")             # null
+    $read("/tmp/hello.txt", null)                       # "hello file!"
+    $delete("/tmp/hello.txt")                           # null
+    $query("USER")                                      # "wareification"
+    $evaluate("import \"add\" from core $add(99, 1)")   # 100
+    $freeze([1, 2, 3])                                  # "[1, 2, 3]"
+    $thaw("[3, 2, 1]")                                  # [3, 2, 1]
+    $type("mystery")                                    # "STRING"
+    $cast("100", "NUMBER")                              # 100
+    $get(["a", "b", "c"], 2)                            # "b"
+    $set(["a", "b", "?"], 3, "c")                       # ["a", "b", "c"]
+    $unset(["a", "b", "uh...", "c"], 3)                 # ["a", "b", "c"]
+    $merge(["a"], ["b", "c"])                           # ["a", "b", "c"]
+    $length(["a", "b", "c"])                            # 3
+    $keys({"a": 1, "b": 2, "c": 3})                     # ["a", "b", "c"]
+    $sort([3, 2, 5, 1, 4], "+")                         # [1, 2, 3, 4, 5]
 
-    $inputs                                    # ["commit", "-m", "fix: ui"]
+    $inputs                                             # ["-m", "fix: ui"]
 
 ## License
 
