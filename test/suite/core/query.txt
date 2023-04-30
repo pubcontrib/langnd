@@ -9,3 +9,10 @@ $throws = $get($testing, "throws")
 $returns(<import ["query", "type"] from core $type($query("TERM"))>, "STRING")
 
 $throws(<import "query" from core $query("missing_env_var")>, "absent environment variable")
+
+$throws(<import "query" from core $query(null)>, "alien argument")
+$throws(<import "query" from core $query(false)>, "alien argument")
+$throws(<import "query" from core $query(0)>, "alien argument")
+$throws(<import "query" from core $query([])>, "alien argument")
+$throws(<import "query" from core $query({})>, "alien argument")
+$throws(<import "query" from core $query(<>)>, "alien argument")

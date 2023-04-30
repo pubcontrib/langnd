@@ -4,6 +4,7 @@ import ["read", "evaluate", "get"] from core
 
 $testing = $evaluate($read("testing.txt", null))
 $returns = $get($testing, "returns")
+$throws = $get($testing, "throws")
 
 $returns(<import "precedes" from core $precedes(null, null)>, false)
 $returns(<import "precedes" from core $precedes(null, true)>, true)
@@ -85,3 +86,11 @@ $returns(<import "precedes" from core $precedes(<import "multiply" from core $nu
 $returns(<import "precedes" from core $precedes(<import "multiply" from core $number=argument return $multiply($number, $number)>, "text")>, false)
 $returns(<import "precedes" from core $precedes(<import "multiply" from core $number=argument return $multiply($number, $number)>, [1, 2, 3])>, false)
 $returns(<import "precedes" from core $precedes(<import "multiply" from core $number=argument return $multiply($number, $number)>, {"a": 1, "b": 2, "c": 3})>, false)
+
+$throws(<import "precedes" from core $precedes(null)>, "absent argument")
+$throws(<import "precedes" from core $precedes(false)>, "absent argument")
+$throws(<import "precedes" from core $precedes(0)>, "absent argument")
+$throws(<import "precedes" from core $precedes("")>, "absent argument")
+$throws(<import "precedes" from core $precedes([])>, "absent argument")
+$throws(<import "precedes" from core $precedes({})>, "absent argument")
+$throws(<import "precedes" from core $precedes(<>)>, "absent argument")

@@ -4,6 +4,7 @@ import ["read", "evaluate", "get"] from core
 
 $testing = $evaluate($read("testing.txt", null))
 $returns = $get($testing, "returns")
+$throws = $get($testing, "throws")
 
 $returns(<import "length" from core $length("")>, 0)
 $returns(<import "length" from core $length("0")>, 1)
@@ -15,3 +16,8 @@ $returns(<import "length" from core $length([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])>, 10
 $returns(<import "length" from core $length({})>, 0)
 $returns(<import "length" from core $length({"0": 0})>, 1)
 $returns(<import "length" from core $length({"0": 0, "1": 1, "2": 2, "3": 3, "4": 4, "5": 5, "6": 6, "7": 7, "8": 8, "9": 9})>, 10)
+
+$throws(<import "length" from core $length(null)>, "alien argument")
+$throws(<import "length" from core $length(false)>, "alien argument")
+$throws(<import "length" from core $length(0)>, "alien argument")
+$throws(<import "length" from core $length(<>)>, "alien argument")

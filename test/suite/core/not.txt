@@ -4,6 +4,14 @@ import ["read", "evaluate", "get"] from core
 
 $testing = $evaluate($read("testing.txt", null))
 $returns = $get($testing, "returns")
+$throws = $get($testing, "throws")
 
 $returns(<import "not" from core $not(false)>, true)
 $returns(<import "not" from core $not(true)>, false)
+
+$throws(<import "not" from core $not(null)>, "alien argument")
+$throws(<import "not" from core $not(0)>, "alien argument")
+$throws(<import "not" from core $not("")>, "alien argument")
+$throws(<import "not" from core $not([])>, "alien argument")
+$throws(<import "not" from core $not({})>, "alien argument")
+$throws(<import "not" from core $not(<>)>, "alien argument")

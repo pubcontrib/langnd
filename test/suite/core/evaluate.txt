@@ -23,3 +23,10 @@ $throws(<import "evaluate" from core $evaluate("throw \"error\"")>, {"issue": "f
 $throws(<import "evaluate" from core $evaluate("return \"lost\"")>, {"issue": "failed to execute code", "cause": "lost return"})
 $throws(<import "evaluate" from core $evaluate("break \"lost\"")>, {"issue": "failed to execute code", "cause": "lost break"})
 $throws(<import "evaluate" from core $evaluate("continue \"lost\"")>, {"issue": "failed to execute code", "cause": "lost continue"})
+
+$throws(<import "evaluate" from core $evaluate(null)>, "alien argument")
+$throws(<import "evaluate" from core $evaluate(false)>, "alien argument")
+$throws(<import "evaluate" from core $evaluate(0)>, "alien argument")
+$throws(<import "evaluate" from core $evaluate([])>, "alien argument")
+$throws(<import "evaluate" from core $evaluate({})>, "alien argument")
+$throws(<import "evaluate" from core $evaluate(<>)>, "alien argument")

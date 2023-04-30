@@ -36,3 +36,9 @@ if $persistence
 $throws(<import "delete" from core $delete(0)>, "io error")
 $throws(<import "delete" from core $delete(1)>, "io error")
 $throws(<import "delete" from core $delete(2)>, "io error")
+
+$throws(<import "delete" from core $delete(null)>, "alien argument")
+$throws(<import "delete" from core $delete(false)>, "alien argument")
+$throws(<import "delete" from core $delete([])>, "alien argument")
+$throws(<import "delete" from core $delete({})>, "alien argument")
+$throws(<import "delete" from core $delete(<>)>, "alien argument")

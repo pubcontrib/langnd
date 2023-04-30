@@ -4,6 +4,7 @@ import ["read", "evaluate", "get"] from core
 
 $testing = $evaluate($read("testing.txt", null))
 $returns = $get($testing, "returns")
+$throws = $get($testing, "throws")
 
 $returns(<import "equals" from core $equals(null, null)>, true)
 $returns(<import "equals" from core $equals(null, true)>, false)
@@ -138,3 +139,11 @@ $returns(<import "equals" from core $equals(<
   $number=argument
   return $multiply($number, $number)
 >)>, false)
+
+$throws(<import "equals" from core $equals(null)>, "absent argument")
+$throws(<import "equals" from core $equals(false)>, "absent argument")
+$throws(<import "equals" from core $equals(0)>, "absent argument")
+$throws(<import "equals" from core $equals("")>, "absent argument")
+$throws(<import "equals" from core $equals([])>, "absent argument")
+$throws(<import "equals" from core $equals({})>, "absent argument")
+$throws(<import "equals" from core $equals(<>)>, "absent argument")

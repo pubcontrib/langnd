@@ -4,6 +4,7 @@ import ["read", "evaluate", "get"] from core
 
 $testing = $evaluate($read("testing.txt", null))
 $returns = $get($testing, "returns")
+$throws = $get($testing, "throws")
 
 $returns(<import "keys" from core $keys("")>, [])
 $returns(<import "keys" from core $keys("0")>, [1])
@@ -15,3 +16,8 @@ $returns(<import "keys" from core $keys({})>, [])
 $returns(<import "keys" from core $keys({"0": 0})>, ["0"])
 $returns(<import "keys" from core $keys({"0": 0, "1": 1, "2": 2, "3": 3, "4": 4, "5": 5, "6": 6, "7": 7, "8": 8, "9": 9})>, ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"])
 $returns(<import "keys" from core $keys({"null": null, "boolean": false, "number": 0, "string": "", "list": [], "map": {}})>, ["boolean", "list", "map", "null", "number", "string"])
+
+$throws(<import "keys" from core $keys(null)>, "alien argument")
+$throws(<import "keys" from core $keys(false)>, "alien argument")
+$throws(<import "keys" from core $keys(0)>, "alien argument")
+$throws(<import "keys" from core $keys(<>)>, "alien argument")

@@ -4,6 +4,7 @@ import ["read", "evaluate", "get"] from core
 
 $testing = $evaluate($read("testing.txt", null))
 $returns = $get($testing, "returns")
+$throws = $get($testing, "throws")
 
 $returns(<import "truncate" from core $truncate(0)>, 0)
 $returns(<import "truncate" from core $truncate(1)>, 1)
@@ -22,3 +23,10 @@ $returns(<import "truncate" from core $truncate(0.999999)>, 0)
 $returns(<import "truncate" from core $truncate(-0.999999)>, 0)
 $returns(<import "truncate" from core $truncate(32767.999999)>, 32767)
 $returns(<import "truncate" from core $truncate(-32767.999999)>, -32767)
+
+$throws(<import "truncate" from core $truncate(null)>, "alien argument")
+$throws(<import "truncate" from core $truncate(false)>, "alien argument")
+$throws(<import "truncate" from core $truncate("")>, "alien argument")
+$throws(<import "truncate" from core $truncate([])>, "alien argument")
+$throws(<import "truncate" from core $truncate({})>, "alien argument")
+$throws(<import "truncate" from core $truncate(<>)>, "alien argument")
