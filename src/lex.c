@@ -138,10 +138,16 @@ static void read_comment_token(scanner_t *scanner)
 
 static void read_number_token(scanner_t *scanner)
 {
-    int decimal;
+    /*
+     * 0: wants integer
+     * 1: got integer
+     * 2: wants decimal
+     * 3: got decimal
+     */
+    int mode;
 
     scanner->token.type = TOKEN_TYPE_NUMBER;
-    decimal = 0;
+    mode = is_number_symbol(scanner->code->bytes[scanner->token.start]) ? 1 : 0;
 
     while (has_another_symbol(scanner))
     {
@@ -151,10 +157,10 @@ static void read_number_token(scanner_t *scanner)
 
         if (symbol == '.')
         {
-            if (!decimal)
+            if (mode == 1)
             {
                 scanner->token.end++;
-                decimal = 1;
+                mode = 2;
             }
             else
             {
@@ -164,12 +170,26 @@ static void read_number_token(scanner_t *scanner)
         }
         else if (is_number_symbol(symbol))
         {
+            if (mode == 0)
+            {
+                mode = 1;
+            }
+            else if (mode == 2)
+            {
+                mode = 3;
+            }
+
             scanner->token.end++;
         }
         else
         {
             break;
         }
+    }
+
+    if (mode != 1 && mode != 3)
+    {
+        scanner->state = SCANNER_STATE_ERRORED;
     }
 }
 
