@@ -18,7 +18,7 @@ typedef enum
     BOOLEAN_TRUE = 1
 } boolean_t;
 
-/**
+/*
  * 16.16 signed fixed point number.
  */
 typedef int number_t;
