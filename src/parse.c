@@ -600,7 +600,13 @@ static expression_t *read_list_expression(capsule_t *capsule)
 static expression_t *read_map_expression(capsule_t *capsule)
 {
     map_t *mappings;
-    int mode; /* 0:wants_key, 1:wants_glue, 2:wants_value, 3:wants_delimiter_or_end */
+    /*
+     * 0: wants key
+     * 1: wants :
+     * 2: wants value
+     * 3: wants , or end
+     */
+    int mode;
     string_t *hold;
 
     mappings = empty_map(hash_string, dereference_value_unsafe, 1);
