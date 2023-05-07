@@ -31,6 +31,19 @@ void ensure_portable_environment()
     {
         crash_with_message("missing portable requirement POINTER_LIMIT");
     }
+
+    if ((-1 & 3) != 3)
+    {
+        /*
+         * Ensure two's complement.
+         *
+         * Example representations for -1:
+         * - two's complement   0xFFFFFFFF
+         * - one's complement   0xFFFFFFFE
+         * - sign + magnitude   0x80000001
+         */
+        crash_with_message("missing portable requirement SIGNED_INTEGRAL");
+    }
 }
 
 int compare_values(const value_t *left, const value_t *right)
