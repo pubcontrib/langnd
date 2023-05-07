@@ -21,7 +21,10 @@ typedef enum
 /*
  * 16.16 signed fixed point number.
  */
-typedef int number_t;
+typedef struct
+{
+    int value;
+} number_t;
 
 typedef struct
 {
@@ -81,14 +84,14 @@ void ensure_portable_environment();
 int compare_values(const value_t *left, const value_t *right);
 string_t *represent_value(const value_t *value);
 boolean_t view_boolean(const value_t *value);
-number_t view_number(const value_t *value);
+number_t *view_number(const value_t *value);
 string_t *view_string(const value_t *value);
 list_t *view_list(const value_t *value);
 map_t *view_map(const value_t *value);
 function_t *view_function(const value_t *value);
 value_t *new_null();
 value_t *new_boolean(boolean_t boolean);
-value_t *new_number(number_t number);
+value_t *steal_number(number_t *number);
 value_t *steal_string(string_t *string);
 value_t *steal_list(list_t *list);
 value_t *steal_map(map_t *map);
@@ -119,16 +122,19 @@ int is_keyword_match(const string_t *left, const char *right);
 string_t *empty_string();
 string_t *create_string(char *bytes, size_t length);
 void destroy_string(string_t *string);
-int add_numbers(number_t left, number_t right, number_t *out);
-int subtract_numbers(number_t left, number_t right, number_t *out);
-int multiply_numbers(number_t left, number_t right, number_t *out);
-int divide_numbers(number_t left, number_t right, number_t *out);
-int modulo_numbers(number_t left, number_t right, number_t *out);
+int add_numbers(const number_t *left, const number_t *right, number_t *out);
+int subtract_numbers(const number_t *left, const number_t *right, number_t *out);
+int multiply_numbers(const number_t *left, const number_t *right, number_t *out);
+int divide_numbers(const number_t *left, const number_t *right, number_t *out);
+int modulo_numbers(const number_t *left, const number_t *right, number_t *out);
 int string_to_number(const string_t *text, number_t *out);
 int integer_to_number(int integer, number_t *out);
-int number_to_integer(number_t number, int *out);
-string_t *represent_number(number_t number);
-number_t truncate_number(number_t number);
+int number_to_integer(const number_t *number, int *out);
+string_t *represent_number(const number_t *number);
+void truncate_number(const number_t *number, number_t *out);
+int compare_numbers(const number_t *left, const number_t *right);
+number_t *create_number(int value);
+void destroy_number(number_t *number);
 int add_with_overflow(int left, int right);
 int can_fit_both(size_t left, size_t right);
 void *allocate(size_t number, size_t size);

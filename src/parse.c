@@ -399,7 +399,7 @@ static expression_t *read_any_expression(capsule_t *capsule)
 
         destroy_string(text);
 
-        return create_literal_expression(new_number(value));
+        return create_literal_expression(steal_number(create_number(value.value)));
     }
     else if (token->type == TOKEN_TYPE_STRING)
     {
@@ -1411,7 +1411,7 @@ static string_t *unescape_string(const string_t *code, const token_t *token)
                         integer = 0;
 
                         if (string_to_number(&string, &number) != 0
-                            || number_to_integer(number, &integer) != 0
+                            || number_to_integer(&number, &integer) != 0
                             || integer < 0 || integer > 255)
                         {
                             free(bytes);

@@ -73,14 +73,7 @@ int compare_values(const value_t *left, const value_t *right)
         }
 
         case VALUE_TYPE_NUMBER:
-        {
-            number_t x, y;
-
-            x = view_number(left);
-            y = view_number(right);
-
-            return x == y ? 0 : (x < y ? -1 : 1);
-        }
+            return compare_numbers(view_number(left), view_number(right));
 
         case VALUE_TYPE_STRING:
             return compare_strings(view_string(left), view_string(right));
@@ -341,7 +334,7 @@ string_t *represent_value(const value_t *value)
                                     crash_with_message("unsupported branch invoked");
                                 }
 
-                                represent = represent_number(number);
+                                represent = represent_number(&number);
 
                                 destination[placement++] = '\\';
                                 destination[placement++] = 'a';
@@ -496,16 +489,16 @@ boolean_t view_boolean(const value_t *value)
     }
 }
 
-number_t view_number(const value_t *value)
+number_t *view_number(const value_t *value)
 {
     if (value->type == VALUE_TYPE_NUMBER)
     {
-        return ((number_t *) value->data)[0];
+        return (number_t *) value->data;
     }
     else
     {
         crash_with_message("unsupported branch invoked");
-        return 0;
+        return NULL;
     }
 }
 
@@ -588,16 +581,13 @@ value_t *new_boolean(boolean_t boolean)
     return value;
 }
 
-value_t *new_number(number_t number)
+value_t *steal_number(number_t *number)
 {
     value_t *value;
-    number_t *data;
 
-    data = allocate(1, sizeof(number_t));
-    data[0] = number;
     value = allocate(1, sizeof(value_t));
     value->type = VALUE_TYPE_NUMBER;
-    value->data = data;
+    value->data = number;
     value->owners = 1;
 
     return value;
@@ -659,8 +649,11 @@ void destroy_value(value_t *value)
         {
             case VALUE_TYPE_NULL:
             case VALUE_TYPE_BOOLEAN:
-            case VALUE_TYPE_NUMBER:
                 free(value->data);
+                break;
+
+            case VALUE_TYPE_NUMBER:
+                destroy_number(value->data);
                 break;
 
             case VALUE_TYPE_STRING:
@@ -1159,81 +1152,81 @@ void destroy_string(string_t *string)
     free(string);
 }
 
-int add_numbers(number_t left, number_t right, number_t *out)
+int add_numbers(const number_t *left, const number_t *right, number_t *out)
 {
     long sum;
 
-    sum = (long) left + (long) right;
+    sum = (long) left->value + (long) right->value;
 
     if (sum < -PORTABLE_INT_LIMIT || sum > PORTABLE_INT_LIMIT)
     {
         return 1;
     }
 
-    (*out) = (int) sum;
+    out->value = (int) sum;
 
     return 0;
 }
 
-int subtract_numbers(number_t left, number_t right, number_t *out)
+int subtract_numbers(const number_t *left, const number_t *right, number_t *out)
 {
     long difference;
 
-    difference = (long) left - (long) right;
+    difference = (long) left->value - (long) right->value;
 
     if (difference < -PORTABLE_INT_LIMIT || difference > PORTABLE_INT_LIMIT)
     {
         return 1;
     }
 
-    (*out) = (int) difference;
+    out->value = (int) difference;
 
     return 0;
 }
 
-int multiply_numbers(number_t left, number_t right, number_t *out)
+int multiply_numbers(const number_t *left, const number_t *right, number_t *out)
 {
     long product;
 
-    product = ((long) left * (long) right) / 65536L;
+    product = ((long) left->value * (long) right->value) / 65536L;
 
     if (product < -PORTABLE_INT_LIMIT || product > PORTABLE_INT_LIMIT)
     {
         return 1;
     }
 
-    (*out) = (int) product;
+    out->value = (int) product;
 
     return 0;
 }
 
-int divide_numbers(number_t left, number_t right, number_t *out)
+int divide_numbers(const number_t *left, const number_t *right, number_t *out)
 {
     long quotient;
 
-    if (right == 0)
+    if (right->value == 0)
     {
         return 1;
     }
 
-    quotient = ((long) left * 65536L) / (long) right;
+    quotient = ((long) left->value * 65536L) / (long) right->value;
 
     if (quotient < -PORTABLE_INT_LIMIT || quotient > PORTABLE_INT_LIMIT)
     {
         return 1;
     }
 
-    (*out) = (int) quotient;
+    out->value = (int) quotient;
 
     return 0;
 }
 
-int modulo_numbers(number_t left, number_t right, number_t *out)
+int modulo_numbers(const number_t *left, const number_t *right, number_t *out)
 {
     long remainder, above, below;
 
-    above = (long) left / 65536L;
-    below = (long) right / 65536L;
+    above = (long) left->value / 65536L;
+    below = (long) right->value / 65536L;
 
     if (below == 0)
     {
@@ -1247,7 +1240,7 @@ int modulo_numbers(number_t left, number_t right, number_t *out)
         return 1;
     }
 
-    (*out) = (int) remainder;
+    out->value = (int) remainder;
 
     return 0;
 }
@@ -1368,7 +1361,7 @@ int string_to_number(const string_t *text, number_t *out)
         number *= -1;
     }
 
-    (*out) = number;
+    out->value = number;
 
     return 0;
 }
@@ -1380,35 +1373,35 @@ int integer_to_number(int integer, number_t *out)
         return 1;
     }
 
-    (*out) = integer * 65536;
+    out->value = integer * 65536;
 
     return 0;
 }
 
-int number_to_integer(number_t number, int *out)
+int number_to_integer(const number_t *number, int *out)
 {
-    (*out) = number / 65536;
+    (*out) = number->value / 65536;
 
     return 0;
 }
 
-string_t *represent_number(number_t number)
+string_t *represent_number(const number_t *number)
 {
     char *bytes;
     int whole, fraction, negative, decimal;
     size_t wholeDigits, fractionDigits, decimalWidth, length, index, zero;
 
-    whole = number / 65536;
+    whole = number->value / 65536;
     wholeDigits = integer_digits(whole);
-    negative = number < 0;
+    negative = number->value < 0;
 
-    if (!negative || (number & 65535) == 0)
+    if (!negative || (number->value & 65535) == 0)
     {
-        fraction = ((number & 65535) * 1000000L) / 65536;
+        fraction = ((number->value & 65535) * 1000000L) / 65536;
     }
     else
     {
-        fraction = ((65536 - (number & 65535)) * 1000000L) / 65536;
+        fraction = ((65536 - (number->value & 65535)) * 1000000L) / 65536;
     }
 
     fractionDigits = integer_digits(fraction);
@@ -1467,9 +1460,34 @@ string_t *represent_number(number_t number)
     return create_string(bytes, length);
 }
 
-number_t truncate_number(number_t number)
+void truncate_number(const number_t *number, number_t *out)
 {
-    return (number / 65536) * 65536;
+    out->value = (number->value / 65536) * 65536;
+}
+
+int compare_numbers(const number_t *left, const number_t *right)
+{
+    int x, y;
+
+    x = left->value;
+    y = right->value;
+
+    return x == y ? 0 : (x < y ? -1 : 1);
+}
+
+number_t *create_number(int value)
+{
+    number_t *number;
+
+    number = allocate(1, sizeof(number_t));
+    number->value = value;
+
+    return number;
+}
+
+void destroy_number(number_t *number)
+{
+    free(number);
 }
 
 int add_with_overflow(int left, int right)

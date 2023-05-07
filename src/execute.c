@@ -785,7 +785,7 @@ static value_t *run_add(frame_t *frame, machine_t *machine)
         return throw_error("arithmetic error", machine);
     }
 
-    return new_number(sum);
+    return steal_number(create_number(sum.value));
 }
 
 static value_t *run_subtract(frame_t *frame, machine_t *machine)
@@ -808,7 +808,7 @@ static value_t *run_subtract(frame_t *frame, machine_t *machine)
         return throw_error("arithmetic error", machine);
     }
 
-    return new_number(difference);
+    return steal_number(create_number(difference.value));
 }
 
 static value_t *run_multiply(frame_t *frame, machine_t *machine)
@@ -831,7 +831,7 @@ static value_t *run_multiply(frame_t *frame, machine_t *machine)
         return throw_error("arithmetic error", machine);
     }
 
-    return new_number(product);
+    return steal_number(create_number(product.value));
 }
 
 static value_t *run_divide(frame_t *frame, machine_t *machine)
@@ -854,7 +854,7 @@ static value_t *run_divide(frame_t *frame, machine_t *machine)
         return throw_error("arithmetic error", machine);
     }
 
-    return new_number(quotient);
+    return steal_number(create_number(quotient.value));
 }
 
 static value_t *run_modulo(frame_t *frame, machine_t *machine)
@@ -877,19 +877,23 @@ static value_t *run_modulo(frame_t *frame, machine_t *machine)
         return throw_error("arithmetic error", machine);
     }
 
-    return new_number(remainder);
+    return steal_number(create_number(remainder.value));
 }
 
 static value_t *run_truncate(frame_t *frame, machine_t *machine)
 {
     value_t *value;
+    number_t *number;
 
     if (!next_argument(VALUE_TYPE_NUMBER, &value, frame, machine))
     {
         return value;
     }
 
-    return new_number(truncate_number(view_number(value)));
+    number = create_number(0);
+    truncate_number(view_number(value), number);
+
+    return steal_number(number);
 }
 
 static value_t *run_and(frame_t *frame, machine_t *machine)
@@ -1014,22 +1018,22 @@ static value_t *run_write(frame_t *frame, machine_t *machine)
     {
         case VALUE_TYPE_NUMBER:
         {
-            number_t streamID, inID, outID, errID;
+            number_t *streamID, inID, outID, errID;
 
             streamID = view_number(file);
             integer_to_number(0, &inID);
             integer_to_number(1, &outID);
             integer_to_number(2, &errID);
 
-            if (streamID == inID)
+            if (compare_numbers(streamID, &inID) == 0)
             {
                 handle = stdin;
             }
-            else if (streamID == outID)
+            else if (compare_numbers(streamID, &outID) == 0)
             {
                 handle = stdout;
             }
-            else if (streamID == errID)
+            else if (compare_numbers(streamID, &errID) == 0)
             {
                 handle = stderr;
             }
@@ -1126,22 +1130,22 @@ static value_t *run_read(frame_t *frame, machine_t *machine)
     {
         case VALUE_TYPE_NUMBER:
         {
-            number_t streamID, inID, outID, errID;
+            number_t *streamID, inID, outID, errID;
 
             streamID = view_number(file);
             integer_to_number(0, &inID);
             integer_to_number(1, &outID);
             integer_to_number(2, &errID);
 
-            if (streamID == inID)
+            if (compare_numbers(streamID, &inID) == 0)
             {
                 handle = stdin;
             }
-            else if (streamID == outID)
+            else if (compare_numbers(streamID, &outID) == 0)
             {
                 handle = stdout;
             }
-            else if (streamID == errID)
+            else if (compare_numbers(streamID, &errID) == 0)
             {
                 handle = stderr;
             }
@@ -1488,7 +1492,7 @@ static value_t *run_cast(frame_t *frame, machine_t *machine)
                 return throw_error("cast error", machine);
             }
 
-            return new_number(number);
+            return steal_number(create_number(number.value));
         }
         else
         {
@@ -2075,7 +2079,7 @@ static value_t *run_length(frame_t *frame, machine_t *machine)
         return throw_error("constraint error", machine);
     }
 
-    return new_number(number);
+    return steal_number(create_number(number.value));
 }
 
 static value_t *run_keys(frame_t *frame, machine_t *machine)
@@ -2116,7 +2120,7 @@ static value_t *run_keys(frame_t *frame, machine_t *machine)
                     return throw_error("constraint error", machine);
                 }
 
-                add_list_item(keys, new_number(key));
+                add_list_item(keys, steal_number(create_number(key.value)));
             }
 
             return steal_list(keys);
@@ -2149,7 +2153,7 @@ static value_t *run_keys(frame_t *frame, machine_t *machine)
                     return throw_error("constraint error", machine);
                 }
 
-                add_list_item(keys, new_number(key));
+                add_list_item(keys, steal_number(create_number(key.value)));
             }
 
             return steal_list(keys);
