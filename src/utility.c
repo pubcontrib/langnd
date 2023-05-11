@@ -12,7 +12,7 @@ static void destroy_map_chain(map_chain_t *chain, void (*destroy)(void *));
 static list_t *create_list(void (*destroy)(void *), size_t capacity, size_t length, void **items);
 static int compare_strings_unsafe(const void *left, const void *right);
 static unsigned int integer_digits(int integer);
-static int integer_power(int a, int b);
+static unsigned int integer_power(unsigned int base, unsigned int power);
 static void crash(void);
 
 void ensure_portable_environment()
@@ -1156,6 +1156,11 @@ int add_numbers(const number_t *left, const number_t *right, number_t *out)
 {
     long sum;
 
+    if (left->layout != right->layout)
+    {
+        return 1;
+    }
+
     sum = (long) left->value + (long) right->value;
 
     if (sum < -PORTABLE_INT_LIMIT || sum > PORTABLE_INT_LIMIT)
@@ -1164,6 +1169,7 @@ int add_numbers(const number_t *left, const number_t *right, number_t *out)
     }
 
     out->value = (int) sum;
+    out->layout = left->layout;
 
     return 0;
 }
@@ -1171,6 +1177,11 @@ int add_numbers(const number_t *left, const number_t *right, number_t *out)
 int subtract_numbers(const number_t *left, const number_t *right, number_t *out)
 {
     long difference;
+
+    if (left->layout != right->layout)
+    {
+        return 1;
+    }
 
     difference = (long) left->value - (long) right->value;
 
@@ -1180,6 +1191,7 @@ int subtract_numbers(const number_t *left, const number_t *right, number_t *out)
     }
 
     out->value = (int) difference;
+    out->layout = left->layout;
 
     return 0;
 }
@@ -1188,7 +1200,17 @@ int multiply_numbers(const number_t *left, const number_t *right, number_t *out)
 {
     long product;
 
-    product = ((long) left->value * (long) right->value) / 65536L;
+    if (left->layout != right->layout)
+    {
+        return 1;
+    }
+
+    product = ((long) left->value * (long) right->value);
+
+    if (left->layout == NUMBER_LAYOUT_16_16)
+    {
+        product /= 65536L;
+    }
 
     if (product < -PORTABLE_INT_LIMIT || product > PORTABLE_INT_LIMIT)
     {
@@ -1196,6 +1218,7 @@ int multiply_numbers(const number_t *left, const number_t *right, number_t *out)
     }
 
     out->value = (int) product;
+    out->layout = left->layout;
 
     return 0;
 }
@@ -1204,12 +1227,24 @@ int divide_numbers(const number_t *left, const number_t *right, number_t *out)
 {
     long quotient;
 
+    if (left->layout != right->layout)
+    {
+        return 1;
+    }
+
     if (right->value == 0)
     {
         return 1;
     }
 
-    quotient = ((long) left->value * 65536L) / (long) right->value;
+    quotient = left->value;
+
+    if (left->layout == NUMBER_LAYOUT_16_16)
+    {
+        quotient *= 65536L;
+    }
+
+    quotient /= (long) right->value;
 
     if (quotient < -PORTABLE_INT_LIMIT || quotient > PORTABLE_INT_LIMIT)
     {
@@ -1217,6 +1252,7 @@ int divide_numbers(const number_t *left, const number_t *right, number_t *out)
     }
 
     out->value = (int) quotient;
+    out->layout = left->layout;
 
     return 0;
 }
@@ -1225,15 +1261,36 @@ int modulo_numbers(const number_t *left, const number_t *right, number_t *out)
 {
     long remainder, above, below;
 
-    above = (long) left->value / 65536L;
-    below = (long) right->value / 65536L;
+    if (left->layout != right->layout)
+    {
+        return 1;
+    }
+
+    above = left->value;
+
+    if (left->layout == NUMBER_LAYOUT_16_16)
+    {
+        above /= 65536L;
+    }
+
+    below = right->value;
+
+    if (left->layout == NUMBER_LAYOUT_16_16)
+    {
+        below /= 65536L;
+    }
 
     if (below == 0)
     {
         return 1;
     }
 
-    remainder = (above % below) * 65536L;
+    remainder = above % below;
+
+    if (left->layout == NUMBER_LAYOUT_16_16)
+    {
+        remainder *= 65536L;
+    }
 
     if (remainder < -PORTABLE_INT_LIMIT || remainder > PORTABLE_INT_LIMIT)
     {
@@ -1241,13 +1298,15 @@ int modulo_numbers(const number_t *left, const number_t *right, number_t *out)
     }
 
     out->value = (int) remainder;
+    out->layout = left->layout;
 
     return 0;
 }
 
 int string_to_number(const string_t *text, number_t *out)
 {
-    int number, whole, fraction, wholeIndex, fractionIndex, negative, decimal, point;
+    int number, wholeIndex, fractionIndex, negative, decimal, point;
+    unsigned int whole, fraction;
     size_t index;
 
     whole = 0;
@@ -1267,11 +1326,6 @@ int string_to_number(const string_t *text, number_t *out)
         }
     }
 
-    if (point > 6 || (point == -1 && text->length > 6))
-    {
-        return 1;
-    }
-
     for (index = 0; index < text->length; index++)
     {
         char symbol;
@@ -1280,7 +1334,7 @@ int string_to_number(const string_t *text, number_t *out)
 
         if (symbol >= '0' && symbol <= '9')
         {
-            int digit, places;
+            unsigned int digit, places;
 
             digit = symbol - '0';
 
@@ -1289,13 +1343,18 @@ int string_to_number(const string_t *text, number_t *out)
                 places = (point == -1 ? (int) text->length : point) - wholeIndex++;
                 whole += digit * integer_power(10, places - 1);
 
-                if (whole > 32767)
+                if (whole > PORTABLE_INT_LIMIT)
                 {
                     return 1;
                 }
             }
             else
             {
+                if (whole > 32767)
+                {
+                    return 1;
+                }
+
                 if (fractionIndex >= 6)
                 {
                     continue;
@@ -1354,7 +1413,14 @@ int string_to_number(const string_t *text, number_t *out)
         fraction += 1;
     }
 
-    number = (whole * 65536) + ((fraction * 65536L) / 1000000);
+    if (decimal)
+    {
+        number = (((int) whole) * 65536) + ((((int) fraction) * 65536L) / 1000000);
+    }
+    else
+    {
+        number = whole;
+    }
 
     if (negative)
     {
@@ -1362,25 +1428,36 @@ int string_to_number(const string_t *text, number_t *out)
     }
 
     out->value = number;
+    out->layout = decimal ? NUMBER_LAYOUT_16_16 : NUMBER_LAYOUT_32_0;
 
     return 0;
 }
 
 int integer_to_number(int integer, number_t *out)
 {
-    if (integer < -32767 || integer > 32767)
+    if (integer < -PORTABLE_INT_LIMIT || integer > PORTABLE_INT_LIMIT)
     {
         return 1;
     }
 
-    out->value = integer * 65536;
+    out->value = integer;
+    out->layout = NUMBER_LAYOUT_32_0;
 
     return 0;
 }
 
 int number_to_integer(const number_t *number, int *out)
 {
-    (*out) = number->value / 65536;
+    int integer;
+
+    integer = number->value;
+
+    if (number->layout == NUMBER_LAYOUT_16_16)
+    {
+        integer /= 65536;
+    }
+
+    (*out) = integer;
 
     return 0;
 }
@@ -1391,21 +1468,31 @@ string_t *represent_number(const number_t *number)
     int whole, fraction, negative, decimal;
     size_t wholeDigits, fractionDigits, decimalWidth, length, index, zero;
 
-    whole = number->value / 65536;
+    whole = number->value;
+
+    if (number->layout == NUMBER_LAYOUT_16_16)
+    {
+        whole /= 65536;
+    }
+
     wholeDigits = integer_digits(whole);
     negative = number->value < 0;
+    fraction = 0;
 
-    if (!negative || (number->value & 65535) == 0)
+    if (number->layout == NUMBER_LAYOUT_16_16)
     {
-        fraction = ((number->value & 65535) * 1000000L) / 65536;
-    }
-    else
-    {
-        fraction = ((65536 - (number->value & 65535)) * 1000000L) / 65536;
+        if (!negative || (number->value & 65535) == 0)
+        {
+            fraction = ((number->value & 65535) * 1000000L) / 65536;
+        }
+        else
+        {
+            fraction = ((65536 - (number->value & 65535)) * 1000000L) / 65536;
+        }
     }
 
     fractionDigits = integer_digits(fraction);
-    decimal = fraction > 0;
+    decimal = number->layout == NUMBER_LAYOUT_16_16;
     decimalWidth = 6;
     length = (negative ? 1 : 0) + wholeDigits + (decimal ? (decimalWidth + 1) : 0);
     bytes = allocate(length, sizeof(char));
@@ -1439,6 +1526,11 @@ string_t *represent_number(const number_t *number)
 
     index = length - 1;
 
+    if (decimal && fraction == 0)
+    {
+        bytes[index--] = '0';
+    }
+
     while (fraction > 0)
     {
         int next, digit;
@@ -1462,25 +1554,49 @@ string_t *represent_number(const number_t *number)
 
 void truncate_number(const number_t *number, number_t *out)
 {
-    out->value = (number->value / 65536) * 65536;
+    int value;
+
+    value = number->value;
+
+    if (number->layout == NUMBER_LAYOUT_16_16)
+    {
+        value /= 65536;
+        value *= 65536;
+    }
+
+    out->value = value;
+    out->layout = number->layout;
 }
 
 int compare_numbers(const number_t *left, const number_t *right)
 {
-    int x, y;
+    long x, y;
 
     x = left->value;
     y = right->value;
 
+    if (left->layout != right->layout)
+    {
+        if (left->layout == NUMBER_LAYOUT_16_16)
+        {
+            y *= 65536;
+        }
+        else
+        {
+            x *= 65536;
+        }
+    }
+
     return x == y ? 0 : (x < y ? -1 : 1);
 }
 
-number_t *create_number(int value)
+number_t *create_number(int value, number_layout_t layout)
 {
     number_t *number;
 
     number = allocate(1, sizeof(number_t));
     number->value = value;
+    number->layout = layout;
 
     return number;
 }
@@ -1724,9 +1840,9 @@ static unsigned int integer_digits(int integer)
     return digits;
 }
 
-static int integer_power(int base, int power)
+static unsigned int integer_power(unsigned int base, unsigned int power)
 {
-    int product;
+    unsigned int product;
 
     if (power == 0)
     {

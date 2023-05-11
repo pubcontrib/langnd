@@ -399,7 +399,7 @@ static expression_t *read_any_expression(capsule_t *capsule)
 
         destroy_string(text);
 
-        return create_literal_expression(steal_number(create_number(value.value)));
+        return create_literal_expression(steal_number(create_number(value.value, value.layout)));
     }
     else if (token->type == TOKEN_TYPE_STRING)
     {

@@ -785,7 +785,7 @@ static value_t *run_add(frame_t *frame, machine_t *machine)
         return throw_error("arithmetic error", machine);
     }
 
-    return steal_number(create_number(sum.value));
+    return steal_number(create_number(sum.value, sum.layout));
 }
 
 static value_t *run_subtract(frame_t *frame, machine_t *machine)
@@ -808,7 +808,7 @@ static value_t *run_subtract(frame_t *frame, machine_t *machine)
         return throw_error("arithmetic error", machine);
     }
 
-    return steal_number(create_number(difference.value));
+    return steal_number(create_number(difference.value, difference.layout));
 }
 
 static value_t *run_multiply(frame_t *frame, machine_t *machine)
@@ -831,7 +831,7 @@ static value_t *run_multiply(frame_t *frame, machine_t *machine)
         return throw_error("arithmetic error", machine);
     }
 
-    return steal_number(create_number(product.value));
+    return steal_number(create_number(product.value, product.layout));
 }
 
 static value_t *run_divide(frame_t *frame, machine_t *machine)
@@ -854,7 +854,7 @@ static value_t *run_divide(frame_t *frame, machine_t *machine)
         return throw_error("arithmetic error", machine);
     }
 
-    return steal_number(create_number(quotient.value));
+    return steal_number(create_number(quotient.value, quotient.layout));
 }
 
 static value_t *run_modulo(frame_t *frame, machine_t *machine)
@@ -877,7 +877,7 @@ static value_t *run_modulo(frame_t *frame, machine_t *machine)
         return throw_error("arithmetic error", machine);
     }
 
-    return steal_number(create_number(remainder.value));
+    return steal_number(create_number(remainder.value, remainder.layout));
 }
 
 static value_t *run_truncate(frame_t *frame, machine_t *machine)
@@ -890,7 +890,7 @@ static value_t *run_truncate(frame_t *frame, machine_t *machine)
         return value;
     }
 
-    number = create_number(0);
+    number = create_number(0, NUMBER_LAYOUT_16_16);
     truncate_number(view_number(value), number);
 
     return steal_number(number);
@@ -1492,7 +1492,7 @@ static value_t *run_cast(frame_t *frame, machine_t *machine)
                 return throw_error("cast error", machine);
             }
 
-            return steal_number(create_number(number.value));
+            return steal_number(create_number(number.value, number.layout));
         }
         else
         {
@@ -2079,7 +2079,7 @@ static value_t *run_length(frame_t *frame, machine_t *machine)
         return throw_error("constraint error", machine);
     }
 
-    return steal_number(create_number(number.value));
+    return steal_number(create_number(number.value, number.layout));
 }
 
 static value_t *run_keys(frame_t *frame, machine_t *machine)
@@ -2120,7 +2120,7 @@ static value_t *run_keys(frame_t *frame, machine_t *machine)
                     return throw_error("constraint error", machine);
                 }
 
-                add_list_item(keys, steal_number(create_number(key.value)));
+                add_list_item(keys, steal_number(create_number(key.value, key.layout)));
             }
 
             return steal_list(keys);
@@ -2153,7 +2153,7 @@ static value_t *run_keys(frame_t *frame, machine_t *machine)
                     return throw_error("constraint error", machine);
                 }
 
-                add_list_item(keys, steal_number(create_number(key.value)));
+                add_list_item(keys, steal_number(create_number(key.value, key.layout)));
             }
 
             return steal_list(keys);

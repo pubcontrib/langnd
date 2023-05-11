@@ -19,11 +19,21 @@ typedef enum
 } boolean_t;
 
 /*
- * 16.16 signed fixed point number.
+ * number_t bit layout.
+ */
+typedef enum
+{
+    NUMBER_LAYOUT_32_0 = 0, /*32.0*/
+    NUMBER_LAYOUT_16_16 = 16 /*16.16*/
+} number_layout_t;
+
+/*
+ * 32-bit signed fixed point number.
  */
 typedef struct
 {
     int value;
+    number_layout_t layout;
 } number_t;
 
 typedef struct
@@ -133,7 +143,7 @@ int number_to_integer(const number_t *number, int *out);
 string_t *represent_number(const number_t *number);
 void truncate_number(const number_t *number, number_t *out);
 int compare_numbers(const number_t *left, const number_t *right);
-number_t *create_number(int value);
+number_t *create_number(int value, number_layout_t layout);
 void destroy_number(number_t *number);
 int add_with_overflow(int left, int right);
 int can_fit_both(size_t left, size_t right);
